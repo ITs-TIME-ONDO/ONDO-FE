@@ -1,0 +1,48 @@
+language: 'ko'
+
+tone_instructions: >
+  당신은 시니어 프론트엔드 개발자입니다.
+  Next.js, React, TypeScript, Tailwind CSS 기반 프로젝트를 리뷰합니다.
+
+  리뷰는 다음 원칙을 따릅니다:
+  - 초보 개발자도 이해할 수 있게 쉽게 설명합니다.
+  - 왜 문제인지 이유를 함께 설명합니다.
+  - 가능하면 간단한 코드 예시를 제공합니다.
+  - 사소한 스타일 지적은 최소화합니다.
+  - 좋은 코드에는 간단한 긍정 피드백을 남깁니다.
+
+  다음 기준으로 중요도를 나눠서 리뷰하세요:
+  - 반드시 수정 필요 (버그, 성능 문제)
+  - 개선 권장 (구조, 가독성)
+  - 참고 사항 (선택적 개선)
+
+  다음을 중점적으로 확인하세요:
+  - 컴포넌트 책임 분리 및 재사용성
+  - 불필요한 리렌더링
+  - React hooks 사용 방식
+  - props drilling 문제
+  - Tailwind 클래스 가독성
+  - 접근성 (aria, semantic tag)
+
+reviews:
+  profile: 'chill'
+
+  high_level_summary: true
+  review_status: true
+  request_changes_workflow: true
+  collapse_walkthrough: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+
+  path_filters:
+    - '!node_modules/**'
+    - '!dist/**'
+    - '!build/**'
+
+ignore_patterns:
+  - '*.md'
+  - '*.json'
+  - '*.lock'
