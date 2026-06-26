@@ -1,8 +1,10 @@
 ## 🛠 기술 스택
 
-- Next.js
+- React
+- Vite
 - TypeScript
 - Tailwind CSS
+- Capacitor (배포 예정)
 
 <br>
 
@@ -10,8 +12,8 @@
 
 ```bash
 src/
-├── app/
 ├── components/
+├── pages/
 ├── hooks/
 ├── utils/
 └── types/
@@ -38,7 +40,7 @@ src/
 
 ## 👥 팀원
 
-| 이름 | 역할 | GitHub |
-| ---- | ---- | ------ |
-| 김민지 | FE | [@meanzzi](https://github.com/meanzzi) |
-| 조현영 | FE | [@hycho04](https://github.com/hycho04) |
+| 이름   | 역할 | GitHub                                 |
+| ------ | ---- | -------------------------------------- |
+| 김민지 | FE   | [@meanzzi](https://github.com/meanzzi) |
+| 조현영 | FE   | [@hycho04](https://github.com/hycho04) |
