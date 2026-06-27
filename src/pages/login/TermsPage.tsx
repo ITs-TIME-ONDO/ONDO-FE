@@ -68,7 +68,7 @@ export default function TermsPage() {
         <div className="absolute left-6 top-[373px] h-px w-[342px] bg-[#e8e8e8]" />
 
         {/* 약관 항목 */}
-        <div className="absolute left-6 top-[401px] flex flex-col">
+        <div className="absolute left-6 top-[401px] flex flex-col w-[342px]">
           {TERMS.map((term, i) => (
             <button
               key={term.id}
