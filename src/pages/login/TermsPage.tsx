@@ -41,7 +41,7 @@ export default function TermsPage() {
 
   return (
     <PageTransition>
-      <div className="relative mx-auto bg-white overflow-hidden" style={{ width: 390, minHeight: '100dvh' }}>
+      <div className="relative mx-auto bg-white overflow-hidden" style={{ width: '100%', maxWidth: 390, minHeight: '100dvh' }}>
         {/* 진행 단계 바 */}
         <div className="absolute flex gap-1 items-center left-6 top-10">
           <div className="h-1 w-[169px] rounded-full bg-[#c6c6c6]" />
@@ -88,7 +88,7 @@ export default function TermsPage() {
         <NextButton
           disabled={!allChecked}
           onClick={() => {
-            localStorage.setItem('isLoggedIn', 'true')
+            localStorage.setItem('onboardingCompleted', 'true')
             navigate('/')
           }}
         />

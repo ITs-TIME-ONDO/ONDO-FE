@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import profileChar from '../../assets/profile_char.svg'
 import cameraIcon from '../../assets/gridicons_camera.svg'
@@ -11,18 +11,23 @@ export default function LoginPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  useEffect(() => {
+    return () => {
+      if (profileImage) URL.revokeObjectURL(profileImage)
+    }
+  }, [profileImage])
+
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const url = URL.createObjectURL(file)
-    setProfileImage(url)
+    setProfileImage(URL.createObjectURL(file))
   }
 
   return (
     <PageTransition>
       <div
         className="relative mx-auto bg-white overflow-hidden"
-        style={{ width: 390, minHeight: '100dvh' }}
+        style={{ width: '100%', maxWidth: 390, minHeight: '100dvh' }}
       >
         {/* 진행 단계 바 */}
         <div className="absolute flex gap-1 items-center left-6 top-10">
@@ -108,8 +113,9 @@ export default function LoginPage() {
 
         {/* 다음 버튼 */}
         <button
-          className={`absolute left-6 top-[720px] flex h-[60px] w-[342px] items-center justify-center rounded-full text-[20px] font-bold text-white transition-colors ${nickname ? 'bg-[#ff9e1b]' : 'bg-[#ff9e1b]/50'}`}
-          disabled={!nickname}
+          type="button"
+          className={`absolute left-6 top-[720px] flex h-[60px] w-[342px] items-center justify-center rounded-full text-[20px] font-bold text-white transition-colors ${nickname.trim() ? 'bg-[#ff9e1b]' : 'bg-[#ff9e1b]/50'}`}
+          disabled={!nickname.trim()}
           onClick={() => navigate('/terms')}
         >
           다음

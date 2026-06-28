@@ -6,7 +6,7 @@ import ProfilePage from './pages/login/ProfilePage'
 import TermsPage from './pages/login/TermsPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
+  const isLoggedIn = localStorage.getItem('onboardingCompleted') === 'true'
   return isLoggedIn ? <>{children}</> : <Navigate to="/login" replace />
 }
 
@@ -16,7 +16,7 @@ function App() {
   return (
     <div
       className="relative overflow-hidden"
-      style={{ width: 390, minHeight: '100dvh', margin: '0 auto' }}
+      style={{ width: '100%', maxWidth: 390, minHeight: '100dvh', margin: '0 auto' }}
     >
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
@@ -31,7 +31,14 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route
+            path="*"
+            element={
+              localStorage.getItem('onboardingCompleted') === 'true'
+                ? <Navigate to="/" replace />
+                : <Navigate to="/login" replace />
+            }
+          />
         </Routes>
       </AnimatePresence>
     </div>
