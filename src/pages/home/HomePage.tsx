@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import BottomNav from '../../components/BottomNav'
 
@@ -7,6 +8,8 @@ import profileBtn from '../../assets/top_small_profile_btn.png'
 import cryingChar from '../../assets/crying_char.png'
 
 export default function HomePage() {
+  const navigate = useNavigate()
+
   return (
     <PageTransition>
       <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-gradient-to-b from-white via-[#FFF4E8] to-[#FFC679]">
@@ -15,7 +18,13 @@ export default function HomePage() {
 
           <div className="flex items-center gap-3">
             <img src={alertIcon} alt="알림" className="h-6 w-5" />
-            <img src={profileBtn} alt="프로필" className="h-6 w-6" />
+            <button
+              type="button"
+              onClick={() => navigate('/mypage')}
+              className="flex items-center justify-center"
+            >
+              <img src={profileBtn} alt="프로필" className="h-6 w-6" />
+            </button>
           </div>
         </header>
 

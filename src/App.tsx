@@ -5,6 +5,9 @@ import LoginPage from './pages/login/LoginPage'
 import ProfilePage from './pages/login/ProfilePage'
 import TermsPage from './pages/login/TermsPage'
 import RequestPage from './pages/home/RequestPage'
+import MyPage from './pages/mypage/MyPage'
+import ProfileEditPage from './pages/mypage/ProfileEditPage'
+import WithdrawPage from './pages/mypage/WithdrawPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isLoggedIn = localStorage.getItem('onboardingCompleted') === 'true'
@@ -44,6 +47,33 @@ function App() {
             element={
               <ProtectedRoute>
                 <RequestPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/mypage"
+            element={
+              <ProtectedRoute>
+                <MyPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/mypage/edit"
+            element={
+              <ProtectedRoute>
+                <ProfileEditPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/mypage/withdraw"
+            element={
+              <ProtectedRoute>
+                <WithdrawPage />
               </ProtectedRoute>
             }
           />
