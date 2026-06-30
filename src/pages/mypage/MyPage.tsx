@@ -3,15 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import PageHeader from '../../components/PageHeader'
 import profileChar from '../../assets/profile_char.svg'
+import { DEFAULT_NICKNAME } from '../../constants/user'
 
 export default function MyPage() {
   const navigate = useNavigate()
-  const nickname = localStorage.getItem('nickname') ?? '당당당근'
+  const nickname = localStorage.getItem('nickname') ?? DEFAULT_NICKNAME
   const profileImage = localStorage.getItem('profileImage')
   const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const handleLogout = () => {
     localStorage.removeItem('onboardingCompleted')
+    localStorage.removeItem('nickname')
+    localStorage.removeItem('profileImage')
     navigate('/login', { replace: true })
   }
 

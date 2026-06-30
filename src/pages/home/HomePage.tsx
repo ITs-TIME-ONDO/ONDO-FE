@@ -18,12 +18,13 @@ export default function HomePage() {
 
           <div className="flex items-center gap-3">
             <img src={alertIcon} alt="알림" className="h-6 w-5" />
-            <img
-              src={profileBtn}
-              alt="프로필"
-              className="h-6 w-6 cursor-pointer"
+            <button
+              type="button"
               onClick={() => navigate('/mypage')}
-            />
+              className="flex items-center justify-center"
+            >
+              <img src={profileBtn} alt="프로필" className="h-6 w-6" />
+            </button>
           </div>
         </header>
 

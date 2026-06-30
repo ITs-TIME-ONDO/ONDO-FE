@@ -5,11 +5,12 @@ import PageHeader from '../../components/PageHeader'
 import NicknameInput from '../../components/NicknameInput'
 import ProfileImagePicker from '../login/ProfileImagePicker'
 import profileChar from '../../assets/profile_char.svg'
+import { DEFAULT_NICKNAME } from '../../constants/user'
 
 export default function ProfileEditPage() {
   const navigate = useNavigate()
   const [nickname, setNickname] = useState(
-    () => localStorage.getItem('nickname') ?? '당당한 당근'
+    () => localStorage.getItem('nickname') ?? DEFAULT_NICKNAME
   )
   const [profileImage, setProfileImage] = useState<string | null>(() =>
     localStorage.getItem('profileImage')
@@ -22,7 +23,7 @@ export default function ProfileEditPage() {
         style={{ width: '100%', maxWidth: 390, minHeight: '100dvh' }}
       >
         {/* 헤더 */}
-        <PageHeader title="프로필 편집" />
+        <PageHeader title="프로필 편집" fallbackPath="/mypage" />
 
         {/* 프로필 이미지 */}
         <ProfileImagePicker
@@ -47,7 +48,7 @@ export default function ProfileEditPage() {
           onClick={() => {
             localStorage.setItem('nickname', nickname)
             if (profileImage) localStorage.setItem('profileImage', profileImage)
-            navigate(-1)
+            navigate('/mypage', { replace: true })
           }}
         >
           저장하기

@@ -11,7 +11,7 @@ export default function NicknameInput({ value, onChange, className = 'top-[523px
         닉네임
       </p>
       <div
-        className={`flex h-[50px] items-center rounded-full bg-[#f3f3f3] px-5 border ${value ? 'border-[#ff9e1b]' : 'border-transparent'}`}
+        className={`flex h-[50px] items-center rounded-full bg-[#f3f3f3] px-5 border ${value.trim() ? 'border-[#ff9e1b]' : 'border-transparent'}`}
       >
         <input
           type="text"

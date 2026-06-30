@@ -45,7 +45,11 @@ export default function ProfilePage() {
           disabled={!nickname.trim()}
           onClick={() => {
             localStorage.setItem('nickname', nickname)
-            if (profileImage) localStorage.setItem('profileImage', profileImage)
+            if (profileImage) {
+              localStorage.setItem('profileImage', profileImage)
+            } else {
+              localStorage.removeItem('profileImage')
+            }
             navigate('/terms')
           }}
         >

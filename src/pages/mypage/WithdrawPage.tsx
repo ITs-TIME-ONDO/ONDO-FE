@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import PageHeader from '../../components/PageHeader'
 import checkBox from '../../assets/check_box.svg'
+import { DEFAULT_NICKNAME } from '../../constants/user'
 
 const ITEMS = [
   '모든 매칭 내용과 채팅 기록은 즉시 삭제됩니다.',
@@ -11,7 +12,7 @@ const ITEMS = [
 
 export default function WithdrawPage() {
   const navigate = useNavigate()
-  const nickname = localStorage.getItem('nickname') ?? '당당당근'
+  const nickname = localStorage.getItem('nickname') ?? DEFAULT_NICKNAME
 
   const handleWithdraw = () => {
     localStorage.clear()
@@ -24,7 +25,7 @@ export default function WithdrawPage() {
         className="relative mx-auto bg-white overflow-hidden"
         style={{ width: '100%', maxWidth: 390, minHeight: '100dvh' }}
       >
-        <PageHeader title="회원 탈퇴" />
+        <PageHeader title="회원 탈퇴" fallbackPath="/mypage" />
 
         <div className="absolute left-[24px] top-[145px]">
           <p className="text-[16px] font-semibold leading-[21px] text-black">
