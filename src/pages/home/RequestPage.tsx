@@ -191,8 +191,24 @@ export default function RequestPage() {
       <button
         type="button"
         disabled={!isValid}
+        onClick={() => {
+          if (!isValid) return
+
+          localStorage.setItem(
+            'myRequest',
+            JSON.stringify({
+              purpose,
+              gender,
+              ageRange,
+              description,
+              createdAt: new Date().toISOString(),
+            })
+          )
+
+          navigate('/')
+        }}
         className={`absolute bottom-[68px] left-6 h-14 w-[342px] rounded-full text-xl font-bold text-white ${
-          isValid ? 'bg-[#FF9814]' : 'bg-[#FFC878]'
+          isValid ? 'bg-[#FF9814]' : 'bg-[#FFC878] cursor-not-allowed'
         }`}
       >
         다음
