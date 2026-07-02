@@ -10,8 +10,8 @@ export default function LoginPage() {
   return (
     <PageTransition>
       <div
-        className="relative mx-auto overflow-hidden"
-        style={{ width: '100%', maxWidth: 390, minHeight: '100dvh', background: 'rgba(255, 158, 27, 0.1)' }}
+        className="relative h-[844px] w-[390px] overflow-hidden"
+        style={{ background: 'rgba(255, 158, 27, 0.1)' }}
       >
         {/* 큰 원형 배경 */}
         <div
