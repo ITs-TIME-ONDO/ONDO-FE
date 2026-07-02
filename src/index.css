@@ -3,5 +3,46 @@
 @tailwind utilities;
 
 body {
-  font-family: 'Pretendard', -apple-system, 'BlinkMacSystemFont', sans-serif;
+  font-family:
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+}
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 20px;
+  background: transparent;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  border: 1px solid white;
+  background: #ff9814;
+  cursor: pointer;
+}
+
+.slider::-moz-range-track {
+  background: transparent;
+}
+
+.slider::-moz-range-thumb {
+  pointer-events: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  border: 1px solid white;
+  background: #ff9814;
+  cursor: pointer;
 }
