@@ -20,10 +20,7 @@ export default function MyPage() {
 
   return (
     <PageTransition>
-      <div
-        className="relative mx-auto bg-white overflow-hidden"
-        style={{ width: '100%', maxWidth: 390, minHeight: '100dvh' }}
-      >
+      <div className="relative h-[844px] w-[390px] overflow-hidden bg-white">
         {/* 주황 배경 */}
         <div className="absolute left-0 top-[89px] h-[299px] w-full bg-[#FF9E1B]/30" />
 

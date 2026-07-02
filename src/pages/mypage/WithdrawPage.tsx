@@ -21,10 +21,7 @@ export default function WithdrawPage() {
 
   return (
     <PageTransition>
-      <div
-        className="relative mx-auto bg-white overflow-hidden"
-        style={{ width: '100%', maxWidth: 390, minHeight: '100dvh' }}
-      >
+      <div className="relative h-[844px] w-[390px] overflow-hidden bg-white">
         <PageHeader title="회원 탈퇴" fallbackPath="/mypage" />
 
         <div className="absolute left-[24px] top-[145px]">

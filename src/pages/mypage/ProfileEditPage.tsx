@@ -18,10 +18,7 @@ export default function ProfileEditPage() {
 
   return (
     <PageTransition>
-      <div
-        className="relative mx-auto bg-white overflow-hidden"
-        style={{ width: '100%', maxWidth: 390, minHeight: '100dvh' }}
-      >
+      <div className="relative h-[844px] w-[390px] overflow-hidden bg-white">
         {/* 헤더 */}
         <PageHeader title="프로필 편집" fallbackPath="/mypage" />
 

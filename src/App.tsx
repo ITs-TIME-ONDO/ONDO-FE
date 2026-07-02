@@ -1,5 +1,6 @@
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
+import ScreenScaler from './components/ScreenScaler'
 import Home from './Home'
 import LoginPage from './pages/login/LoginPage'
 import ProfilePage from './pages/login/ProfilePage'
@@ -18,15 +19,7 @@ function App() {
   const location = useLocation()
 
   return (
-    <div
-      className="relative overflow-hidden"
-      style={{
-        width: '100%',
-        maxWidth: 390,
-        minHeight: '100dvh',
-        margin: '0 auto',
-      }}
-    >
+    <ScreenScaler>
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/login" element={<LoginPage />} />
@@ -90,7 +83,7 @@ function App() {
           />
         </Routes>
       </AnimatePresence>
-    </div>
+    </ScreenScaler>
   )
 }
 

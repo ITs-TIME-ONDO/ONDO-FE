@@ -12,10 +12,7 @@ export default function ProfilePage() {
 
   return (
     <PageTransition>
-      <div
-        className="relative mx-auto bg-white overflow-hidden"
-        style={{ width: '100%', maxWidth: 390, minHeight: '100dvh' }}
-      >
+      <div className="relative h-[844px] w-[390px] overflow-hidden bg-white">
         {/* 진행 단계 바 */}
         <div className="absolute flex gap-1 items-center left-6 top-10">
           <div className="h-1 w-[169px] rounded-full bg-[#ff9e1b]" />
