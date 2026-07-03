@@ -13,6 +13,10 @@ export function saveTokens({ accessToken, refreshToken, tokenType, expiresIn }: 
 }
 
 export function getAccessToken(): string | null {
+  const expiresAt = localStorage.getItem(EXPIRES_AT_KEY)
+  if (!expiresAt || Date.now() >= Number(expiresAt)) {
+    return null
+  }
   return localStorage.getItem(ACCESS_TOKEN_KEY)
 }
 

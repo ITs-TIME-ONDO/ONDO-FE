@@ -1,5 +1,11 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL
 
+if (!BASE_URL) {
+  throw new Error(
+    'VITE_API_BASE_URL이 설정되지 않았습니다. .env 파일을 확인해주세요.'
+  )
+}
+
 export class ApiError extends Error {
   status: number
   code?: string
