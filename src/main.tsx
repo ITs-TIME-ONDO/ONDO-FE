@@ -7,6 +7,17 @@ import './index.css'
 
 import App from './App.tsx'
 
+if (
+  window.location.pathname === '/api/auth/kakao/callback' &&
+  !window.location.hash
+) {
+  window.history.replaceState(
+    null,
+    '',
+    `${window.location.origin}/#/api/auth/kakao/callback${window.location.search}`
+  )
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HashRouter>
