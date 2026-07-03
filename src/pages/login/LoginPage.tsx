@@ -1,12 +1,10 @@
-import { useNavigate } from 'react-router-dom'
 import loginChar from '../../assets/login_char.png'
 import logo from '../../assets/logo.png'
 import kakaoLogo from '../../assets/kakao_logo.png'
 import PageTransition from '../../components/PageTransition'
+import { getKakaoLoginUrl } from '../../api/auth'
 
 export default function LoginPage() {
-  const navigate = useNavigate()
-
   return (
     <PageTransition>
       <div
@@ -91,7 +89,9 @@ export default function LoginPage() {
         <button
           className="absolute -translate-x-1/2 flex items-center justify-center gap-3 rounded-full bg-[#f8e533]"
           style={{ left: '50%', top: 720, width: 342, height: 60 }}
-          onClick={() => navigate('/profile')}
+          onClick={() => {
+            window.location.href = getKakaoLoginUrl()
+          }}
         >
           <img alt="카카오 로고" className="size-5 object-contain" src={kakaoLogo} />
           <span className="text-[16px] font-bold text-black tracking-[-0.3px]">

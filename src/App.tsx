@@ -3,6 +3,7 @@ import { AnimatePresence } from 'framer-motion'
 import ScreenScaler from './components/ScreenScaler'
 import Home from './Home'
 import LoginPage from './pages/login/LoginPage'
+import KakaoCallbackPage from './pages/login/KakaoCallbackPage'
 import ProfilePage from './pages/login/ProfilePage'
 import TermsPage from './pages/login/TermsPage'
 import RequestPage from './pages/home/RequestPage'
@@ -23,6 +24,7 @@ function App() {
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/api/auth/kakao/callback" element={<KakaoCallbackPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/terms" element={<TermsPage />} />
 
