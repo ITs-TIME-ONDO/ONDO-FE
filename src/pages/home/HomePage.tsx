@@ -21,6 +21,7 @@ export default function HomePage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showDeleteGuide, setShowDeleteGuide] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showHelpModal, setShowHelpModal] = useState(false)
 
   const getCurrentPosition = (): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
@@ -60,11 +61,6 @@ export default function HomePage() {
         setMyRequest(card)
       } catch (e) {
         setMyRequest(null)
-      }
-
-      if (localStorage.getItem('showDeleteGuide') === 'true') {
-        setShowDeleteGuide(true)
-        localStorage.removeItem('showDeleteGuide')
       }
     }
 
@@ -126,7 +122,7 @@ export default function HomePage() {
                 setCurrentIndex((i) => Math.min(i + 1, nearbyCards.length - 1))
               }
               onSwipeRight={() => setCurrentIndex((i) => Math.max(i - 1, 0))}
-              onClick={() => navigate(`/cards/${nearbyCards[currentIndex].id}`)}
+              onClick={() => setShowHelpModal(true)}
             />
           ) : (
             <div className="mt-[96px] flex flex-col items-center">
@@ -178,6 +174,40 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* 도움 확인 모달 */}
+        {showHelpModal && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50">
+            <div
+              className="flex flex-col items-center gap-[20px] rounded-[20px] bg-white px-[28px] pb-[24px] pt-[32px]"
+              style={{ boxShadow: '0px 0px 2.8px rgba(0,0,0,0.25)' }}
+            >
+              <p className="text-[20px] font-semibold leading-[1.7] text-black">
+                도와주시겠습니까?
+              </p>
+
+              <div className="flex gap-[8px]">
+                <button
+                  type="button"
+                  onClick={() => setShowHelpModal(false)}
+                  className="flex h-[44px] w-[108px] items-center justify-center rounded-full bg-[#f3f3f3] text-[16px] font-semibold text-[#666]"
+                >
+                  취소
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowHelpModal(false)
+                    navigate(`/cards/${nearbyCards[currentIndex].id}`)
+                  }}
+                  className="flex h-[44px] w-[107px] items-center justify-center rounded-full bg-[#ff9e1b] text-[16px] font-semibold text-white"
+                >
+                  도와주기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* 삭제 가이드 */}
         {showDeleteGuide && (
           <div
