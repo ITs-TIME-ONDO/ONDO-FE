@@ -68,7 +68,7 @@ export default function MyRequestCard({
   return (
     <motion.section
       drag="y"
-      dragConstraints={{ top: -180, bottom: 0 }}
+      dragConstraints={{ top: -100, bottom: 0 }}
       dragElastic={0.15}
       onDragStart={onDragStart}
       onDragEnd={(_, info) => {

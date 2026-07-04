@@ -20,6 +20,7 @@ export default function HomePage() {
   const [nearbyCards, setNearbyCards] = useState<any[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showDeleteGuide, setShowDeleteGuide] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const getCurrentPosition = (): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
@@ -89,6 +90,7 @@ export default function HomePage() {
       setNearbyCards([])
       setCurrentIndex(0)
       setShowDeleteGuide(false)
+      setShowDeleteModal(false)
     } catch (error) {
       console.error('카드 취소 실패:', error)
       alert('카드 취소에 실패했습니다.')
@@ -113,7 +115,7 @@ export default function HomePage() {
           {myRequest ? (
             <MyRequestCard
               request={myRequest}
-              onDelete={handleDeleteRequest}
+              onDelete={() => setShowDeleteModal(true)}
               onDragStart={() => {}}
               onDragEnd={() => {}}
             />
@@ -140,6 +142,41 @@ export default function HomePage() {
         </main>
 
         <BottomNav />
+
+        {/* 삭제 확인 모달 */}
+        {showDeleteModal && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50">
+            <div
+              className="flex flex-col items-center gap-[20px] rounded-[20px] bg-white px-[28px] pb-[24px] pt-[32px]"
+              style={{ boxShadow: '0px 0px 2.8px rgba(0,0,0,0.25)' }}
+            >
+              <p className="text-[20px] font-semibold leading-[1.7] text-black">
+                요청을 삭제하시겠습니까?
+              </p>
+
+              <div className="flex gap-[8px]">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex h-[44px] w-[108px] items-center justify-center rounded-full bg-[#f3f3f3] text-[16px] font-semibold text-[#666]"
+                >
+                  취소
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteModal(false)
+                    handleDeleteRequest()
+                  }}
+                  className="flex h-[44px] w-[107px] items-center justify-center rounded-full bg-[#ff9e1b] text-[16px] font-semibold text-white"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 삭제 가이드 */}
         {showDeleteGuide && (
