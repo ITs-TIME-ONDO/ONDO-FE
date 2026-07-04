@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import BottomNav from '../../components/BottomNav'
 import MyRequestCard from '../../components/MyRequestCard'
+import NearbyRequestCard from '../../components/NearbyRequestCard'
 
 import logo from '../../assets/logo.png'
 import alertIcon from '../../assets/alert.png'
@@ -16,12 +17,31 @@ export default function HomePage() {
   const navigate = useNavigate()
 
   const [myRequest, setMyRequest] = useState<any>(null)
+  const [nearbyCards, setNearbyCards] = useState<any[]>([])
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [showDeleteGuide, setShowDeleteGuide] = useState(false)
+
+  const getCurrentPosition = (): Promise<GeolocationPosition> => {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject)
+    })
+  }
   useEffect(() => {
     const fetchMyCard = async () => {
       try {
         const res = await apiFetch<any>('/api/cards/my/active')
         setMyRequest(res)
+        if (!res) {
+          const position = await getCurrentPosition()
+
+          const nearbyRes = await apiFetch<any>(
+            `/api/cards/nearby?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}`
+          )
+
+          console.log('주변 카드', nearbyRes)
+
+          setNearbyCards(nearbyRes.cards ?? [])
+        }
       } catch (e) {
         setMyRequest(null)
       }
@@ -64,6 +84,15 @@ export default function HomePage() {
               onDelete={handleDeleteRequest}
               onDragStart={() => {}}
               onDragEnd={() => {}}
+            />
+          ) : nearbyCards.length > 0 ? (
+            <NearbyRequestCard
+              request={nearbyCards[currentIndex]}
+              onSwipeLeft={() =>
+                setCurrentIndex((i) => Math.min(i + 1, nearbyCards.length - 1))
+              }
+              onSwipeRight={() => setCurrentIndex((i) => Math.max(i - 1, 0))}
+              onClick={() => navigate(`/cards/${nearbyCards[currentIndex].id}`)}
             />
           ) : (
             <div className="mt-[96px] flex flex-col items-center">
