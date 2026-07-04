@@ -10,34 +10,32 @@ import alertIcon from '../../assets/alert.png'
 import profileBtn from '../../assets/top_small_profile_btn.png'
 import cryingChar from '../../assets/crying_char.png'
 import upFinger from '../../assets/up_finger.png'
+import { apiFetch } from '../../api/client'
 
 export default function HomePage() {
   const navigate = useNavigate()
 
   const [myRequest, setMyRequest] = useState<any>(null)
   const [showDeleteGuide, setShowDeleteGuide] = useState(false)
-
   useEffect(() => {
-    const saved = localStorage.getItem('myRequest')
-
-    if (saved) {
+    const fetchMyCard = async () => {
       try {
-        setMyRequest(JSON.parse(saved))
-      } catch {
-        localStorage.removeItem('myRequest')
+        const res = await apiFetch<any>('/api/cards/my/active')
+        setMyRequest(res)
+      } catch (e) {
         setMyRequest(null)
+      }
+
+      if (localStorage.getItem('showDeleteGuide') === 'true') {
+        setShowDeleteGuide(true)
+        localStorage.removeItem('showDeleteGuide')
       }
     }
 
-    // 요청 생성 직후 삭제 가이드 표시
-    if (localStorage.getItem('showDeleteGuide') === 'true') {
-      setShowDeleteGuide(true)
-      localStorage.removeItem('showDeleteGuide')
-    }
+    fetchMyCard()
   }, [])
 
   const handleDeleteRequest = () => {
-    localStorage.removeItem('myRequest')
     localStorage.removeItem('bumpCount')
 
     setMyRequest(null)

@@ -21,11 +21,14 @@ export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const accessToken = localStorage.getItem('accessToken')
+
   const res = await fetch(`${BASE_URL}${path}`, {
     credentials: 'include',
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...options.headers,
     },
   })
