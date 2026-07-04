@@ -4,10 +4,20 @@ import { motion } from 'framer-motion'
 import photo from '../assets/photo.png'
 
 type MyRequest = {
-  purpose: string
-  gender: string
-  ageRange: [number, number]
+  id: string
+  requesterId: string
+  requesterProfileImageUrl: string
+  category: string
   description: string
+  expiresAt: string
+  status: string
+  preferredGender: string
+  preferredAgeMin: number
+  preferredAgeMax: number
+  retryCount: number
+  createdAt: string
+  updatedAt: string
+  distanceMeters: number
 }
 
 type Props = {
@@ -47,7 +57,6 @@ export default function MyRequestCard({
       onDragEnd={(_, info) => {
         onDragEnd()
 
-        // 위로 120px 이상 올리면 삭제
         if (info.offset.y < -120) {
           onDelete()
         }
@@ -64,7 +73,7 @@ export default function MyRequestCard({
 
           <div className="absolute inset-0 flex items-center justify-center">
             <h2 className="text-[24px] font-extrabold text-white">
-              {request.purpose}
+              {request.category}
             </h2>
           </div>
         </div>
@@ -74,7 +83,9 @@ export default function MyRequestCard({
         <div className="flex items-center gap-8">
           <span className="text-[#666666]">성별</span>
 
-          <span className="font-semibold text-[#333333]">{request.gender}</span>
+          <span className="font-semibold text-[#333333]">
+            {request.preferredGender}
+          </span>
         </div>
 
         <div className="w-[54px]" />
@@ -83,7 +94,7 @@ export default function MyRequestCard({
           <span className="text-[#666666]">나이</span>
 
           <span className="font-semibold text-[#333333]">
-            {request.ageRange[0]}살~{request.ageRange[1]}살
+            {request.preferredAgeMin}살~{request.preferredAgeMax}살
           </span>
         </div>
       </div>
