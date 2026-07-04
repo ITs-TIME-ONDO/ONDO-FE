@@ -28,20 +28,35 @@ export default function HomePage() {
   }
   useEffect(() => {
     const fetchMyCard = async () => {
+      if (localStorage.getItem('showDeleteGuide') === 'true') {
+        setShowDeleteGuide(true)
+        localStorage.removeItem('showDeleteGuide')
+      }
+
       try {
         const res = await apiFetch<any>('/api/cards/my/active')
-        setMyRequest(res)
-        if (!res) {
+
+        const card = res.data ?? null
+
+        console.log('내 활성 카드:', card)
+
+        if (!card || !card.id) {
+          setMyRequest(null)
+
           const position = await getCurrentPosition()
 
           const nearbyRes = await apiFetch<any>(
             `/api/cards/nearby?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}`
           )
 
-          console.log('주변 카드', nearbyRes)
+          const nearbyData = nearbyRes.data ?? nearbyRes
 
-          setNearbyCards(nearbyRes.cards ?? [])
+          setNearbyCards(nearbyData?.cards ?? [])
+
+          return
         }
+
+        setMyRequest(card)
       } catch (e) {
         setMyRequest(null)
       }
@@ -55,13 +70,30 @@ export default function HomePage() {
     fetchMyCard()
   }, [])
 
-  const handleDeleteRequest = () => {
-    localStorage.removeItem('bumpCount')
+  const handleDeleteRequest = async () => {
+    const cardId = myRequest?.id
 
-    setMyRequest(null)
-    setShowDeleteGuide(false)
+    if (!cardId) {
+      console.error('카드 ID 없음:', myRequest)
+      alert('카드 ID를 찾을 수 없습니다.')
+      return
+    }
+
+    try {
+      await apiFetch(`/api/cards/${cardId}/cancel`, {
+        method: 'PATCH',
+      })
+
+      localStorage.removeItem('bumpCount')
+      setMyRequest(null)
+      setNearbyCards([])
+      setCurrentIndex(0)
+      setShowDeleteGuide(false)
+    } catch (error) {
+      console.error('카드 취소 실패:', error)
+      alert('카드 취소에 실패했습니다.')
+    }
   }
-
   return (
     <PageTransition>
       <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-gradient-to-b from-white via-[#FFF4E8] to-[#FFC679]">

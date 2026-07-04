@@ -48,6 +48,23 @@ export default function MyRequestCard({
     alert('요청이 다시 전송되었습니다.')
   }
 
+  const categoryLabelMap: Record<string, string> = {
+    PHOTO: '사진 찍기',
+    MEAL: '합석',
+    OTHER: '기타',
+  }
+
+  const genderLabelMap: Record<string, string> = {
+    MALE: '남성',
+    FEMALE: '여성',
+    ANY: '상관없음',
+  }
+
+  const categoryLabel = categoryLabelMap[request.category] ?? request.category
+
+  const genderLabel =
+    genderLabelMap[request.preferredGender] ?? request.preferredGender
+
   return (
     <motion.section
       drag="y"
@@ -73,7 +90,7 @@ export default function MyRequestCard({
 
           <div className="absolute inset-0 flex items-center justify-center">
             <h2 className="text-[24px] font-extrabold text-white">
-              {request.category}
+              {categoryLabel}
             </h2>
           </div>
         </div>
@@ -83,9 +100,7 @@ export default function MyRequestCard({
         <div className="flex items-center gap-8">
           <span className="text-[#666666]">성별</span>
 
-          <span className="font-semibold text-[#333333]">
-            {request.preferredGender}
-          </span>
+          <span className="font-semibold text-[#333333]">{genderLabel}</span>
         </div>
 
         <div className="w-[54px]" />
