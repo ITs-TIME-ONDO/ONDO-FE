@@ -28,43 +28,45 @@ export default function HomePage() {
       navigator.geolocation.getCurrentPosition(resolve, reject)
     })
   }
-  useEffect(() => {
-    const fetchMyCard = async () => {
-      if (localStorage.getItem('showDeleteGuide') === 'true') {
-        setShowDeleteGuide(true)
-        localStorage.removeItem('showDeleteGuide')
-      }
-
-      try {
-        const res = await apiFetch<any>('/api/cards/my/active')
-
-        const card = res.data ?? null
-
-        console.log('내 활성 카드:', card)
-
-        if (!card || !card.id) {
-          setMyRequest(null)
-
-          const position = await getCurrentPosition()
-
-          const nearbyRes = await apiFetch<any>(
-            `/api/cards/nearby?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}`
-          )
-
-          const nearbyData = nearbyRes.data ?? nearbyRes
-
-          setNearbyCards(nearbyData?.cards ?? [])
-
-          return
-        }
-
-        setMyRequest(card)
-      } catch (e) {
-        setMyRequest(null)
-      }
+  const fetchHomeData = async () => {
+    if (localStorage.getItem('showDeleteGuide') === 'true') {
+      setShowDeleteGuide(true)
+      localStorage.removeItem('showDeleteGuide')
     }
 
-    fetchMyCard()
+    try {
+      const res = await apiFetch<any>('/api/cards/my/active')
+      const card = res.data ?? null
+
+      console.log('내 활성 카드:', card)
+
+      if (!card || !card.id) {
+        setMyRequest(null)
+
+        const position = await getCurrentPosition()
+
+        const nearbyRes = await apiFetch<any>(
+          `/api/cards/nearby?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}`
+        )
+
+        const nearbyData = nearbyRes.data ?? nearbyRes
+
+        setNearbyCards(nearbyData?.cards ?? [])
+        setCurrentIndex(0)
+        return
+      }
+
+      setMyRequest(card)
+      setNearbyCards([])
+    } catch (e) {
+      console.error('홈 데이터 조회 실패:', e)
+      setMyRequest(null)
+      setNearbyCards([])
+    }
+  }
+
+  useEffect(() => {
+    fetchHomeData()
   }, [])
 
   const handleDeleteRequest = async () => {
@@ -81,12 +83,10 @@ export default function HomePage() {
         method: 'PATCH',
       })
 
-      localStorage.removeItem('bumpCount')
-      setMyRequest(null)
-      setNearbyCards([])
-      setCurrentIndex(0)
       setShowDeleteGuide(false)
       setShowDeleteModal(false)
+
+      await fetchHomeData()
     } catch (error) {
       console.error('카드 취소 실패:', error)
       alert('카드 취소에 실패했습니다.')
@@ -112,6 +112,7 @@ export default function HomePage() {
             <MyRequestCard
               request={myRequest}
               onDelete={() => setShowDeleteModal(true)}
+              onRetry={fetchHomeData}
               onDragStart={() => {}}
               onDragEnd={() => {}}
             />
@@ -161,10 +162,7 @@ export default function HomePage() {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowDeleteModal(false)
-                    handleDeleteRequest()
-                  }}
+                  onClick={handleDeleteRequest}
                   className="flex h-[44px] w-[107px] items-center justify-center rounded-full bg-[#ff9e1b] text-[16px] font-semibold text-white"
                 >
                   삭제

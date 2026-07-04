@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
 import photo from '../assets/photo.png'
+import { apiFetch } from '../api/client'
 
 type MyRequest = {
   id: string
@@ -23,6 +24,7 @@ type MyRequest = {
 type Props = {
   request: MyRequest
   onDelete: () => void
+  onRetry: () => void
   onDragStart: () => void
   onDragEnd: () => void
 }
@@ -30,22 +32,32 @@ type Props = {
 export default function MyRequestCard({
   request,
   onDelete,
+  onRetry,
   onDragStart,
   onDragEnd,
 }: Props) {
-  const [bumpCount, setBumpCount] = useState(
-    Number(localStorage.getItem('bumpCount') ?? 0)
-  )
+  const [bumpCount, setBumpCount] = useState(request.retryCount ?? 0)
 
-  const handleBump = () => {
+  useEffect(() => {
+    setBumpCount(request.retryCount ?? 0)
+  }, [request.retryCount])
+
+  const handleBump = async () => {
     if (bumpCount >= 3) return
 
-    const next = bumpCount + 1
+    try {
+      await apiFetch(`/api/cards/${request.id}/retry`, {
+        method: 'PATCH',
+      })
 
-    setBumpCount(next)
-    localStorage.setItem('bumpCount', String(next))
+      setBumpCount((prev) => prev + 1)
+      alert('요청이 다시 전송되었습니다.')
 
-    alert('요청이 다시 전송되었습니다.')
+      onRetry()
+    } catch (error) {
+      console.error('재요청 실패:', error)
+      alert('재요청에 실패했습니다.')
+    }
   }
 
   const categoryLabelMap: Record<string, string> = {
