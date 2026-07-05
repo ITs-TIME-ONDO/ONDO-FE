@@ -37,13 +37,16 @@ export default function MyRequestCard({
   onDragEnd,
 }: Props) {
   const [bumpCount, setBumpCount] = useState(request.retryCount ?? 0)
+  const [isBumping, setIsBumping] = useState(false)
 
   useEffect(() => {
     setBumpCount(request.retryCount ?? 0)
   }, [request.retryCount])
 
   const handleBump = async () => {
-    if (bumpCount >= 3) return
+    if (isBumping || bumpCount >= 3) return
+
+    setIsBumping(true)
 
     try {
       await apiFetch(`/api/cards/${request.id}/retry`, {
@@ -57,6 +60,8 @@ export default function MyRequestCard({
     } catch (error) {
       console.error('재요청 실패:', error)
       alert('재요청에 실패했습니다.')
+    } finally {
+      setIsBumping(false)
     }
   }
 
@@ -132,10 +137,10 @@ export default function MyRequestCard({
 
       <button
         type="button"
-        disabled={bumpCount >= 3}
+        disabled={isBumping || bumpCount >= 3}
         onClick={handleBump}
         className={`mt-auto h-12 w-full rounded-full text-lg font-semibold transition ${
-          bumpCount >= 3
+          isBumping || bumpCount >= 3
             ? 'cursor-not-allowed bg-[#D9D9D9] text-[#8C8C8C]'
             : 'bg-black text-white'
         }`}

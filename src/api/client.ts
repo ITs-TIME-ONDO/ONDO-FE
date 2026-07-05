@@ -42,7 +42,7 @@ export async function apiFetch<T>(
 
     try {
       const body = await res.json()
-      code = body.error?.code
+      code = body.error?.code ?? body.code
       message = body.error?.message ?? body.message ?? message
     } catch {}
 
