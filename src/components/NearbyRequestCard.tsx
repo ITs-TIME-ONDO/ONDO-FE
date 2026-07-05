@@ -38,6 +38,37 @@ const genderLabelMap: Record<string, string> = {
   ANY: '상관없음',
 }
 
+const formatElapsedTime = (createdAt: string): string => {
+  const createdTime = new Date(createdAt).getTime()
+
+  if (Number.isNaN(createdTime)) {
+    return '\uBC29\uAE08 \uC804'
+  }
+
+  const diffMinutes = Math.max(
+    0,
+    Math.floor((Date.now() - createdTime) / 1000 / 60)
+  )
+
+  if (diffMinutes < 1) {
+    return '\uBC29\uAE08 \uC804'
+  }
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes}\uBD84 \uC804`
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60)
+
+  if (diffHours < 24) {
+    return `${diffHours}\uC2DC\uAC04 \uC804`
+  }
+
+  const diffDays = Math.floor(diffHours / 24)
+
+  return `${diffDays}\uC77C \uC804`
+}
+
 export default function NearbyRequestCard({
   request,
   onSwipeLeft,
@@ -65,8 +96,9 @@ export default function NearbyRequestCard({
       }}
       className="flex h-[508px] w-[342px] cursor-pointer flex-col items-center rounded-[20px] border border-[#FFC878] bg-white px-[26px] py-5 shadow-[0_0_4px_rgba(255,158,27,1),0_4px_4px_rgba(0,0,0,0.15)]"
     >
-      <p className="text-center text-sm text-[#666666]">30분 전</p>
-
+      <p className="text-center text-sm text-[#666666]">
+        {formatElapsedTime(request.createdAt)}
+      </p>
       <div className="mt-4 flex justify-center">
         <div className="relative h-[250px] w-[290px] overflow-hidden rounded-2xl">
           <img src={photo} alt="" className="h-full w-full object-cover" />
