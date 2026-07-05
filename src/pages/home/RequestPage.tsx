@@ -51,7 +51,7 @@ export default function RequestPage() {
 
       const position = await getCurrentPosition()
 
-      await apiFetch('/api/cards', {
+      const createdRes = await apiFetch<any>('/api/cards', {
         method: 'POST',
         body: JSON.stringify({
           category: categoryMap[purpose],
@@ -63,6 +63,16 @@ export default function RequestPage() {
           preferredAgeMax: ageRange[1],
         }),
       })
+
+      const createdCard =
+        createdRes.data?.card ??
+        createdRes.data ??
+        createdRes.card ??
+        createdRes
+
+      if (createdCard?.id) {
+        localStorage.setItem('myRequest', JSON.stringify(createdCard))
+      }
 
       localStorage.setItem('showDeleteGuide', 'true')
       navigate('/')

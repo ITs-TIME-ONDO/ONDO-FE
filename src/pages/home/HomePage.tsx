@@ -52,7 +52,10 @@ export default function HomePage() {
     })
   }
   const fetchHomeData = async () => {
-    if (localStorage.getItem('showDeleteGuide') === 'true') {
+    const shouldShowDeleteGuide =
+      localStorage.getItem('showDeleteGuide') === 'true'
+
+    if (shouldShowDeleteGuide) {
       setShowDeleteGuide(true)
       localStorage.removeItem('showDeleteGuide')
     }
@@ -61,9 +64,24 @@ export default function HomePage() {
       const res = await apiFetch<any>('/api/cards/my/active')
       const card = res.data ?? null
 
-      console.log('내 활성 카드:', card)
-
       if (!card || !card.id) {
+        const savedMyRequest = localStorage.getItem('myRequest')
+
+        if (savedMyRequest) {
+          try {
+            const parsedMyRequest = JSON.parse(savedMyRequest)
+
+            if (parsedMyRequest?.id) {
+              setMyRequest(parsedMyRequest)
+              setNearbyCards([])
+              setHomeErrorMessage(null)
+              return
+            }
+          } catch {
+            localStorage.removeItem('myRequest')
+          }
+        }
+
         setMyRequest(null)
 
         try {
@@ -87,6 +105,7 @@ export default function HomePage() {
         return
       }
 
+      localStorage.setItem('myRequest', JSON.stringify(card))
       setMyRequest(card)
       setNearbyCards([])
       setHomeErrorMessage(null)
@@ -94,7 +113,9 @@ export default function HomePage() {
       console.error('홈 데이터 조회 실패:', e)
       setMyRequest(null)
       setNearbyCards([])
-      setHomeErrorMessage('\uD648 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.')
+      setHomeErrorMessage(
+        '\uD648 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.'
+      )
     }
   }
 
@@ -118,6 +139,7 @@ export default function HomePage() {
 
       setShowDeleteGuide(false)
       setShowDeleteModal(false)
+      localStorage.removeItem('myRequest')
 
       await fetchHomeData()
     } catch (error) {
