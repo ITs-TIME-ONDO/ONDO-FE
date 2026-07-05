@@ -5,6 +5,7 @@ import PageTransition from '../../components/PageTransition'
 import BottomNav from '../../components/BottomNav'
 import MyRequestCard from '../../components/MyRequestCard'
 import NearbyRequestCard from '../../components/NearbyRequestCard'
+import ConfirmModal from '../../components/ConfirmModal'
 
 import logo from '../../assets/logo.png'
 import alertIcon from '../../assets/alert.png'
@@ -192,72 +193,26 @@ export default function HomePage() {
 
         <BottomNav />
 
-        {/* 삭제 확인 모달 */}
-        {showDeleteModal && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50">
-            <div
-              className="flex flex-col items-center gap-[20px] rounded-[20px] bg-white px-[28px] pb-[24px] pt-[32px]"
-              style={{ boxShadow: '0px 0px 2.8px rgba(0,0,0,0.25)' }}
-            >
-              <p className="text-[20px] font-semibold leading-[1.7] text-black">
-                요청을 삭제하시겠습니까?
-              </p>
+        <ConfirmModal
+          open={showDeleteModal}
+          title="요청을 삭제하시겠습니까?"
+          confirmText="삭제"
+          cancelText="취소"
+          onConfirm={handleDeleteRequest}
+          onCancel={() => setShowDeleteModal(false)}
+        />
 
-              <div className="flex gap-[8px]">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(false)}
-                  className="flex h-[44px] w-[108px] items-center justify-center rounded-full bg-[#f3f3f3] text-[16px] font-semibold text-[#666]"
-                >
-                  취소
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDeleteRequest}
-                  className="flex h-[44px] w-[107px] items-center justify-center rounded-full bg-[#ff9e1b] text-[16px] font-semibold text-white"
-                >
-                  삭제
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 도움 확인 모달 */}
-        {showHelpModal && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50">
-            <div
-              className="flex flex-col items-center gap-[20px] rounded-[20px] bg-white px-[28px] pb-[24px] pt-[32px]"
-              style={{ boxShadow: '0px 0px 2.8px rgba(0,0,0,0.25)' }}
-            >
-              <p className="text-[20px] font-semibold leading-[1.7] text-black">
-                도와주시겠습니까?
-              </p>
-
-              <div className="flex gap-[8px]">
-                <button
-                  type="button"
-                  onClick={() => setShowHelpModal(false)}
-                  className="flex h-[44px] w-[108px] items-center justify-center rounded-full bg-[#f3f3f3] text-[16px] font-semibold text-[#666]"
-                >
-                  취소
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowHelpModal(false)
-                    navigate(`/cards/${nearbyCards[currentIndex].id}`)
-                  }}
-                  className="flex h-[44px] w-[107px] items-center justify-center rounded-full bg-[#ff9e1b] text-[16px] font-semibold text-white"
-                >
-                  도와주기
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <ConfirmModal
+          open={showHelpModal}
+          title="도와주시겠습니까?"
+          confirmText="도와주기"
+          cancelText="취소"
+          onConfirm={() => {
+            setShowHelpModal(false)
+            navigate(`/cards/${nearbyCards[currentIndex].id}`)
+          }}
+          onCancel={() => setShowHelpModal(false)}
+        />
         {/* 삭제 가이드 */}
         {showDeleteGuide && (
           <div
