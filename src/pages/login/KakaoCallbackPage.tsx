@@ -37,7 +37,6 @@ export default function KakaoCallbackPage() {
 
     postKakaoCallback({ code, state })
       .then((res) => {
-        console.log('카카오 콜백 응답:', res)
         saveTokens(res)
         if (res.isNewUser) {
           navigate('/profile', { replace: true })
