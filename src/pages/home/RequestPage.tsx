@@ -3,9 +3,22 @@ import { useState } from 'react'
 
 import arrow from '../../assets/arrow.png'
 import openArrow from '../../assets/open_arrow.png'
+import { apiFetch } from '../../api/client'
 
 type Purpose = '사진 찍기' | '합석' | '기타'
 type Gender = '남성' | '여성' | '상관없음'
+
+const categoryMap: Record<Purpose, string> = {
+  '사진 찍기': 'PHOTO',
+  합석: 'MEAL',
+  기타: 'OTHER',
+}
+
+const genderMap: Record<Gender, string> = {
+  남성: 'MALE',
+  여성: 'FEMALE',
+  상관없음: 'ANY',
+}
 
 export default function RequestPage() {
   const [isOpen, setIsOpen] = useState(false)
@@ -13,10 +26,55 @@ export default function RequestPage() {
   const [gender, setGender] = useState<Gender | ''>('')
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100])
   const [description, setDescription] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   const navigate = useNavigate()
 
   const isAllAge = ageRange[0] === 0 && ageRange[1] === 100
   const isValid = purpose && gender && description.trim().length > 0
+
+  const getCurrentPosition = (): Promise<GeolocationPosition> => {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      })
+    })
+  }
+
+  const handleSubmit = async () => {
+    if (!isValid || isSubmitting) return
+
+    try {
+      setIsSubmitting(true)
+
+      const position = await getCurrentPosition()
+
+      await apiFetch('/api/cards', {
+        method: 'POST',
+        body: JSON.stringify({
+          category: categoryMap[purpose],
+          description: description.trim(),
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          preferredGender: genderMap[gender],
+          preferredAgeMin: ageRange[0],
+          preferredAgeMax: ageRange[1],
+        }),
+      })
+
+      localStorage.setItem('showDeleteGuide', 'true')
+      navigate('/')
+    } catch (error) {
+      console.error('카드 생성 실패:', error)
+      alert(
+        '요청 생성에 실패했습니다. 위치 권한 또는 로그인 상태를 확인해주세요.'
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-white font-['Pretendard']">
@@ -118,10 +176,8 @@ export default function RequestPage() {
 
           <div className="mt-[26px] px-5">
             <div className="relative h-5">
-              {/* 전체 바 */}
               <div className="absolute top-[8px] h-[5px] w-full rounded-full bg-[#D9D9D9]" />
 
-              {/* 선택 영역 */}
               <div
                 className="absolute top-[8px] h-[5px] rounded-full bg-[#FF9814]"
                 style={{
@@ -130,7 +186,6 @@ export default function RequestPage() {
                 }}
               />
 
-              {/* 최소 나이 */}
               <input
                 type="range"
                 min={0}
@@ -145,7 +200,6 @@ export default function RequestPage() {
                 className="slider absolute left-0 top-0 w-full"
               />
 
-              {/* 최대 나이 */}
               <input
                 type="range"
                 min={0}
@@ -190,31 +244,15 @@ export default function RequestPage() {
 
       <button
         type="button"
-        disabled={!isValid}
-        onClick={() => {
-          if (!isValid) return
-
-          localStorage.setItem(
-            'myRequest',
-            JSON.stringify({
-              purpose,
-              gender,
-              ageRange,
-              description,
-              createdAt: new Date().toISOString(),
-            })
-          )
-
-          // 홈 진입 시 삭제 튜토리얼 표시
-          localStorage.setItem('showDeleteGuide', 'true')
-
-          navigate('/')
-        }}
+        disabled={!isValid || isSubmitting}
+        onClick={handleSubmit}
         className={`absolute bottom-[68px] left-6 h-14 w-[342px] rounded-full text-xl font-bold text-white ${
-          isValid ? 'bg-[#FF9814]' : 'bg-[#FFC878] cursor-not-allowed'
+          isValid && !isSubmitting
+            ? 'bg-[#FF9814]'
+            : 'bg-[#FFC878] cursor-not-allowed'
         }`}
       >
-        다음
+        {isSubmitting ? '생성 중...' : '다음'}
       </button>
     </div>
   )

@@ -1,18 +1,30 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
 import photo from '../assets/photo.png'
+import { apiFetch } from '../api/client'
 
 type MyRequest = {
-  purpose: string
-  gender: string
-  ageRange: [number, number]
+  id: string
+  requesterId: string
+  requesterProfileImageUrl: string
+  category: string
   description: string
+  expiresAt: string
+  status: string
+  preferredGender: string
+  preferredAgeMin: number
+  preferredAgeMax: number
+  retryCount: number
+  createdAt: string
+  updatedAt: string
+  distanceMeters: number
 }
 
 type Props = {
   request: MyRequest
   onDelete: () => void
+  onRetry: () => void
   onDragStart: () => void
   onDragEnd: () => void
 }
@@ -20,34 +32,65 @@ type Props = {
 export default function MyRequestCard({
   request,
   onDelete,
+  onRetry,
   onDragStart,
   onDragEnd,
 }: Props) {
-  const [bumpCount, setBumpCount] = useState(
-    Number(localStorage.getItem('bumpCount') ?? 0)
-  )
+  const [bumpCount, setBumpCount] = useState(request.retryCount ?? 0)
+  const [isBumping, setIsBumping] = useState(false)
 
-  const handleBump = () => {
-    if (bumpCount >= 3) return
+  useEffect(() => {
+    setBumpCount(request.retryCount ?? 0)
+  }, [request.retryCount])
 
-    const next = bumpCount + 1
+  const handleBump = async () => {
+    if (isBumping || bumpCount >= 3) return
 
-    setBumpCount(next)
-    localStorage.setItem('bumpCount', String(next))
+    setIsBumping(true)
 
-    alert('요청이 다시 전송되었습니다.')
+    try {
+      await apiFetch(`/api/cards/${request.id}/retry`, {
+        method: 'PATCH',
+      })
+
+      setBumpCount((prev) => prev + 1)
+      alert('요청이 다시 전송되었습니다.')
+
+      onRetry()
+    } catch (error) {
+      console.error('재요청 실패:', error)
+      alert('재요청에 실패했습니다.')
+    } finally {
+      setIsBumping(false)
+    }
   }
+
+  const categoryLabelMap: Record<string, string> = {
+    PHOTO: '사진 찍기',
+    MEAL: '합석',
+    OTHER: '기타',
+  }
+
+  const genderLabelMap: Record<string, string> = {
+    MALE: '남성',
+    FEMALE: '여성',
+    ANY: '상관없음',
+  }
+
+  const categoryLabel = categoryLabelMap[request.category] ?? request.category
+
+  const genderLabel =
+    genderLabelMap[request.preferredGender] ?? request.preferredGender
 
   return (
     <motion.section
       drag="y"
-      dragConstraints={{ top: -180, bottom: 0 }}
+      dragConstraints={{ top: -100, bottom: 0 }}
       dragElastic={0.15}
       onDragStart={onDragStart}
       onDragEnd={(_, info) => {
         onDragEnd()
 
-        // 위로 120px 이상 올리면 삭제
         if (info.offset.y < -120) {
           onDelete()
         }
@@ -64,7 +107,7 @@ export default function MyRequestCard({
 
           <div className="absolute inset-0 flex items-center justify-center">
             <h2 className="text-[24px] font-extrabold text-white">
-              {request.purpose}
+              {categoryLabel}
             </h2>
           </div>
         </div>
@@ -74,7 +117,7 @@ export default function MyRequestCard({
         <div className="flex items-center gap-8">
           <span className="text-[#666666]">성별</span>
 
-          <span className="font-semibold text-[#333333]">{request.gender}</span>
+          <span className="font-semibold text-[#333333]">{genderLabel}</span>
         </div>
 
         <div className="w-[54px]" />
@@ -83,7 +126,7 @@ export default function MyRequestCard({
           <span className="text-[#666666]">나이</span>
 
           <span className="font-semibold text-[#333333]">
-            {request.ageRange[0]}살~{request.ageRange[1]}살
+            {request.preferredAgeMin}살~{request.preferredAgeMax}살
           </span>
         </div>
       </div>
@@ -94,10 +137,10 @@ export default function MyRequestCard({
 
       <button
         type="button"
-        disabled={bumpCount >= 3}
+        disabled={isBumping || bumpCount >= 3}
         onClick={handleBump}
         className={`mt-auto h-12 w-full rounded-full text-lg font-semibold transition ${
-          bumpCount >= 3
+          isBumping || bumpCount >= 3
             ? 'cursor-not-allowed bg-[#D9D9D9] text-[#8C8C8C]'
             : 'bg-black text-white'
         }`}

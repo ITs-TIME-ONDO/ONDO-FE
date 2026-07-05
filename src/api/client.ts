@@ -21,11 +21,17 @@ export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const accessToken = localStorage.getItem('accessToken')
+
+  const validAccessToken =
+    accessToken && accessToken !== 'undefined' && accessToken !== 'null'
+
   const res = await fetch(`${BASE_URL}${path}`, {
     credentials: 'include',
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(validAccessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...options.headers,
     },
   })
@@ -33,13 +39,13 @@ export async function apiFetch<T>(
   if (!res.ok) {
     let code: string | undefined
     let message = `요청에 실패했습니다. (${res.status})`
+
     try {
       const body = await res.json()
-      code = body.error?.code
-      message = body.error?.message ?? message
-    } catch {
-      // 에러 응답 본문이 없거나 JSON이 아닌 경우 기본 메시지 사용
-    }
+      code = body.error?.code ?? body.code
+      message = body.error?.message ?? body.message ?? message
+    } catch {}
+
     throw new ApiError(res.status, message, code)
   }
 
