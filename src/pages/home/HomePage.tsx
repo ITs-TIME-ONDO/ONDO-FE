@@ -31,6 +31,48 @@ const getHomeErrorMessage = (error: unknown): string => {
   return '\uC8FC\uBCC0 \uC694\uCCAD\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.'
 }
 
+const MY_REQUEST_STORAGE_KEY = 'myRequest'
+
+const getStoredMyRequest = (): any | null => {
+  const saved = localStorage.getItem(MY_REQUEST_STORAGE_KEY)
+  const accessToken = localStorage.getItem('accessToken')
+
+  if (!saved || !accessToken) return null
+
+  try {
+    const parsed = JSON.parse(saved)
+    const card = parsed.card ?? parsed
+    const savedAccessToken = parsed.accessToken
+    const expiresAt = card?.expiresAt ? new Date(card.expiresAt).getTime() : NaN
+
+    if (!card?.id || Number.isNaN(expiresAt) || expiresAt <= Date.now()) {
+      localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+      return null
+    }
+
+    if (savedAccessToken && savedAccessToken !== accessToken) {
+      localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+      return null
+    }
+
+    return card
+  } catch {
+    localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+    return null
+  }
+}
+
+const saveStoredMyRequest = (card: any) => {
+  const accessToken = localStorage.getItem('accessToken')
+
+  if (!card?.id || !accessToken) return
+
+  localStorage.setItem(
+    MY_REQUEST_STORAGE_KEY,
+    JSON.stringify({ accessToken, card })
+  )
+}
+
 export default function HomePage() {
   const navigate = useNavigate()
 
@@ -52,7 +94,10 @@ export default function HomePage() {
     })
   }
   const fetchHomeData = async () => {
-    if (localStorage.getItem('showDeleteGuide') === 'true') {
+    const shouldShowDeleteGuide =
+      localStorage.getItem('showDeleteGuide') === 'true'
+
+    if (shouldShowDeleteGuide) {
       setShowDeleteGuide(true)
       localStorage.removeItem('showDeleteGuide')
     }
@@ -61,9 +106,16 @@ export default function HomePage() {
       const res = await apiFetch<any>('/api/cards/my/active')
       const card = res.data ?? null
 
-      console.log('내 활성 카드:', card)
-
       if (!card || !card.id) {
+        const savedMyRequest = getStoredMyRequest()
+
+        if (savedMyRequest) {
+          setMyRequest(savedMyRequest)
+          setNearbyCards([])
+          setHomeErrorMessage(null)
+          return
+        }
+
         setMyRequest(null)
 
         try {
@@ -87,6 +139,7 @@ export default function HomePage() {
         return
       }
 
+      saveStoredMyRequest(card)
       setMyRequest(card)
       setNearbyCards([])
       setHomeErrorMessage(null)
@@ -94,7 +147,9 @@ export default function HomePage() {
       console.error('홈 데이터 조회 실패:', e)
       setMyRequest(null)
       setNearbyCards([])
-      setHomeErrorMessage('\uD648 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.')
+      setHomeErrorMessage(
+        '\uD648 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.'
+      )
     }
   }
 
@@ -118,6 +173,7 @@ export default function HomePage() {
 
       setShowDeleteGuide(false)
       setShowDeleteModal(false)
+      localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
 
       await fetchHomeData()
     } catch (error) {

@@ -51,7 +51,7 @@ export default function RequestPage() {
 
       const position = await getCurrentPosition()
 
-      await apiFetch('/api/cards', {
+      const createdRes = await apiFetch<any>('/api/cards', {
         method: 'POST',
         body: JSON.stringify({
           category: categoryMap[purpose],
@@ -64,6 +64,20 @@ export default function RequestPage() {
         }),
       })
 
+      const createdCard =
+        createdRes.data?.card ??
+        createdRes.data ??
+        createdRes.card ??
+        createdRes
+
+      const accessToken = localStorage.getItem('accessToken')
+
+      if (createdCard?.id && accessToken) {
+        localStorage.setItem(
+          'myRequest',
+          JSON.stringify({ accessToken, card: createdCard })
+        )
+      }
       localStorage.setItem('showDeleteGuide', 'true')
       navigate('/')
     } catch (error) {
