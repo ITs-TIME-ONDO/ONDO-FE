@@ -70,10 +70,14 @@ export default function RequestPage() {
         createdRes.card ??
         createdRes
 
-      if (createdCard?.id) {
-        localStorage.setItem('myRequest', JSON.stringify(createdCard))
-      }
+      const accessToken = localStorage.getItem('accessToken')
 
+      if (createdCard?.id && accessToken) {
+        localStorage.setItem(
+          'myRequest',
+          JSON.stringify({ accessToken, card: createdCard })
+        )
+      }
       localStorage.setItem('showDeleteGuide', 'true')
       navigate('/')
     } catch (error) {

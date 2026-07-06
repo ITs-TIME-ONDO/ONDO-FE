@@ -31,6 +31,48 @@ const getHomeErrorMessage = (error: unknown): string => {
   return '\uC8FC\uBCC0 \uC694\uCCAD\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.'
 }
 
+const MY_REQUEST_STORAGE_KEY = 'myRequest'
+
+const getStoredMyRequest = (): any | null => {
+  const saved = localStorage.getItem(MY_REQUEST_STORAGE_KEY)
+  const accessToken = localStorage.getItem('accessToken')
+
+  if (!saved || !accessToken) return null
+
+  try {
+    const parsed = JSON.parse(saved)
+    const card = parsed.card ?? parsed
+    const savedAccessToken = parsed.accessToken
+    const expiresAt = card?.expiresAt ? new Date(card.expiresAt).getTime() : NaN
+
+    if (!card?.id || Number.isNaN(expiresAt) || expiresAt <= Date.now()) {
+      localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+      return null
+    }
+
+    if (savedAccessToken && savedAccessToken !== accessToken) {
+      localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+      return null
+    }
+
+    return card
+  } catch {
+    localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+    return null
+  }
+}
+
+const saveStoredMyRequest = (card: any) => {
+  const accessToken = localStorage.getItem('accessToken')
+
+  if (!card?.id || !accessToken) return
+
+  localStorage.setItem(
+    MY_REQUEST_STORAGE_KEY,
+    JSON.stringify({ accessToken, card })
+  )
+}
+
 export default function HomePage() {
   const navigate = useNavigate()
 
@@ -65,21 +107,13 @@ export default function HomePage() {
       const card = res.data ?? null
 
       if (!card || !card.id) {
-        const savedMyRequest = localStorage.getItem('myRequest')
+        const savedMyRequest = getStoredMyRequest()
 
         if (savedMyRequest) {
-          try {
-            const parsedMyRequest = JSON.parse(savedMyRequest)
-
-            if (parsedMyRequest?.id) {
-              setMyRequest(parsedMyRequest)
-              setNearbyCards([])
-              setHomeErrorMessage(null)
-              return
-            }
-          } catch {
-            localStorage.removeItem('myRequest')
-          }
+          setMyRequest(savedMyRequest)
+          setNearbyCards([])
+          setHomeErrorMessage(null)
+          return
         }
 
         setMyRequest(null)
@@ -105,7 +139,7 @@ export default function HomePage() {
         return
       }
 
-      localStorage.setItem('myRequest', JSON.stringify(card))
+      saveStoredMyRequest(card)
       setMyRequest(card)
       setNearbyCards([])
       setHomeErrorMessage(null)
@@ -139,7 +173,7 @@ export default function HomePage() {
 
       setShowDeleteGuide(false)
       setShowDeleteModal(false)
-      localStorage.removeItem('myRequest')
+      localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
 
       await fetchHomeData()
     } catch (error) {

@@ -15,6 +15,7 @@ export default function MyPage() {
     localStorage.removeItem('onboardingCompleted')
     localStorage.removeItem('nickname')
     localStorage.removeItem('profileImage')
+    localStorage.removeItem('myRequest')
     navigate('/login', { replace: true })
   }
 
