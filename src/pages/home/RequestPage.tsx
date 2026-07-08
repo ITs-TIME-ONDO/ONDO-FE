@@ -14,6 +14,12 @@ const categoryMap: Record<Purpose, string> = {
   기타: 'OTHER',
 }
 
+
+const getCardFromResponse = (response: any): any | null => {
+  const card = response?.data?.card ?? response?.data ?? response?.card ?? response
+
+  return card?.id ? card : null
+}
 const genderMap: Record<Gender, string> = {
   남성: 'MALE',
   여성: 'FEMALE',
@@ -39,7 +45,7 @@ export default function RequestPage() {
     const checkActiveRequest = async () => {
       try {
         const res = await apiFetch<any>('/api/cards/my/active')
-        const card = res.data ?? null
+        const card = getCardFromResponse(res)
         const accessToken = localStorage.getItem('accessToken')
 
         if (card?.id) {
@@ -93,11 +99,7 @@ export default function RequestPage() {
         }),
       })
 
-      const createdCard =
-        createdRes.data?.card ??
-        createdRes.data ??
-        createdRes.card ??
-        createdRes
+      const createdCard = getCardFromResponse(createdRes)
 
       const accessToken = localStorage.getItem('accessToken')
 

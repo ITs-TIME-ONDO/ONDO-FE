@@ -7,6 +7,7 @@ type NearbyRequest = {
   id: string
   requesterId: string
   requesterProfileImageUrl: string
+  requesterNickname?: string
   category: string
   description: string
   expiresAt: string
@@ -79,6 +80,9 @@ export default function NearbyRequestCard({
   const categoryLabel = categoryLabelMap[request.category] ?? request.category
   const genderLabel =
     genderLabelMap[request.preferredGender] ?? request.preferredGender
+  const requesterProfileImage =
+    request.requesterProfileImageUrl?.trim() || miniProfileChar
+  const requesterName = request.requesterNickname?.trim() || '요청자'
 
   return (
     <motion.section
@@ -119,12 +123,12 @@ export default function NearbyRequestCard({
           <div className="flex size-11 items-center justify-center rounded-full bg-gradient-to-b from-amber-500 to-white">
             <img
               className="size-11 rounded-full object-cover"
-              src={miniProfileChar}
+              src={requesterProfileImage}
               alt="프로필"
             />
           </div>
 
-          <div className="text-sm font-medium text-white">당당한 당근</div>
+          <div className="text-sm font-medium text-white">{requesterName}</div>
         </div>
 
         <h2 className="absolute left-1/2 top-5 z-10 -translate-x-1/2 text-3xl font-extrabold text-white">

@@ -66,7 +66,7 @@ export default function MyRequestCard({
   }
 
   const categoryLabelMap: Record<string, string> = {
-    PHOTO: '사진 찍기',
+    PHOTO: '사진찍기',
     MEAL: '합석',
     OTHER: '기타',
   }

@@ -34,6 +34,11 @@ const getHomeErrorMessage = (error: unknown): string => {
 
 const MY_REQUEST_STORAGE_KEY = 'myRequest'
 const NEARBY_REQUEST_GUIDE_STORAGE_KEY = 'nearbyRequestGuideSeen'
+const getCardFromResponse = (response: any): any | null => {
+  const card = response?.data?.card ?? response?.data ?? response?.card ?? response
+
+  return card?.id ? card : null
+}
 
 const getStoredMyRequest = (): any | null => {
   const saved = localStorage.getItem(MY_REQUEST_STORAGE_KEY)
@@ -146,7 +151,7 @@ export default function HomePage() {
 
     try {
       const res = await apiFetch<any>('/api/cards/my/active')
-      const card = res.data ?? null
+      const card = getCardFromResponse(res)
 
       if (!card || !card.id) {
         const savedMyRequest = getStoredMyRequest()
@@ -169,8 +174,14 @@ export default function HomePage() {
 
           const nearbyData = nearbyRes.data ?? nearbyRes
 
-          setNearbyCards(filterOutMyCards(nearbyData?.cards ?? []))
-          setCurrentIndex(0)
+          const nextNearbyCards = filterOutMyCards(nearbyData?.cards ?? [])
+
+          setNearbyCards(nextNearbyCards)
+          setCurrentIndex((prev) =>
+            nextNearbyCards.length === 0
+              ? 0
+              : Math.min(prev, nextNearbyCards.length - 1)
+          )
           setHomeErrorMessage(null)
         } catch (error) {
           console.error('주변 요청 조회 실패:', error)
