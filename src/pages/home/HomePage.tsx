@@ -12,6 +12,7 @@ import alertIcon from '../../assets/alert.png'
 import profileBtn from '../../assets/top_small_profile_btn.png'
 import cryingChar from '../../assets/crying_char.png'
 import upFinger from '../../assets/up_finger.png'
+import sideFinger from '../../assets/side_finger.png'
 import { apiFetch } from '../../api/client'
 
 const getHomeErrorMessage = (error: unknown): string => {
@@ -32,6 +33,7 @@ const getHomeErrorMessage = (error: unknown): string => {
 }
 
 const MY_REQUEST_STORAGE_KEY = 'myRequest'
+const NEARBY_REQUEST_GUIDE_STORAGE_KEY = 'nearbyRequestGuideSeen'
 
 const getStoredMyRequest = (): any | null => {
   const saved = localStorage.getItem(MY_REQUEST_STORAGE_KEY)
@@ -80,6 +82,9 @@ export default function HomePage() {
   const [nearbyCards, setNearbyCards] = useState<any[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showDeleteGuide, setShowDeleteGuide] = useState(false)
+  const [nearbyGuideStep, setNearbyGuideStep] = useState<
+    'help' | 'swipe' | null
+  >(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [homeErrorMessage, setHomeErrorMessage] = useState<string | null>(null)
@@ -166,6 +171,29 @@ export default function HomePage() {
     return () => window.clearInterval(intervalId)
   }, [fetchHomeData])
 
+  useEffect(() => {
+    if (
+      myRequest ||
+      nearbyCards.length === 0 ||
+      showDeleteGuide ||
+      localStorage.getItem(NEARBY_REQUEST_GUIDE_STORAGE_KEY) === 'true'
+    ) {
+      return
+    }
+
+    setNearbyGuideStep((prev) => prev ?? 'help')
+  }, [myRequest, nearbyCards.length, showDeleteGuide])
+
+  const handleNearbyGuideClick = () => {
+    setNearbyGuideStep((step) => {
+      if (step === 'help') {
+        return 'swipe'
+      }
+
+      localStorage.setItem(NEARBY_REQUEST_GUIDE_STORAGE_KEY, 'true')
+      return null
+    })
+  }
   const handleDeleteRequest = async () => {
     const cardId = myRequest?.id
 
@@ -293,6 +321,34 @@ export default function HomePage() {
                 src={upFinger}
                 alt="올려서 삭제"
                 className="h-12 w-12 animate-bounce"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Nearby request guide */}
+        {nearbyGuideStep && (
+          <div
+            onClick={handleNearbyGuideClick}
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/50"
+          >
+            <div className="flex flex-col items-center">
+              <p className="mb-4 text-base font-medium text-white">
+                {nearbyGuideStep === 'help'
+                  ? '\uC62C\uB824\uC11C \uB3C4\uC640\uC8FC\uAE30'
+                  : '\uC606\uC73C\uB85C \uBC00\uC5B4\uC11C \uB2E4\uB978 \uC694\uCCAD \uBCF4\uAE30'}
+              </p>
+
+              <img
+                src={nearbyGuideStep === 'help' ? upFinger : sideFinger}
+                alt={
+                  nearbyGuideStep === 'help'
+                    ? '\uC62C\uB824\uC11C \uB3C4\uC640\uC8FC\uAE30'
+                    : '\uC606\uC73C\uB85C \uBC00\uC5B4\uC11C \uB2E4\uB978 \uC694\uCCAD \uBCF4\uAE30'
+                }
+                className={`h-12 w-12 ${
+                  nearbyGuideStep === 'help' ? 'animate-bounce' : 'animate-pulse'
+                }`}
               />
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 
 import photo from '../assets/photo.png'
+import miniProfileChar from '../assets/mini_profile_char.png'
 
 type NearbyRequest = {
   id: string
@@ -27,7 +28,7 @@ type Props = {
 }
 
 const categoryLabelMap: Record<string, string> = {
-  PHOTO: '사진 찍기',
+  PHOTO: '사진찍기',
   MEAL: '합석',
   OTHER: '기타',
 }
@@ -42,7 +43,7 @@ const formatElapsedTime = (createdAt: string): string => {
   const createdTime = new Date(createdAt).getTime()
 
   if (Number.isNaN(createdTime)) {
-    return '\uBC29\uAE08 \uC804'
+    return '방금 전'
   }
 
   const diffMinutes = Math.max(
@@ -51,22 +52,22 @@ const formatElapsedTime = (createdAt: string): string => {
   )
 
   if (diffMinutes < 1) {
-    return '\uBC29\uAE08 \uC804'
+    return '방금 전'
   }
 
   if (diffMinutes < 60) {
-    return `${diffMinutes}\uBD84 \uC804`
+    return `${diffMinutes}분 전`
   }
 
   const diffHours = Math.floor(diffMinutes / 60)
 
   if (diffHours < 24) {
-    return `${diffHours}\uC2DC\uAC04 \uC804`
+    return `${diffHours}시간 전`
   }
 
   const diffDays = Math.floor(diffHours / 24)
 
-  return `${diffDays}\uC77C \uC804`
+  return `${diffDays}일 전`
 }
 
 export default function NearbyRequestCard({
@@ -98,52 +99,61 @@ export default function NearbyRequestCard({
           onSwipeRight?.()
         }
       }}
-      className="flex h-[508px] w-[342px] cursor-pointer flex-col items-center rounded-[20px] border border-[#FFC878] bg-white px-[26px] py-5 shadow-[0_0_4px_rgba(255,158,27,1),0_4px_4px_rgba(0,0,0,0.15)]"
+      className="flex h-[508px] w-80 cursor-pointer flex-col items-center justify-between rounded-[20px] bg-white pb-7 pt-5 shadow-[0_4px_4px_rgba(0,0,0,0.25),0_0_4px_rgba(255,158,27,1)]"
     >
-      <p className="text-center text-sm text-[#666666]">
+      <p className="h-5 text-sm font-normal text-[#555555]">
         {formatElapsedTime(request.createdAt)}
       </p>
-      <div className="mt-4 flex justify-center">
-        <div className="relative h-[250px] w-[290px] overflow-hidden rounded-2xl">
-          <img src={photo} alt="" className="h-full w-full object-cover" />
 
-          <div className="absolute inset-0 bg-black/50" />
+      <div className="relative flex h-64 w-72 flex-col items-start justify-start overflow-hidden rounded-2xl px-2 py-3">
+        <img
+          src={photo}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+        />
 
-          <div className="absolute inset-0 flex items-center justify-center">
-            <h2 className="text-[24px] font-extrabold text-white">
-              {categoryLabel}
-            </h2>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-white/0" />
+
+        <div className="relative z-10 inline-flex items-center gap-2 rounded-full bg-black/30 pr-3">
+          <div className="flex size-11 items-center justify-center rounded-full bg-gradient-to-b from-amber-500 to-white">
+            <img
+              className="size-11 rounded-full object-cover"
+              src={miniProfileChar}
+              alt="프로필"
+            />
           </div>
+
+          <div className="text-sm font-medium text-white">당당한 당근</div>
         </div>
+
+        <h2 className="absolute left-1/2 top-5 z-10 -translate-x-1/2 text-3xl font-extrabold text-white">
+          {categoryLabel}
+        </h2>
       </div>
 
-      <div className="mt-6 flex w-full items-center">
-        <div className="flex items-center gap-8">
-          <span className="text-[#666666]">성별</span>
-
-          <span className="font-semibold text-[#333333]">{genderLabel}</span>
+      <div className="flex w-72 items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className="text-base font-normal text-[#555555]">성별</span>
+          <span className="text-base font-semibold text-[#333333]">
+            {genderLabel}
+          </span>
         </div>
 
-        <div className="w-[54px]" />
-
-        <div className="flex items-center gap-8">
-          <span className="text-[#666666]">나이</span>
-
-          <span className="font-semibold text-[#333333]">
+        <div className="flex items-center gap-4">
+          <span className="text-base font-normal text-[#555555]">나이</span>
+          <span className="text-right text-base font-semibold text-[#333333]">
             {request.preferredAgeMin}살~{request.preferredAgeMax}살
           </span>
         </div>
       </div>
 
-      <p className="mt-6 w-full text-base font-semibold leading-6 text-[#333333]">
+      <p className="h-11 w-72 text-base font-semibold leading-5 text-[#333333]">
         {request.description}
       </p>
 
-      <div className="mt-auto flex h-12 w-full items-center justify-center rounded-full">
-        <p className="text-lg font-semibold leading-5 text-[#FF9814]">
-          나와 {Math.round(request.distanceMeters)}m 떨어져 있음
-        </p>
-      </div>
+      <p className="text-xl font-semibold leading-5 text-amber-500">
+        나와 {Math.round(request.distanceMeters)}m 떨어져 있음
+      </p>
     </motion.section>
   )
 }
