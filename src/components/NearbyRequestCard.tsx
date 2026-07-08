@@ -83,10 +83,11 @@ export default function NearbyRequestCard({
   return (
     <motion.section
       drag
-      dragConstraints={{ left: 0, right: 0, top: -120, bottom: 0 }}
-      dragElastic={0.25}
+      dragConstraints={{ left: -140, right: 140, top: -120, bottom: 0 }}
+      dragElastic={0}
+      dragSnapToOrigin
       onDragEnd={(_, info) => {
-        if (info.offset.y < -120) {
+        if (info.offset.y <= -100) {
           onHelp?.()
           return
         }
@@ -105,7 +106,7 @@ export default function NearbyRequestCard({
         {formatElapsedTime(request.createdAt)}
       </p>
 
-      <div className="relative flex h-64 w-72 flex-col items-start justify-start overflow-hidden rounded-2xl px-2 py-3">
+      <div className="relative h-64 w-72 overflow-hidden rounded-2xl">
         <img
           src={photo}
           alt=""
@@ -114,7 +115,7 @@ export default function NearbyRequestCard({
 
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-white/0" />
 
-        <div className="relative z-10 inline-flex items-center gap-2 rounded-full bg-black/30 pr-3">
+        <div className="absolute bottom-3 left-2 z-10 inline-flex items-center gap-2 rounded-full bg-black/30 pr-3">
           <div className="flex size-11 items-center justify-center rounded-full bg-gradient-to-b from-amber-500 to-white">
             <img
               className="size-11 rounded-full object-cover"
@@ -132,22 +133,22 @@ export default function NearbyRequestCard({
       </div>
 
       <div className="flex w-72 items-center justify-between">
-        <div className="flex items-center gap-4">
-          <span className="text-base font-normal text-[#555555]">성별</span>
-          <span className="text-base font-semibold text-[#333333]">
+        <div className="flex w-[136px] items-center gap-3 whitespace-nowrap">
+          <span className="shrink-0 text-base font-normal text-[#555555]">성별</span>
+          <span className="shrink-0 text-base font-semibold text-[#333333]">
             {genderLabel}
           </span>
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="text-base font-normal text-[#555555]">나이</span>
-          <span className="text-right text-base font-semibold text-[#333333]">
+        <div className="ml-auto flex w-[120px] items-center justify-end gap-3 whitespace-nowrap">
+          <span className="shrink-0 text-base font-normal text-[#555555]">나이</span>
+          <span className="shrink-0 text-right text-base font-semibold text-[#333333]">
             {request.preferredAgeMin}살~{request.preferredAgeMax}살
           </span>
         </div>
       </div>
 
-      <p className="h-11 w-72 text-base font-semibold leading-5 text-[#333333]">
+      <p className="h-11 w-72 overflow-hidden text-base font-semibold leading-5 text-[#333333] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
         {request.description}
       </p>
 

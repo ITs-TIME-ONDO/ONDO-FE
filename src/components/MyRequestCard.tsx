@@ -113,25 +113,23 @@ export default function MyRequestCard({
         </div>
       </div>
 
-      <div className="mt-6 flex items-center">
-        <div className="flex items-center gap-8">
-          <span className="text-[#666666]">성별</span>
+      <div className="mt-6 flex items-center justify-between">
+        <div className="flex w-[136px] items-center gap-3 whitespace-nowrap">
+          <span className="shrink-0 text-[#666666]">성별</span>
 
-          <span className="font-semibold text-[#333333]">{genderLabel}</span>
+          <span className="shrink-0 font-semibold text-[#333333]">{genderLabel}</span>
         </div>
 
-        <div className="w-[54px]" />
+        <div className="ml-auto flex w-[120px] items-center justify-end gap-3 whitespace-nowrap">
+          <span className="shrink-0 text-[#666666]">나이</span>
 
-        <div className="flex items-center gap-8">
-          <span className="text-[#666666]">나이</span>
-
-          <span className="font-semibold text-[#333333]">
+          <span className="shrink-0 font-semibold text-[#333333]">
             {request.preferredAgeMin}살~{request.preferredAgeMax}살
           </span>
         </div>
       </div>
 
-      <p className="mt-6 text-base font-semibold leading-6 text-[#333333]">
+      <p className="mt-6 h-12 overflow-hidden text-base font-semibold leading-6 text-[#333333] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
         {request.description}
       </p>
 

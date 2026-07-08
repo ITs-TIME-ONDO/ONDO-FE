@@ -64,6 +64,39 @@ const getStoredMyRequest = (): any | null => {
   }
 }
 
+
+const getCurrentUserId = (): string | null => {
+  const accessToken = localStorage.getItem('accessToken')
+  const payload = accessToken?.split('.')[1]
+
+  if (!payload) return null
+
+  try {
+    const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const paddedPayload = normalizedPayload.padEnd(
+      normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
+      '='
+    )
+    const decodedPayload = JSON.parse(atob(paddedPayload))
+    const userId =
+      decodedPayload.userId ??
+      decodedPayload.memberId ??
+      decodedPayload.id ??
+      decodedPayload.sub
+
+    return userId == null ? null : String(userId)
+  } catch {
+    return null
+  }
+}
+
+const filterOutMyCards = (cards: any[]): any[] => {
+  const currentUserId = getCurrentUserId()
+
+  if (!currentUserId) return cards
+
+  return cards.filter((card) => String(card?.requesterId) !== currentUserId)
+}
 const saveStoredMyRequest = (card: any) => {
   const accessToken = localStorage.getItem('accessToken')
 
@@ -99,8 +132,8 @@ export default function HomePage() {
       })
     })
   }
-  const fetchHomeData = useCallback(async () => {
-    if (isFetchingRef.current) return
+  const fetchHomeData = useCallback(async (options?: { force?: boolean }) => {
+    if (isFetchingRef.current && !options?.force) return
 
     isFetchingRef.current = true
     const shouldShowDeleteGuide =
@@ -136,7 +169,7 @@ export default function HomePage() {
 
           const nearbyData = nearbyRes.data ?? nearbyRes
 
-          setNearbyCards(nearbyData?.cards ?? [])
+          setNearbyCards(filterOutMyCards(nearbyData?.cards ?? []))
           setCurrentIndex(0)
           setHomeErrorMessage(null)
         } catch (error) {
@@ -210,9 +243,12 @@ export default function HomePage() {
 
       setShowDeleteGuide(false)
       setShowDeleteModal(false)
+      setMyRequest(null)
+      setNearbyCards([])
+      setCurrentIndex(0)
       localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
 
-      await fetchHomeData()
+      await fetchHomeData({ force: true })
     } catch (error) {
       console.error('카드 취소 실패:', error)
       alert('카드 취소에 실패했습니다.')
@@ -265,7 +301,7 @@ export default function HomePage() {
 
               <button
                 type="button"
-                onClick={fetchHomeData}
+                onClick={() => fetchHomeData()}
                 className="mt-5 h-10 rounded-full bg-[#FF9814] px-5 text-sm font-semibold text-white"
               >
                 {'\uB2E4\uC2DC \uC2DC\uB3C4'}
