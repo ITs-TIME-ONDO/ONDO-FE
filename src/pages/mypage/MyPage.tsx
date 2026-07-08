@@ -4,6 +4,7 @@ import PageTransition from '../../components/PageTransition'
 import PageHeader from '../../components/PageHeader'
 import profileChar from '../../assets/profile_char.svg'
 import { DEFAULT_NICKNAME } from '../../constants/user'
+import { clearTokens } from '../../utils/authStorage'
 
 export default function MyPage() {
   const navigate = useNavigate()
@@ -16,6 +17,9 @@ export default function MyPage() {
     localStorage.removeItem('nickname')
     localStorage.removeItem('profileImage')
     localStorage.removeItem('myRequest')
+    localStorage.removeItem('showDeleteGuide')
+    localStorage.removeItem('nearbyRequestGuideSeen')
+    clearTokens()
     navigate('/login', { replace: true })
   }
 
