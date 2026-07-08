@@ -23,7 +23,7 @@ type Props = {
   request: NearbyRequest
   onSwipeLeft?: () => void
   onSwipeRight?: () => void
-  onClick?: () => void
+  onHelp?: () => void
 }
 
 const categoryLabelMap: Record<string, string> = {
@@ -73,7 +73,7 @@ export default function NearbyRequestCard({
   request,
   onSwipeLeft,
   onSwipeRight,
-  onClick,
+  onHelp,
 }: Props) {
   const categoryLabel = categoryLabelMap[request.category] ?? request.category
   const genderLabel =
@@ -81,11 +81,15 @@ export default function NearbyRequestCard({
 
   return (
     <motion.section
-      drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
+      drag
+      dragConstraints={{ left: 0, right: 0, top: -120, bottom: 0 }}
       dragElastic={0.25}
-      onClick={onClick}
       onDragEnd={(_, info) => {
+        if (info.offset.y < -120) {
+          onHelp?.()
+          return
+        }
+
         if (info.offset.x < -100) {
           onSwipeLeft?.()
         }

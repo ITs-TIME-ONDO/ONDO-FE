@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import PageTransition from '../../components/PageTransition'
@@ -83,6 +83,7 @@ export default function HomePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [homeErrorMessage, setHomeErrorMessage] = useState<string | null>(null)
+  const isFetchingRef = useRef(false)
 
   const getCurrentPosition = (): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
@@ -93,7 +94,10 @@ export default function HomePage() {
       })
     })
   }
-  const fetchHomeData = async () => {
+  const fetchHomeData = useCallback(async () => {
+    if (isFetchingRef.current) return
+
+    isFetchingRef.current = true
     const shouldShowDeleteGuide =
       localStorage.getItem('showDeleteGuide') === 'true'
 
@@ -150,12 +154,17 @@ export default function HomePage() {
       setHomeErrorMessage(
         '\uD648 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.'
       )
+    } finally {
+      isFetchingRef.current = false
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchHomeData()
-  }, [])
+    const intervalId = window.setInterval(fetchHomeData, 10000)
+
+    return () => window.clearInterval(intervalId)
+  }, [fetchHomeData])
 
   const handleDeleteRequest = async () => {
     const cardId = myRequest?.id
@@ -212,7 +221,7 @@ export default function HomePage() {
                 setCurrentIndex((i) => Math.min(i + 1, nearbyCards.length - 1))
               }
               onSwipeRight={() => setCurrentIndex((i) => Math.max(i - 1, 0))}
-              onClick={() => setShowHelpModal(true)}
+              onHelp={() => setShowHelpModal(true)}
             />
           ) : homeErrorMessage ? (
             <div className="mt-[96px] flex flex-col items-center px-6 text-center">
@@ -247,7 +256,7 @@ export default function HomePage() {
           )}
         </main>
 
-        <BottomNav />
+        <BottomNav disableRequestButton={Boolean(myRequest)} />
 
         <ConfirmModal
           open={showDeleteModal}
