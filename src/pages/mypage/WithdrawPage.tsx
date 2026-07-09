@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import PageHeader from '../../components/PageHeader'
 import checkBox from '../../assets/check_box.svg'
 import { DEFAULT_NICKNAME } from '../../constants/user'
+import { deleteUser } from '../../api/user'
 
 const ITEMS = [
   '모든 매칭 내용과 채팅 기록은 즉시 삭제됩니다.',
@@ -13,10 +15,22 @@ const ITEMS = [
 export default function WithdrawPage() {
   const navigate = useNavigate()
   const nickname = localStorage.getItem('nickname') ?? DEFAULT_NICKNAME
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleWithdraw = () => {
-    localStorage.clear()
-    navigate('/login', { replace: true })
+  const handleWithdraw = async () => {
+    if (isSubmitting) return
+
+    try {
+      setIsSubmitting(true)
+      await deleteUser()
+      localStorage.clear()
+      navigate('/login', { replace: true })
+    } catch (error) {
+      console.error('회원 탈퇴 실패:', error)
+      alert('회원 탈퇴에 실패했습니다. 다시 시도해주세요.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -48,10 +62,11 @@ export default function WithdrawPage() {
 
         <button
           type="button"
-          className="absolute left-[24px] top-[720px] flex h-[60px] w-[342px] items-center justify-center rounded-full bg-[red] text-[20px] font-bold text-white"
+          className="absolute left-[24px] top-[720px] flex h-[60px] w-[342px] items-center justify-center rounded-full bg-[red] text-[20px] font-bold text-white disabled:opacity-50"
           onClick={handleWithdraw}
+          disabled={isSubmitting}
         >
-          탈퇴하기
+          {isSubmitting ? '탈퇴 처리 중...' : '탈퇴하기'}
         </button>
       </div>
     </PageTransition>

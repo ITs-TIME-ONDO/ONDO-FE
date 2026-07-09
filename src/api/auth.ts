@@ -23,3 +23,9 @@ export function postKakaoCallback(body: KakaoCallbackRequest): Promise<KakaoCall
     body: JSON.stringify(body),
   })
 }
+
+export function postLogout(): Promise<void> {
+  return apiFetch<void>('/api/auth/logout', {
+    method: 'POST',
+  })
+}

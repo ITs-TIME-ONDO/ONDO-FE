@@ -1,21 +1,49 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import PageHeader from '../../components/PageHeader'
 import profileChar from '../../assets/profile_char.svg'
 import { DEFAULT_NICKNAME } from '../../constants/user'
+import { getUserProfile, type UserProfile } from '../../api/user'
+import { postLogout } from '../../api/auth'
+import { clearTokens } from '../../utils/authStorage'
 
 export default function MyPage() {
   const navigate = useNavigate()
-  const nickname = localStorage.getItem('nickname') ?? DEFAULT_NICKNAME
-  const profileImage = localStorage.getItem('profileImage')
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  const handleLogout = () => {
-    localStorage.removeItem('onboardingCompleted')
-    localStorage.removeItem('nickname')
-    localStorage.removeItem('profileImage')
-    navigate('/login', { replace: true })
+  useEffect(() => {
+    getUserProfile()
+      .then(setProfile)
+      .catch((error) => {
+        console.error('프로필 조회 실패:', error)
+      })
+  }, [])
+
+  const nickname =
+    profile?.nickname ?? localStorage.getItem('nickname') ?? DEFAULT_NICKNAME
+  const profileImage =
+    profile?.profileImageUrl || localStorage.getItem('profileImage')
+  const helpRequestCount = profile?.helpRequestCount ?? 0
+  const helpCount = profile?.helpCount ?? 0
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+
+    try {
+      setIsLoggingOut(true)
+      await postLogout()
+    } catch (error) {
+      console.error('로그아웃 요청 실패:', error)
+    } finally {
+      clearTokens()
+      localStorage.removeItem('onboardingCompleted')
+      localStorage.removeItem('nickname')
+      localStorage.removeItem('profileImage')
+      navigate('/login', { replace: true })
+    }
   }
 
   return (
@@ -41,16 +69,11 @@ export default function MyPage() {
           {nickname}
         </p>
 
-        {/* 지역 */}
-        <p className="absolute left-1/2 -translate-x-1/2 top-[274px] whitespace-nowrap text-[14px] text-[#666] tracking-[-0.3px]">
-          서울 광진구 냥냥동
-        </p>
-
         {/* 프로필 편집 버튼 */}
         <button
           type="button"
           onClick={() => navigate('/mypage/edit')}
-          className="absolute left-1/2 -translate-x-1/2 top-[303px] flex items-center justify-center rounded-full bg-white px-[15px] py-[4px]"
+          className="absolute left-1/2 -translate-x-1/2 top-[277px] flex items-center justify-center rounded-full bg-white px-[15px] py-[4px]"
         >
           <span className="text-[12px] font-medium text-[#343434] whitespace-nowrap">
             프로필 편집
@@ -64,12 +87,16 @@ export default function MyPage() {
         >
           <div className="flex flex-col items-center gap-[8px]">
             <p className="text-[12px] font-medium text-black">도움 요청</p>
-            <p className="text-[36px] font-bold leading-none text-black">10</p>
+            <p className="text-[36px] font-bold leading-none text-black">
+              {helpRequestCount}
+            </p>
           </div>
           <div className="h-[50px] w-px bg-[#e0e0e0]" />
           <div className="flex flex-col items-center gap-[8px]">
             <p className="text-[12px] font-medium text-black">도움 응답</p>
-            <p className="text-[36px] font-bold leading-none text-black">20</p>
+            <p className="text-[36px] font-bold leading-none text-black">
+              {helpCount}
+            </p>
           </div>
         </div>
 
@@ -111,15 +138,17 @@ export default function MyPage() {
                   type="button"
                   className="flex h-[44px] w-[108px] items-center justify-center rounded-full bg-[#f3f3f3] text-[16px] font-semibold text-[#666]"
                   onClick={() => setShowLogoutModal(false)}
+                  disabled={isLoggingOut}
                 >
                   취소
                 </button>
                 <button
                   type="button"
-                  className="flex h-[44px] w-[107px] items-center justify-center rounded-full bg-[#ff9e1b] text-[16px] font-semibold text-white"
+                  className="flex h-[44px] w-[107px] items-center justify-center rounded-full bg-[#ff9e1b] text-[16px] font-semibold text-white disabled:opacity-50"
                   onClick={handleLogout}
+                  disabled={isLoggingOut}
                 >
-                  확인
+                  {isLoggingOut ? '처리 중...' : '확인'}
                 </button>
               </div>
             </div>

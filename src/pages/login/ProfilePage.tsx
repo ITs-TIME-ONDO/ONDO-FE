@@ -4,11 +4,13 @@ import profileChar from '../../assets/profile_char.svg'
 import PageTransition from '../../components/PageTransition'
 import NicknameInput from '../../components/NicknameInput'
 import ProfileImagePicker from './ProfileImagePicker'
+import { postUserProfile } from '../../api/user'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
   const [nickname, setNickname] = useState('')
   const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   return (
     <PageTransition>
@@ -38,19 +40,35 @@ export default function ProfilePage() {
         {/* 다음 버튼 */}
         <button
           type="button"
-          className={`absolute left-6 top-[720px] flex h-[60px] w-[342px] items-center justify-center rounded-full text-[20px] font-bold text-white transition-colors ${nickname.trim() ? 'bg-[#ff9e1b]' : 'bg-[#ff9e1b]/50'}`}
-          disabled={!nickname.trim()}
-          onClick={() => {
-            localStorage.setItem('nickname', nickname)
-            if (profileImage) {
-              localStorage.setItem('profileImage', profileImage)
-            } else {
-              localStorage.removeItem('profileImage')
+          className={`absolute left-6 top-[720px] flex h-[60px] w-[342px] items-center justify-center rounded-full text-[20px] font-bold text-white transition-colors ${nickname.trim() && !isSubmitting ? 'bg-[#ff9e1b]' : 'bg-[#ff9e1b]/50'}`}
+          disabled={!nickname.trim() || isSubmitting}
+          onClick={async () => {
+            if (isSubmitting) return
+
+            try {
+              setIsSubmitting(true)
+
+              await postUserProfile({
+                nickname: nickname.trim(),
+                profileImageUrl: profileImage ?? '',
+              })
+
+              localStorage.setItem('nickname', nickname)
+              if (profileImage) {
+                localStorage.setItem('profileImage', profileImage)
+              } else {
+                localStorage.removeItem('profileImage')
+              }
+              navigate('/terms')
+            } catch (error) {
+              console.error('프로필 저장 실패:', error)
+              alert('프로필 저장에 실패했습니다. 다시 시도해주세요.')
+            } finally {
+              setIsSubmitting(false)
             }
-            navigate('/terms')
           }}
         >
-          다음
+          {isSubmitting ? '저장 중...' : '다음'}
         </button>
       </div>
     </PageTransition>
