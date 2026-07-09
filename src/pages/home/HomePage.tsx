@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import PageTransition from '../../components/PageTransition'
@@ -12,6 +12,7 @@ import alertIcon from '../../assets/alert.png'
 import profileBtn from '../../assets/top_small_profile_btn.png'
 import cryingChar from '../../assets/crying_char.png'
 import upFinger from '../../assets/up_finger.png'
+import sideFinger from '../../assets/side_finger.png'
 import { apiFetch } from '../../api/client'
 
 const getHomeErrorMessage = (error: unknown): string => {
@@ -31,6 +32,87 @@ const getHomeErrorMessage = (error: unknown): string => {
   return '\uC8FC\uBCC0 \uC694\uCCAD\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.'
 }
 
+const MY_REQUEST_STORAGE_KEY = 'myRequest'
+const NEARBY_REQUEST_GUIDE_STORAGE_KEY = 'nearbyRequestGuideSeen'
+const getCardFromResponse = (response: any): any | null => {
+  const card = response?.data?.card ?? response?.data ?? response?.card ?? response
+
+  return card?.id ? card : null
+}
+
+const getStoredMyRequest = (): any | null => {
+  const saved = localStorage.getItem(MY_REQUEST_STORAGE_KEY)
+  const accessToken = localStorage.getItem('accessToken')
+
+  if (!saved || !accessToken) return null
+
+  try {
+    const parsed = JSON.parse(saved)
+    const card = parsed.card ?? parsed
+    const savedAccessToken = parsed.accessToken
+    const expiresAt = card?.expiresAt ? new Date(card.expiresAt).getTime() : NaN
+
+    if (!card?.id || Number.isNaN(expiresAt) || expiresAt <= Date.now()) {
+      localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+      return null
+    }
+
+    if (savedAccessToken && savedAccessToken !== accessToken) {
+      localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+      return null
+    }
+
+    return card
+  } catch {
+    localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+    return null
+  }
+}
+
+
+const getCurrentUserId = (): string | null => {
+  const accessToken = localStorage.getItem('accessToken')
+  const payload = accessToken?.split('.')[1]
+
+  if (!payload) return null
+
+  try {
+    const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const paddedPayload = normalizedPayload.padEnd(
+      normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
+      '='
+    )
+    const decodedPayload = JSON.parse(atob(paddedPayload))
+    const userId =
+      decodedPayload.userId ??
+      decodedPayload.memberId ??
+      decodedPayload.id ??
+      decodedPayload.sub
+
+    return userId == null ? null : String(userId)
+  } catch {
+    return null
+  }
+}
+
+const filterOutMyCards = (cards: any[]): any[] => {
+  const currentUserId = getCurrentUserId()
+
+  if (!currentUserId) return cards
+
+  return cards.filter((card) => String(card?.requesterId) !== currentUserId)
+}
+const saveStoredMyRequest = (card: any) => {
+  const accessToken = localStorage.getItem('accessToken')
+
+  if (!card?.id || !accessToken) return
+
+  localStorage.setItem(
+    MY_REQUEST_STORAGE_KEY,
+    JSON.stringify({ accessToken, card })
+  )
+}
+
 export default function HomePage() {
   const navigate = useNavigate()
 
@@ -38,9 +120,13 @@ export default function HomePage() {
   const [nearbyCards, setNearbyCards] = useState<any[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showDeleteGuide, setShowDeleteGuide] = useState(false)
+  const [nearbyGuideStep, setNearbyGuideStep] = useState<
+    'help' | 'swipe' | null
+  >(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [homeErrorMessage, setHomeErrorMessage] = useState<string | null>(null)
+  const isFetchingRef = useRef(false)
 
   const getCurrentPosition = (): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
@@ -51,19 +137,32 @@ export default function HomePage() {
       })
     })
   }
-  const fetchHomeData = async () => {
-    if (localStorage.getItem('showDeleteGuide') === 'true') {
+  const fetchHomeData = useCallback(async (options?: { force?: boolean }) => {
+    if (isFetchingRef.current && !options?.force) return
+
+    isFetchingRef.current = true
+    const shouldShowDeleteGuide =
+      localStorage.getItem('showDeleteGuide') === 'true'
+
+    if (shouldShowDeleteGuide) {
       setShowDeleteGuide(true)
       localStorage.removeItem('showDeleteGuide')
     }
 
     try {
       const res = await apiFetch<any>('/api/cards/my/active')
-      const card = res.data ?? null
-
-      console.log('내 활성 카드:', card)
+      const card = getCardFromResponse(res)
 
       if (!card || !card.id) {
+        const savedMyRequest = getStoredMyRequest()
+
+        if (savedMyRequest) {
+          setMyRequest(savedMyRequest)
+          setNearbyCards([])
+          setHomeErrorMessage(null)
+          return
+        }
+
         setMyRequest(null)
 
         try {
@@ -75,8 +174,14 @@ export default function HomePage() {
 
           const nearbyData = nearbyRes.data ?? nearbyRes
 
-          setNearbyCards(nearbyData?.cards ?? [])
-          setCurrentIndex(0)
+          const nextNearbyCards = filterOutMyCards(nearbyData?.cards ?? [])
+
+          setNearbyCards(nextNearbyCards)
+          setCurrentIndex((prev) =>
+            nextNearbyCards.length === 0
+              ? 0
+              : Math.min(prev, nextNearbyCards.length - 1)
+          )
           setHomeErrorMessage(null)
         } catch (error) {
           console.error('주변 요청 조회 실패:', error)
@@ -87,6 +192,7 @@ export default function HomePage() {
         return
       }
 
+      saveStoredMyRequest(card)
       setMyRequest(card)
       setNearbyCards([])
       setHomeErrorMessage(null)
@@ -94,14 +200,44 @@ export default function HomePage() {
       console.error('홈 데이터 조회 실패:', e)
       setMyRequest(null)
       setNearbyCards([])
-      setHomeErrorMessage('\uD648 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.')
+      setHomeErrorMessage(
+        '\uD648 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.'
+      )
+    } finally {
+      isFetchingRef.current = false
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchHomeData()
-  }, [])
+    const intervalId = window.setInterval(fetchHomeData, 10000)
 
+    return () => window.clearInterval(intervalId)
+  }, [fetchHomeData])
+
+  useEffect(() => {
+    if (
+      myRequest ||
+      nearbyCards.length === 0 ||
+      showDeleteGuide ||
+      localStorage.getItem(NEARBY_REQUEST_GUIDE_STORAGE_KEY) === 'true'
+    ) {
+      return
+    }
+
+    setNearbyGuideStep((prev) => prev ?? 'help')
+  }, [myRequest, nearbyCards.length, showDeleteGuide])
+
+  const handleNearbyGuideClick = () => {
+    setNearbyGuideStep((step) => {
+      if (step === 'help') {
+        return 'swipe'
+      }
+
+      localStorage.setItem(NEARBY_REQUEST_GUIDE_STORAGE_KEY, 'true')
+      return null
+    })
+  }
   const handleDeleteRequest = async () => {
     const cardId = myRequest?.id
 
@@ -118,8 +254,12 @@ export default function HomePage() {
 
       setShowDeleteGuide(false)
       setShowDeleteModal(false)
+      setMyRequest(null)
+      setNearbyCards([])
+      setCurrentIndex(0)
+      localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
 
-      await fetchHomeData()
+      await fetchHomeData({ force: true })
     } catch (error) {
       console.error('카드 취소 실패:', error)
       alert('카드 취소에 실패했습니다.')
@@ -156,7 +296,7 @@ export default function HomePage() {
                 setCurrentIndex((i) => Math.min(i + 1, nearbyCards.length - 1))
               }
               onSwipeRight={() => setCurrentIndex((i) => Math.max(i - 1, 0))}
-              onClick={() => setShowHelpModal(true)}
+              onHelp={() => setShowHelpModal(true)}
             />
           ) : homeErrorMessage ? (
             <div className="mt-[96px] flex flex-col items-center px-6 text-center">
@@ -172,7 +312,7 @@ export default function HomePage() {
 
               <button
                 type="button"
-                onClick={fetchHomeData}
+                onClick={() => fetchHomeData()}
                 className="mt-5 h-10 rounded-full bg-[#FF9814] px-5 text-sm font-semibold text-white"
               >
                 {'\uB2E4\uC2DC \uC2DC\uB3C4'}
@@ -191,7 +331,7 @@ export default function HomePage() {
           )}
         </main>
 
-        <BottomNav />
+        <BottomNav disableRequestButton={Boolean(myRequest)} />
 
         <ConfirmModal
           open={showDeleteModal}
@@ -228,6 +368,34 @@ export default function HomePage() {
                 src={upFinger}
                 alt="올려서 삭제"
                 className="h-12 w-12 animate-bounce"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Nearby request guide */}
+        {nearbyGuideStep && (
+          <div
+            onClick={handleNearbyGuideClick}
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/50"
+          >
+            <div className="flex flex-col items-center">
+              <p className="mb-4 text-base font-medium text-white">
+                {nearbyGuideStep === 'help'
+                  ? '\uC62C\uB824\uC11C \uB3C4\uC640\uC8FC\uAE30'
+                  : '\uC606\uC73C\uB85C \uBC00\uC5B4\uC11C \uB2E4\uB978 \uC694\uCCAD \uBCF4\uAE30'}
+              </p>
+
+              <img
+                src={nearbyGuideStep === 'help' ? upFinger : sideFinger}
+                alt={
+                  nearbyGuideStep === 'help'
+                    ? '\uC62C\uB824\uC11C \uB3C4\uC640\uC8FC\uAE30'
+                    : '\uC606\uC73C\uB85C \uBC00\uC5B4\uC11C \uB2E4\uB978 \uC694\uCCAD \uBCF4\uAE30'
+                }
+                className={`h-12 w-12 ${
+                  nearbyGuideStep === 'help' ? 'animate-bounce' : 'animate-pulse'
+                }`}
               />
             </div>
           </div>

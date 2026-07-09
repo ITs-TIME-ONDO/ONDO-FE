@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import arrow from '../../assets/arrow.png'
 import openArrow from '../../assets/open_arrow.png'
@@ -14,6 +14,12 @@ const categoryMap: Record<Purpose, string> = {
   기타: 'OTHER',
 }
 
+
+const getCardFromResponse = (response: any): any | null => {
+  const card = response?.data?.card ?? response?.data ?? response?.card ?? response
+
+  return card?.id ? card : null
+}
 const genderMap: Record<Gender, string> = {
   남성: 'MALE',
   여성: 'FEMALE',
@@ -27,11 +33,40 @@ export default function RequestPage() {
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100])
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [hasActiveRequest, setHasActiveRequest] = useState(false)
 
   const navigate = useNavigate()
 
   const isAllAge = ageRange[0] === 0 && ageRange[1] === 100
-  const isValid = purpose && gender && description.trim().length > 0
+  const isValid =
+    !hasActiveRequest && purpose && gender && description.trim().length > 0
+
+  useEffect(() => {
+    const checkActiveRequest = async () => {
+      try {
+        const res = await apiFetch<any>('/api/cards/my/active')
+        const card = getCardFromResponse(res)
+        const accessToken = localStorage.getItem('accessToken')
+
+        if (card?.id) {
+          setHasActiveRequest(true)
+
+          if (accessToken) {
+            localStorage.setItem(
+              'myRequest',
+              JSON.stringify({ accessToken, card })
+            )
+          }
+
+          navigate('/')
+        }
+      } catch (error) {
+        console.error('active request check failed:', error)
+      }
+    }
+
+    checkActiveRequest()
+  }, [navigate])
 
   const getCurrentPosition = (): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
@@ -44,14 +79,14 @@ export default function RequestPage() {
   }
 
   const handleSubmit = async () => {
-    if (!isValid || isSubmitting) return
+    if (!isValid || isSubmitting || hasActiveRequest) return
 
     try {
       setIsSubmitting(true)
 
       const position = await getCurrentPosition()
 
-      await apiFetch('/api/cards', {
+      const createdRes = await apiFetch<any>('/api/cards', {
         method: 'POST',
         body: JSON.stringify({
           category: categoryMap[purpose],
@@ -64,6 +99,16 @@ export default function RequestPage() {
         }),
       })
 
+      const createdCard = getCardFromResponse(createdRes)
+
+      const accessToken = localStorage.getItem('accessToken')
+
+      if (createdCard?.id && accessToken) {
+        localStorage.setItem(
+          'myRequest',
+          JSON.stringify({ accessToken, card: createdCard })
+        )
+      }
       localStorage.setItem('showDeleteGuide', 'true')
       navigate('/')
     } catch (error) {
@@ -144,7 +189,7 @@ export default function RequestPage() {
                 key={item}
                 type="button"
                 onClick={() => setGender(item)}
-                className={`h-12 rounded-full text-base font-medium ${
+                className={`h-12 whitespace-nowrap rounded-full text-[15px] font-medium ${
                   gender === item
                     ? 'bg-[#FF9814] font-semibold text-white'
                     : 'border border-[#D3D3D3] text-[#333333]'
@@ -244,10 +289,10 @@ export default function RequestPage() {
 
       <button
         type="button"
-        disabled={!isValid || isSubmitting}
+        disabled={!isValid || isSubmitting || hasActiveRequest}
         onClick={handleSubmit}
         className={`absolute bottom-[68px] left-6 h-14 w-[342px] rounded-full text-xl font-bold text-white ${
-          isValid && !isSubmitting
+          isValid && !isSubmitting && !hasActiveRequest
             ? 'bg-[#FF9814]'
             : 'bg-[#FFC878] cursor-not-allowed'
         }`}
