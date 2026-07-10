@@ -25,7 +25,7 @@ export default function MyPage() {
   const nickname =
     profile?.nickname ?? localStorage.getItem('nickname') ?? DEFAULT_NICKNAME
   const profileImage =
-    profile?.profileImageUrl || localStorage.getItem('profileImage')
+    profile?.profileImageUrl ?? localStorage.getItem('profileImage')
   const helpRequestCount = profile?.helpRequestCount ?? 0
   const helpCount = profile?.helpCount ?? 0
 
@@ -58,7 +58,7 @@ export default function MyPage() {
         {/* 프로필 이미지 */}
         <div className="absolute left-1/2 -translate-x-1/2 top-[125px] size-[100px] rounded-full bg-[#FF9E1B] overflow-hidden">
           <img
-            src={profileImage ?? profileChar}
+            src={profileImage || profileChar}
             alt="프로필"
             className="size-full object-cover"
           />

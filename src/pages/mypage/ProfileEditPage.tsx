@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import PageHeader from '../../components/PageHeader'
@@ -17,10 +17,12 @@ export default function ProfileEditPage() {
     localStorage.getItem('profileImage')
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const hasEditedRef = useRef(false)
 
   useEffect(() => {
     getUserProfile()
       .then((profile) => {
+        if (hasEditedRef.current) return
         setNickname(profile.nickname)
         setProfileImage(profile.profileImageUrl || null)
       })
@@ -28,6 +30,16 @@ export default function ProfileEditPage() {
         console.error('프로필 조회 실패:', error)
       })
   }, [])
+
+  const handleNicknameChange = (value: string) => {
+    hasEditedRef.current = true
+    setNickname(value)
+  }
+
+  const handleProfileImageChange = (value: string | null) => {
+    hasEditedRef.current = true
+    setProfileImage(value)
+  }
 
   return (
     <PageTransition>
@@ -40,13 +52,13 @@ export default function ProfileEditPage() {
           defaultImage={profileChar}
           className="top-[160px]"
           initialValue={profileImage}
-          onChange={setProfileImage}
+          onChange={handleProfileImageChange}
         />
 
         {/* 닉네임 입력 */}
         <NicknameInput
           value={nickname}
-          onChange={setNickname}
+          onChange={handleNicknameChange}
           className="top-[422px]"
         />
 
@@ -61,12 +73,14 @@ export default function ProfileEditPage() {
             try {
               setIsSubmitting(true)
 
+              const trimmedNickname = nickname.trim()
+
               await putUserProfile({
-                nickname: nickname.trim(),
+                nickname: trimmedNickname,
                 profileImageUrl: profileImage ?? '',
               })
 
-              localStorage.setItem('nickname', nickname)
+              localStorage.setItem('nickname', trimmedNickname)
               if (profileImage) {
                 localStorage.setItem('profileImage', profileImage)
               } else {
