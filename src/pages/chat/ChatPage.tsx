@@ -1,23 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 import PageTransition from '../../components/PageTransition'
 import BottomNav from '../../components/BottomNav'
 import ChatHeader from './ChatHeader'
 import ChatEmptyState from './ChatEmptyState'
 import ChatRoomList from './ChatRoomList'
-import { getChatRooms, type ChatRoomSummary } from '../../api/chat'
+import { useChatRoomStore } from '../../stores/chatRoomStore'
 
 const ROOM_LIST_BACKGROUND =
   'linear-gradient(180deg, #FFF 66.83%, rgba(255, 233, 204, 0.50) 86.87%, #FF9200 100%), #FFF'
 
 export default function ChatPage() {
-  const [rooms, setRooms] = useState<ChatRoomSummary[]>([])
+  const rooms = useChatRoomStore((state) => state.rooms)
+  const fetchRooms = useChatRoomStore((state) => state.fetchRooms)
 
   useEffect(() => {
-    getChatRooms({ page: 0 })
-      .then((res) => setRooms(res.data.content))
-      .catch((error) => console.error('채팅방 목록 조회 실패', error))
-  }, [])
+    fetchRooms()
+  }, [fetchRooms])
 
   const hasChatRooms = rooms.length > 0
 
