@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import mapIcon from '../../assets/chat_map_icon.svg'
 import sendIcon from '../../assets/chat_send_icon.svg'
@@ -10,6 +10,10 @@ type Props = {
 // TODO: 메시지 전송(WebSocket) 연동
 export default function ChatRoomInputBar({ disabled = false }: Props) {
   const [value, setValue] = useState('')
+
+  useEffect(() => {
+    if (disabled) setValue('')
+  }, [disabled])
 
   const handleSend = () => {
     if (disabled || !value.trim()) return

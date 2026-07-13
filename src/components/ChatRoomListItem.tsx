@@ -48,7 +48,9 @@ export default function ChatRoomListItem({
             {message}
           </p>
           {unread && (
-            <span className="size-[10px] shrink-0 rounded-full bg-[#1BB3FF]" />
+            <span className="size-[10px] shrink-0 rounded-full bg-[#1BB3FF]">
+              <span className="sr-only">읽지 않음</span>
+            </span>
           )}
         </div>
       </div>

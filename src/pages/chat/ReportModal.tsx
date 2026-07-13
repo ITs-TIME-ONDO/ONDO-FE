@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import arrowIcon from '../../assets/chat_report_arrow.svg'
 
@@ -13,6 +13,14 @@ export default function ReportModal({ open, onClose }: Props) {
   const [reason, setReason] = useState<string | null>(null)
   const [description, setDescription] = useState('')
   const [isReasonOpen, setIsReasonOpen] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setReason(null)
+      setDescription('')
+      setIsReasonOpen(false)
+    }
+  }, [open])
 
   if (!open) return null
 
@@ -92,6 +100,7 @@ export default function ReportModal({ open, onClose }: Props) {
         {/* TODO: 신고 접수 API 연동 전까지는 클릭해도 아무 동작도 하지 않음 */}
         <button
           type="button"
+          disabled={!isValid}
           className={
             'flex h-[50px] w-full items-center justify-center rounded-full text-xl font-bold text-white ' +
             (isValid ? 'bg-[#FF9E1B]' : 'bg-[#FF9E1B]/50')
