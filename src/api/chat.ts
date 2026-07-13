@@ -102,3 +102,22 @@ export function getChatRooms(
     `/api/chat/rooms${queryString ? `?${queryString}` : ''}`
   )
 }
+
+export interface ChatMessageListParams {
+  before?: string
+  size?: number
+}
+
+export function getChatMessages(
+  roomId: string,
+  params: ChatMessageListParams = {}
+): Promise<ApiResponse<ChatMessagesResponse>> {
+  const query = new URLSearchParams()
+  if (params.before !== undefined) query.set('before', params.before)
+  if (params.size !== undefined) query.set('size', String(params.size))
+
+  const queryString = query.toString()
+  return apiFetch<ApiResponse<ChatMessagesResponse>>(
+    `/api/chat/rooms/${roomId}/messages${queryString ? `?${queryString}` : ''}`
+  )
+}
