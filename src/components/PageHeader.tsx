@@ -1,13 +1,20 @@
 // 홈화면 제외한 페이지들 헤더, 이전 버튼(<) 있는 헤더
+import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 interface MyPageHeaderProps {
   title: string
   fallbackPath?: string
   onBack?: () => void
+  rightAction?: ReactNode
 }
 
-export default function MyPageHeader({ title, fallbackPath, onBack }: MyPageHeaderProps) {
+export default function MyPageHeader({
+  title,
+  fallbackPath,
+  onBack,
+  rightAction,
+}: MyPageHeaderProps) {
   const navigate = useNavigate()
 
   const handleBack = onBack ?? (() => {
@@ -36,6 +43,12 @@ export default function MyPageHeader({ title, fallbackPath, onBack }: MyPageHead
         </svg>
       </button>
       <p className="text-[20px] font-medium text-black">{title}</p>
+
+      {rightAction && (
+        <div className="absolute right-6 flex items-center justify-center">
+          {rightAction}
+        </div>
+      )}
     </div>
   )
 }
