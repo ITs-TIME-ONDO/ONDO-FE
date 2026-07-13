@@ -1,4 +1,4 @@
-// 타입 정의만 우선 작성 (docs/api/chat.md 기준). API 함수 연동은 다음 체크리스트 단계에서 진행.
+import { apiFetch } from './client'
 
 export interface ApiResponse<T> {
   success: boolean
@@ -81,4 +81,24 @@ export interface ChatReadEvent {
   readerId: string
   messageIds: string[]
   readAt: string
+}
+
+export interface ChatRoomListParams {
+  page?: number
+  size?: number
+  sort?: string
+}
+
+export function getChatRooms(
+  params: ChatRoomListParams = {}
+): Promise<ApiResponse<PageResponse<ChatRoomSummary>>> {
+  const query = new URLSearchParams()
+  if (params.page !== undefined) query.set('page', String(params.page))
+  if (params.size !== undefined) query.set('size', String(params.size))
+  if (params.sort !== undefined) query.set('sort', params.sort)
+
+  const queryString = query.toString()
+  return apiFetch<ApiResponse<PageResponse<ChatRoomSummary>>>(
+    `/api/chat/rooms${queryString ? `?${queryString}` : ''}`
+  )
 }
