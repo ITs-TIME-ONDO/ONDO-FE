@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 import PageTransition from '../../components/PageTransition'
@@ -9,6 +9,10 @@ import ChatRoomInputBar from './ChatRoomInputBar'
 import ChatRoomMenuDropdown from './ChatRoomMenuDropdown'
 import ReportModal from './ReportModal'
 import { mockChatRooms } from './chatMockData'
+import { getChatMessages, type ChatMessage } from '../../api/chat'
+import { getAccessToken } from '../../utils/authStorage'
+import { getUserIdFromToken } from '../../utils/jwt'
+import { formatMessageTime } from '../../utils/date'
 
 import menuIcon from '../../assets/chat_menu_icon.svg'
 import chatRoomChar from '../../assets/chat_room_char.png'
@@ -21,6 +25,47 @@ export default function ChatRoomPage() {
   const [closedMessage, setClosedMessage] = useState<string | null>(null)
   const [showMenu, setShowMenu] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
+
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [hasNext, setHasNext] = useState(false)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const accessToken = getAccessToken()
+  const myUserId = accessToken ? getUserIdFromToken(accessToken) : null
+
+  useEffect(() => {
+    if (!roomId) return
+
+    getChatMessages(roomId, { size: 30 })
+      .then((res) => {
+        setMessages([...res.data.messages].reverse())
+        setHasNext(res.data.hasNext)
+        setNextCursor(res.data.nextCursor)
+      })
+      .catch((error) => console.error('메시지 목록 조회 실패', error))
+  }, [roomId])
+
+  const loadMoreMessages = () => {
+    if (!roomId || !hasNext || !nextCursor || loadingMore) return
+
+    setLoadingMore(true)
+    getChatMessages(roomId, { before: nextCursor, size: 30 })
+      .then((res) => {
+        setMessages((prev) => [...[...res.data.messages].reverse(), ...prev])
+        setHasNext(res.data.hasNext)
+        setNextCursor(res.data.nextCursor)
+      })
+      .catch((error) => console.error('이전 메시지 조회 실패', error))
+      .finally(() => setLoadingMore(false))
+  }
+
+  const handleScroll = () => {
+    if (scrollRef.current && scrollRef.current.scrollTop < 40) {
+      loadMoreMessages()
+    }
+  }
 
   if (!room) {
     return (
@@ -86,19 +131,26 @@ export default function ChatRoomPage() {
           />
         </div>
 
-        <div className="absolute inset-x-0 top-[265px] bottom-[90px] overflow-y-auto">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="absolute inset-x-0 top-[265px] bottom-[90px] overflow-y-auto"
+        >
           <p className="text-center text-xs text-[#666]">{room.matchedDate}</p>
 
           <div className="mt-6 flex flex-col gap-6">
-            {room.messages.map((msg) => (
-              <ChatMessageBubble
-                key={msg.id}
-                sender={msg.sender}
-                message={msg.message}
-                time={msg.time}
-                nickname={msg.sender === 'partner' ? room.nickname : undefined}
-              />
-            ))}
+            {messages.map((msg) => {
+              const sender = msg.senderId === myUserId ? 'me' : 'partner'
+              return (
+                <ChatMessageBubble
+                  key={msg.id}
+                  sender={sender}
+                  message={msg.content ?? ''}
+                  time={formatMessageTime(msg.sentAt)}
+                  nickname={sender === 'partner' ? msg.senderNickname : undefined}
+                />
+              )
+            })}
           </div>
 
           {closedMessage && (
