@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import mapIcon from '../../assets/chat_map_icon.svg'
 import sendIcon from '../../assets/chat_send_icon.svg'
@@ -10,6 +11,7 @@ type Props = {
 // TODO: 메시지 전송(WebSocket) 연동
 export default function ChatRoomInputBar({ disabled = false }: Props) {
   const [value, setValue] = useState('')
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (disabled) setValue('')
@@ -22,7 +24,12 @@ export default function ChatRoomInputBar({ disabled = false }: Props) {
 
   return (
     <div className="absolute bottom-6 left-0 flex w-full items-center gap-3 px-6">
-      <button type="button" disabled={disabled} className="shrink-0">
+      <button
+        type="button"
+        onClick={() => navigate('/location')}
+        disabled={disabled}
+        className="shrink-0"
+      >
         <img src={mapIcon} alt="위치 공유" className="h-5 w-5" />
       </button>
 
