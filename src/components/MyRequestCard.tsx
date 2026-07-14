@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 
 import photo from '../assets/photo.png'
 import { apiFetch } from '../api/client'
+import { formatElapsedTime } from '../utils/formatElapsedTime'
 
 type MyRequest = {
   id: string
@@ -24,7 +25,7 @@ type MyRequest = {
 type Props = {
   request: MyRequest
   onDelete: () => void
-  onRetry: () => void
+  onRetry: () => void | Promise<void>
   onDragStart: () => void
   onDragEnd: () => void
 }
@@ -56,7 +57,7 @@ export default function MyRequestCard({
       setBumpCount((prev) => prev + 1)
       alert('요청이 다시 전송되었습니다.')
 
-      onRetry()
+      await onRetry()
     } catch (error) {
       console.error('재요청 실패:', error)
       alert('재요청에 실패했습니다.')
@@ -81,6 +82,7 @@ export default function MyRequestCard({
 
   const genderLabel =
     genderLabelMap[request.preferredGender] ?? request.preferredGender
+  const elapsedTime = formatElapsedTime(request.updatedAt || request.createdAt)
 
   return (
     <motion.section
@@ -97,7 +99,7 @@ export default function MyRequestCard({
       }}
       className="flex h-[508px] w-[342px] flex-col rounded-[20px] border border-[#FFC878] bg-white px-[26px] py-5 shadow-[0_0_4px_rgba(255,158,27,1),0_4px_4px_rgba(0,0,0,0.15)]"
     >
-      <p className="text-center text-sm text-[#666666]">30분 전</p>
+      <p className="text-center text-sm text-[#666666]">{elapsedTime}</p>
 
       <div className="mt-4 flex justify-center">
         <div className="relative h-[250px] w-[290px] overflow-hidden rounded-2xl">

@@ -109,7 +109,6 @@ export default function RequestPage() {
           JSON.stringify({ accessToken, card: createdCard })
         )
       }
-      localStorage.setItem('showDeleteGuide', 'true')
       navigate('/')
     } catch (error) {
       console.error('카드 생성 실패:', error)

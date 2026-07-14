@@ -14,6 +14,7 @@ import cryingChar from '../../assets/crying_char.png'
 import upFinger from '../../assets/up_finger.png'
 import sideFinger from '../../assets/side_finger.png'
 import { apiFetch } from '../../api/client'
+import { getUserProfile } from '../../api/user'
 
 const getHomeErrorMessage = (error: unknown): string => {
   const code =
@@ -127,6 +128,7 @@ export default function HomePage() {
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [homeErrorMessage, setHomeErrorMessage] = useState<string | null>(null)
   const isFetchingRef = useRef(false)
+  const deleteGuideDismissedCardIdRef = useRef<string | null>(null)
 
   const getCurrentPosition = (): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
@@ -141,13 +143,6 @@ export default function HomePage() {
     if (isFetchingRef.current && !options?.force) return
 
     isFetchingRef.current = true
-    const shouldShowDeleteGuide =
-      localStorage.getItem('showDeleteGuide') === 'true'
-
-    if (shouldShowDeleteGuide) {
-      setShowDeleteGuide(true)
-      localStorage.removeItem('showDeleteGuide')
-    }
 
     try {
       const res = await apiFetch<any>('/api/cards/my/active')
@@ -164,6 +159,8 @@ export default function HomePage() {
         }
 
         setMyRequest(null)
+        setShowDeleteGuide(false)
+        deleteGuideDismissedCardIdRef.current = null
 
         try {
           const position = await getCurrentPosition()
@@ -192,14 +189,21 @@ export default function HomePage() {
         return
       }
 
+      const profile = await getUserProfile().catch(() => null)
+
       saveStoredMyRequest(card)
       setMyRequest(card)
       setNearbyCards([])
+      setShowDeleteGuide(
+        Boolean(profile?.hasCreatedCard) &&
+          deleteGuideDismissedCardIdRef.current !== card.id
+      )
       setHomeErrorMessage(null)
     } catch (e) {
       console.error('홈 데이터 조회 실패:', e)
       setMyRequest(null)
       setNearbyCards([])
+      setShowDeleteGuide(false)
       setHomeErrorMessage(
         '\uD648 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.'
       )
@@ -356,7 +360,10 @@ export default function HomePage() {
         {/* 삭제 가이드 */}
         {showDeleteGuide && (
           <div
-            onClick={() => setShowDeleteGuide(false)}
+            onClick={() => {
+              deleteGuideDismissedCardIdRef.current = myRequest?.id ?? null
+              setShowDeleteGuide(false)
+            }}
             className="absolute inset-0 z-50 flex items-center justify-center bg-black/50"
           >
             <div className="flex flex-col items-center">
