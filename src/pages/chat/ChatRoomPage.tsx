@@ -9,7 +9,7 @@ import ChatRoomInputBar from './ChatRoomInputBar'
 import ChatRoomMenuDropdown from './ChatRoomMenuDropdown'
 import ReportModal from './ReportModal'
 import { mockChatRooms } from './chatMockData'
-import { getChatMessages } from '../../api/chat'
+import { getChatMessages, markRoomAsRead } from '../../api/chat'
 import { getAccessToken } from '../../utils/authStorage'
 import { getUserIdFromToken } from '../../utils/jwt'
 import { formatMessageTime } from '../../utils/date'
@@ -43,6 +43,8 @@ export default function ChatRoomPage() {
   const unsubscribeFromRoom = useChatSocketStore((state) => state.unsubscribeFromRoom)
   const setRoomMessages = useChatSocketStore((state) => state.setRoomMessages)
   const prependRoomMessages = useChatSocketStore((state) => state.prependRoomMessages)
+  const markMessagesRead = useChatSocketStore((state) => state.markMessagesRead)
+  const onRoomRead = useChatSocketStore((state) => state.onRoomRead)
 
   useEffect(() => {
     if (!roomId) return
@@ -50,6 +52,7 @@ export default function ChatRoomPage() {
     // 소켓 연결은 앱 전체 1개만 유지 (이미 연결돼 있으면 no-op)
     connect()
     subscribeToRoom(roomId)
+    onRoomRead(roomId, (event) => markMessagesRead(roomId, event.messageIds, event.readAt))
 
     getChatMessages(roomId, { size: 30 })
       .then((res) => {
@@ -59,10 +62,24 @@ export default function ChatRoomPage() {
       })
       .catch((error) => console.error('메시지 목록 조회 실패', error))
 
+    // 채팅방 진입 시 상대방이 보낸 미읽음 메시지 읽음 처리
+    markRoomAsRead(roomId).catch((error) =>
+      console.error('읽음 처리 실패', error)
+    )
+
     return () => {
+      onRoomRead(roomId, null)
       unsubscribeFromRoom(roomId)
     }
-  }, [roomId, connect, subscribeToRoom, unsubscribeFromRoom, setRoomMessages])
+  }, [
+    roomId,
+    connect,
+    subscribeToRoom,
+    unsubscribeFromRoom,
+    setRoomMessages,
+    markMessagesRead,
+    onRoomRead,
+  ])
 
   const loadMoreMessages = () => {
     if (!roomId || !hasNext || !nextCursor || loadingMore) return

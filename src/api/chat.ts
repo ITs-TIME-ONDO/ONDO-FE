@@ -121,3 +121,10 @@ export function getChatMessages(
     `/api/chat/rooms/${roomId}/messages${queryString ? `?${queryString}` : ''}`
   )
 }
+
+// 응답 바디 형태 TBD (chat.md에 명시 없음)
+export function markRoomAsRead(roomId: string): Promise<ApiResponse<null>> {
+  return apiFetch<ApiResponse<null>>(`/api/chat/rooms/${roomId}/read`, {
+    method: 'PATCH',
+  })
+}
