@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 import PageTransition from '../../components/PageTransition'
@@ -44,6 +44,8 @@ export default function ChatRoomPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [loadingMore, setLoadingMore] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const isInitialLoadRef = useRef(true)
+  const preserveScrollRef = useRef<{ height: number; top: number } | null>(null)
 
   const accessToken = getAccessToken()
   const myUserId = accessToken ? getUserIdFromToken(accessToken) : null
@@ -67,16 +69,30 @@ export default function ChatRoomPage() {
   useEffect(() => {
     if (!roomId) return
 
+    let active = true
+    setRoom(null)
+    setRoomNotFound(false)
+
     getChatRoom(roomId)
-      .then((res) => setRoom(res.data))
+      .then((res) => {
+        if (active) setRoom(res.data)
+      })
       .catch((error) => {
+        if (!active) return
         console.error('채팅방 조회 실패', error)
         setRoomNotFound(true)
       })
+
+    return () => {
+      active = false
+    }
   }, [roomId])
 
   useEffect(() => {
     if (!roomId) return
+
+    isInitialLoadRef.current = true
+    preserveScrollRef.current = null
 
     // 소켓 연결은 앱 전체 1개만 유지 (이미 연결돼 있으면 no-op)
     connect()
@@ -122,8 +138,32 @@ export default function ChatRoomPage() {
     )
   }, [messages, myUserId])
 
+  // 최초 로딩 시에는 최신 메시지가 보이도록 하단으로 스크롤하고,
+  // 이전 메시지를 위로 더 불러온 경우에는 기존에 보고 있던 위치를 유지한다.
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+
+    if (preserveScrollRef.current) {
+      const { height, top } = preserveScrollRef.current
+      el.scrollTop = el.scrollHeight - height + top
+      preserveScrollRef.current = null
+      return
+    }
+
+    if (isInitialLoadRef.current && messages.length > 0) {
+      el.scrollTop = el.scrollHeight
+      isInitialLoadRef.current = false
+    }
+  }, [messages])
+
   const loadMoreMessages = () => {
     if (!roomId || !hasNext || !nextCursor || loadingMore) return
+
+    const el = scrollRef.current
+    if (el) {
+      preserveScrollRef.current = { height: el.scrollHeight, top: el.scrollTop }
+    }
 
     setLoadingMore(true)
     getChatMessages(roomId, { before: nextCursor, size: 30 })
@@ -132,21 +172,43 @@ export default function ChatRoomPage() {
         setHasNext(res.data.hasNext)
         setNextCursor(res.data.nextCursor)
       })
-      .catch((error) => console.error('이전 메시지 조회 실패', error))
+      .catch((error) => {
+        preserveScrollRef.current = null
+        console.error('이전 메시지 조회 실패', error)
+      })
       .finally(() => setLoadingMore(false))
   }
 
-  const handleSend = (text: string) => {
-    if (!roomId) return
+  const handleSend = async (text: string): Promise<boolean> => {
+    if (!roomId) return false
 
     const body = { messageType: 'TEXT' as const, content: text }
     const sentViaSocket = sendSocketMessage(roomId, body)
 
-    // 소켓 미연결 시에만 REST 폴백 — 소켓으로 보낸 메시지는 SUBSCRIBE 채널로 에코되어 돌아옴
-    if (!sentViaSocket) {
-      sendChatMessage(roomId, body)
-        .then((res) => appendRoomMessage(roomId, res.data))
-        .catch((error) => console.error('메시지 전송 실패', error))
+    // 소켓으로 보낸 메시지는 SUBSCRIBE 채널로 에코되어 돌아옴
+    if (sentViaSocket) return true
+
+    // 소켓 미연결 시에만 REST 폴백
+    try {
+      const res = await sendChatMessage(roomId, body)
+      appendRoomMessage(roomId, res.data)
+      return true
+    } catch (error) {
+      console.error('메시지 전송 실패', error)
+      return false
+    }
+  }
+
+  const handleCloseRoom = async () => {
+    if (!roomId) return
+
+    try {
+      await closeChatRoom(roomId)
+      // 상대방 화면에는 ROOM_CLOSED 소켓 echo(위 useEffect)가 "OO님이 채팅을 종료했습니다."를 띄워줌
+      setClosedMessage('채팅방을 나갔습니다.')
+    } catch (error) {
+      console.error('채팅방 종료 실패', error)
+      alert('채팅방 종료에 실패했습니다. 다시 시도해주세요.')
     }
   }
 
@@ -270,13 +332,7 @@ export default function ChatRoomPage() {
           description="완료 시 위치 공유가 불가합니다."
           onConfirm={() => {
             setShowCompleteModal(false)
-            if (roomId) {
-              closeChatRoom(roomId).catch((error) =>
-                console.error('채팅방 종료 실패', error)
-              )
-            }
-            // 상대방 화면에는 ROOM_CLOSED 소켓 echo(위 useEffect)가 "OO님이 채팅을 종료했습니다."를 띄워줌
-            setClosedMessage('채팅방을 나갔습니다.')
+            handleCloseRoom()
           }}
           onCancel={() => setShowCompleteModal(false)}
         />
@@ -287,12 +343,7 @@ export default function ChatRoomPage() {
           description="매칭이 자동으로 종료됩니다."
           onConfirm={() => {
             setShowLeaveModal(false)
-            if (roomId) {
-              closeChatRoom(roomId).catch((error) =>
-                console.error('채팅방 종료 실패', error)
-              )
-            }
-            setClosedMessage('채팅방을 나갔습니다.')
+            handleCloseRoom()
           }}
           onCancel={() => setShowLeaveModal(false)}
         />

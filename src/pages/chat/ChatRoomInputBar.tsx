@@ -6,20 +6,21 @@ import sendIcon from '../../assets/chat_send_icon.svg'
 
 type Props = {
   disabled?: boolean
-  onSend?: (text: string) => void
+  onSend?: (text: string) => Promise<boolean>
 }
 
 export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
+  const [sending, setSending] = useState(false)
 
   useEffect(() => {
     if (disabled) setValue('')
   }, [disabled])
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = value.trim()
-    if (disabled || !text) return
+    if (disabled || sending || !text) return
 
     // 클라이언트 단어사전 기반 경량 차단 — 우회 가능성 있어 실효성 있는 필터링은
     // 백엔드/AI 모더레이션에서 별도로 처리해야 함
@@ -29,8 +30,18 @@ export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
     }
 
     setError('')
-    onSend?.(text)
-    setValue('')
+    setSending(true)
+
+    // 전송 성공이 확인된 뒤에만 입력을 비운다 — 실패 시 값을 그대로 두어 원문이 보존됨
+    const success = await onSend?.(text)
+
+    setSending(false)
+
+    if (success) {
+      setValue('')
+    } else {
+      setError('메시지 전송에 실패했습니다. 다시 시도해주세요.')
+    }
   }
 
   return (
@@ -50,7 +61,9 @@ export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
               setValue(e.target.value)
               if (error) setError('')
             }}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleSend()
+            }}
             placeholder={
               disabled ? '메시지를 보낼 수 없습니다' : '메시지 보내기'
             }
@@ -61,7 +74,7 @@ export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
           <button
             type="button"
             onClick={handleSend}
-            disabled={disabled}
+            disabled={disabled || sending}
             className="shrink-0"
           >
             <img src={sendIcon} alt="전송" className="h-6 w-[23px]" />

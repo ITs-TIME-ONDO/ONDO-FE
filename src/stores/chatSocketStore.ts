@@ -90,7 +90,11 @@ export const useChatSocketStore = create<ChatSocketState>((set, get) => ({
       },
       onWebSocketClose: (event) => {
         console.log('[chatSocket] WebSocket 연결 종료', event.code, event.reason)
-        set({ connected: false })
+        // 연결이 끊기면 구독도 함께 끊어지므로, 재연결 시 다시 구독할 수 있도록
+        // 기존 구독 방들을 pendingRoomIds로 옮기고 구독 맵은 비운다.
+        const { roomSubscriptions, pendingRoomIds } = get()
+        Object.keys(roomSubscriptions).forEach((roomId) => pendingRoomIds.add(roomId))
+        set({ connected: false, roomSubscriptions: {}, readSubscriptions: {} })
       },
     })
 
@@ -130,7 +134,12 @@ export const useChatSocketStore = create<ChatSocketState>((set, get) => ({
   },
 
   setRoomMessages: (roomId, messages) => {
-    set({ messagesByRoom: { ...get().messagesByRoom, [roomId]: messages } })
+    const current = get().messagesByRoom[roomId] ?? []
+    const incomingIds = new Set(messages.map((m) => m.id))
+    const liveOnly = current.filter((m) => !incomingIds.has(m.id))
+    set({
+      messagesByRoom: { ...get().messagesByRoom, [roomId]: [...messages, ...liveOnly] },
+    })
   },
 
   prependRoomMessages: (roomId, messages) => {
