@@ -114,7 +114,7 @@ export default function ChatRoomPage() {
     setClosedMessage(
       lastMessage.senderId === myUserId
         ? '채팅방을 나갔습니다.'
-        : '상대방이 채팅을 종료했습니다.'
+        : `${lastMessage.senderNickname}님이 채팅을 종료했습니다.`
     )
   }, [messages, myUserId])
 
@@ -232,18 +232,20 @@ export default function ChatRoomPage() {
           <p className="text-center text-xs text-[#666]">{formatMatchedDate(room.createdAt)}</p>
 
           <div className="mt-6 flex flex-col gap-6">
-            {messages.map((msg) => {
-              const sender = msg.senderId === myUserId ? 'me' : 'partner'
-              return (
-                <ChatMessageBubble
-                  key={msg.id}
-                  sender={sender}
-                  message={msg.content ?? ''}
-                  time={formatMessageTime(msg.sentAt)}
-                  nickname={sender === 'partner' ? msg.senderNickname : undefined}
-                />
-              )
-            })}
+            {messages
+              .filter((msg) => msg.messageType !== 'ROOM_CLOSED')
+              .map((msg) => {
+                const sender = msg.senderId === myUserId ? 'me' : 'partner'
+                return (
+                  <ChatMessageBubble
+                    key={msg.id}
+                    sender={sender}
+                    message={msg.content ?? ''}
+                    time={formatMessageTime(msg.sentAt)}
+                    nickname={sender === 'partner' ? msg.senderNickname : undefined}
+                  />
+                )
+              })}
           </div>
 
           {closedMessage && (
@@ -266,7 +268,8 @@ export default function ChatRoomPage() {
                 console.error('채팅방 종료 실패', error)
               )
             }
-            setClosedMessage('상대방이 채팅을 종료했습니다.')
+            // 상대방 화면에는 ROOM_CLOSED 소켓 echo(위 useEffect)가 "OO님이 채팅을 종료했습니다."를 띄워줌
+            setClosedMessage('채팅방을 나갔습니다.')
           }}
           onCancel={() => setShowCompleteModal(false)}
         />
