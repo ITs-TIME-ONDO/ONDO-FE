@@ -6,7 +6,7 @@ import sendIcon from '../../assets/chat_send_icon.svg'
 
 type Props = {
   disabled?: boolean
-  onSend?: (text: string) => Promise<boolean>
+  onSend: (text: string) => Promise<boolean>
 }
 
 export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
