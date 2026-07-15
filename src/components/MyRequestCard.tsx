@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
 import photo from '../assets/photo.png'
+import meal from '../assets/합석.png'
+import other from '../assets/기타.png'
 import { apiFetch } from '../api/client'
 import { formatElapsedTime } from '../utils/formatElapsedTime'
 
@@ -86,6 +88,12 @@ export default function MyRequestCard({
     OTHER: '기타',
   }
 
+  const categoryImageMap: Record<string, string> = {
+    PHOTO: photo,
+    MEAL: meal,
+    OTHER: other,
+  }
+
   const genderLabelMap: Record<string, string> = {
     MALE: '남성',
     FEMALE: '여성',
@@ -93,6 +101,7 @@ export default function MyRequestCard({
   }
 
   const categoryLabel = categoryLabelMap[request.category] ?? request.category
+  const categoryImage = categoryImageMap[request.category] ?? photo
 
   const genderLabel =
     genderLabelMap[request.preferredGender] ?? request.preferredGender
@@ -119,7 +128,11 @@ export default function MyRequestCard({
 
       <div className="mt-4 flex justify-center">
         <div className="relative h-[250px] w-[290px] overflow-hidden rounded-2xl">
-          <img src={photo} alt="" className="h-full w-full object-cover" />
+          <img
+            src={categoryImage}
+            alt=""
+            className="h-full w-full object-cover"
+          />
 
           <div className="absolute inset-0 bg-black/50" />
 

@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion'
 
 import photo from '../assets/photo.png'
+import meal from '../assets/합석.png'
+import other from '../assets/기타.png'
 import miniProfileChar from '../assets/mini_profile_char.png'
 import { formatElapsedTime } from '../utils/formatElapsedTime'
 
@@ -35,6 +37,12 @@ const categoryLabelMap: Record<string, string> = {
   OTHER: '기타',
 }
 
+const categoryImageMap: Record<string, string> = {
+  PHOTO: photo,
+  MEAL: meal,
+  OTHER: other,
+}
+
 const genderLabelMap: Record<string, string> = {
   MALE: '남성',
   FEMALE: '여성',
@@ -48,6 +56,7 @@ export default function NearbyRequestCard({
   onHelp,
 }: Props) {
   const categoryLabel = categoryLabelMap[request.category] ?? request.category
+  const categoryImage = categoryImageMap[request.category] ?? photo
   const genderLabel =
     genderLabelMap[request.preferredGender] ?? request.preferredGender
   const requesterProfileImage =
@@ -83,7 +92,7 @@ export default function NearbyRequestCard({
 
       <div className="relative h-64 w-72 overflow-hidden rounded-2xl">
         <img
-          src={photo}
+          src={categoryImage}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
         />
