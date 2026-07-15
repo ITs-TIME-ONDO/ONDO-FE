@@ -15,6 +15,7 @@ import matchingImage from '../../assets/matching.png'
 import upFinger from '../../assets/up_finger.png'
 import sideFinger from '../../assets/side_finger.png'
 import { apiFetch } from '../../api/client'
+import { createChatRoom } from '../../api/chat'
 
 const getHomeErrorMessage = (error: unknown): string => {
   const code =
@@ -408,6 +409,13 @@ export default function HomePage() {
       setSelectedHelpCardId(null)
       selectedHelpCardRef.current = null
       await fetchHomeData({ force: true })
+
+      try {
+        const chatRoomRes = await createChatRoom({ cardId })
+        navigate(`/chat/${chatRoomRes.data.id}`)
+      } catch (chatRoomError) {
+        console.error('채팅방 생성 또는 조회 실패:', chatRoomError)
+      }
     } catch (error) {
       const status =
         typeof error === 'object' && error !== null && 'status' in error

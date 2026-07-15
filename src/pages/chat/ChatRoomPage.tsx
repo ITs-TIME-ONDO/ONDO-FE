@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import PageTransition from '../../components/PageTransition'
 import PageHeader from '../../components/PageHeader'
@@ -30,6 +30,7 @@ import chatRoomChar from '../../assets/chat_room_char.png'
 const mockRoomInfo = mockChatRooms[0]
 
 export default function ChatRoomPage() {
+  const navigate = useNavigate()
   const { roomId } = useParams<{ roomId: string }>()
   const [room, setRoom] = useState<ChatRoomSummary | null>(null)
   const [roomNotFound, setRoomNotFound] = useState(false)
@@ -241,7 +242,7 @@ export default function ChatRoomPage() {
       <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-white">
         <PageHeader
           title={room.opponentNickname ?? '알 수 없음'}
-          fallbackPath="/chat"
+          onBack={() => navigate('/chat', { replace: true })}
           rightAction={
             <button type="button" onClick={() => setShowMenu((prev) => !prev)}>
               <img src={menuIcon} alt="메뉴" className="h-6 w-6" />
