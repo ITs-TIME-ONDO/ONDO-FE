@@ -37,7 +37,11 @@ export default function ConfirmModal({
     if (!open) return
 
     const previouslyFocusedElement = document.activeElement as HTMLElement | null
-    cancelButtonRef.current?.focus()
+    if (cancelButtonRef.current && !cancelButtonRef.current.disabled) {
+      cancelButtonRef.current.focus()
+    } else {
+      dialogRef.current?.focus()
+    }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
