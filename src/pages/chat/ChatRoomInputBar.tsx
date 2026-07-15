@@ -5,10 +5,10 @@ import sendIcon from '../../assets/chat_send_icon.svg'
 
 type Props = {
   disabled?: boolean
+  onSend?: (text: string) => void
 }
 
-// TODO: 메시지 전송(WebSocket) 연동
-export default function ChatRoomInputBar({ disabled = false }: Props) {
+export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
   const [value, setValue] = useState('')
 
   useEffect(() => {
@@ -16,7 +16,9 @@ export default function ChatRoomInputBar({ disabled = false }: Props) {
   }, [disabled])
 
   const handleSend = () => {
-    if (disabled || !value.trim()) return
+    const text = value.trim()
+    if (disabled || !text) return
+    onSend?.(text)
     setValue('')
   }
 

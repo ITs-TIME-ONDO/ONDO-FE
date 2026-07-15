@@ -19,6 +19,7 @@ interface ChatSocketState {
   unsubscribeFromRoom: (roomId: string) => void
   setRoomMessages: (roomId: string, messages: ChatMessage[]) => void
   prependRoomMessages: (roomId: string, messages: ChatMessage[]) => void
+  appendRoomMessage: (roomId: string, message: ChatMessage) => void
   markMessagesRead: (roomId: string, messageIds: string[], readAt: string) => void
   sendMessage: (roomId: string, body: ChatMessageSendRequest) => boolean
   onRoomRead: (roomId: string, handler: ((event: ChatReadEvent) => void) | null) => void
@@ -135,6 +136,12 @@ export const useChatSocketStore = create<ChatSocketState>((set, get) => ({
     set({
       messagesByRoom: { ...get().messagesByRoom, [roomId]: [...newOnes, ...current] },
     })
+  },
+
+  appendRoomMessage: (roomId, message) => {
+    const current = get().messagesByRoom[roomId] ?? []
+    if (current.some((m) => m.id === message.id)) return
+    set({ messagesByRoom: { ...get().messagesByRoom, [roomId]: [...current, message] } })
   },
 
   markMessagesRead: (roomId, messageIds, readAt) => {

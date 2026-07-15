@@ -9,7 +9,7 @@ import ChatRoomInputBar from './ChatRoomInputBar'
 import ChatRoomMenuDropdown from './ChatRoomMenuDropdown'
 import ReportModal from './ReportModal'
 import { mockChatRooms } from './chatMockData'
-import { getChatMessages, markRoomAsRead } from '../../api/chat'
+import { getChatMessages, markRoomAsRead, sendChatMessage } from '../../api/chat'
 import { getAccessToken } from '../../utils/authStorage'
 import { getUserIdFromToken } from '../../utils/jwt'
 import { formatMessageTime } from '../../utils/date'
@@ -45,6 +45,8 @@ export default function ChatRoomPage() {
   const prependRoomMessages = useChatSocketStore((state) => state.prependRoomMessages)
   const markMessagesRead = useChatSocketStore((state) => state.markMessagesRead)
   const onRoomRead = useChatSocketStore((state) => state.onRoomRead)
+  const sendSocketMessage = useChatSocketStore((state) => state.sendMessage)
+  const appendRoomMessage = useChatSocketStore((state) => state.appendRoomMessage)
 
   useEffect(() => {
     if (!roomId) return
@@ -93,6 +95,20 @@ export default function ChatRoomPage() {
       })
       .catch((error) => console.error('이전 메시지 조회 실패', error))
       .finally(() => setLoadingMore(false))
+  }
+
+  const handleSend = (text: string) => {
+    if (!roomId) return
+
+    const body = { messageType: 'TEXT' as const, content: text }
+    const sentViaSocket = sendSocketMessage(roomId, body)
+
+    // 소켓 미연결 시에만 REST 폴백 — 소켓으로 보낸 메시지는 SUBSCRIBE 채널로 에코되어 돌아옴
+    if (!sentViaSocket) {
+      sendChatMessage(roomId, body)
+        .then((res) => appendRoomMessage(roomId, res.data))
+        .catch((error) => console.error('메시지 전송 실패', error))
+    }
   }
 
   const handleScroll = () => {
@@ -194,7 +210,7 @@ export default function ChatRoomPage() {
           )}
         </div>
 
-        <ChatRoomInputBar disabled={Boolean(closedMessage)} />
+        <ChatRoomInputBar disabled={Boolean(closedMessage)} onSend={handleSend} />
 
         <FloatingConfirmModal
           open={showCompleteModal}

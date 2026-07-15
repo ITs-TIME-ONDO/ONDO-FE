@@ -128,3 +128,14 @@ export function markRoomAsRead(roomId: string): Promise<ApiResponse<null>> {
     method: 'PATCH',
   })
 }
+
+// REST 폴백 전송 (WS 미지원 환경용). 실시간 전송은 WS SEND(chatSocketStore.sendMessage) 우선 사용
+export function sendChatMessage(
+  roomId: string,
+  body: ChatMessageSendRequest
+): Promise<ApiResponse<ChatMessage>> {
+  return apiFetch<ApiResponse<ChatMessage>>(`/api/chat/rooms/${roomId}/messages`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
