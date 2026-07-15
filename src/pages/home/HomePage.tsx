@@ -126,14 +126,15 @@ export default function HomePage() {
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [homeErrorMessage, setHomeErrorMessage] = useState<string | null>(null)
   const isFetchingRef = useRef(false)
+  const positionRef = useRef<GeolocationPosition | null>(null)
   const deleteGuideDismissedCardIdRef = useRef<string | null>(null)
 
   const getCurrentPosition = (): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+        enableHighAccuracy: false,
+        timeout: 15000,
+        maximumAge: 300000,
       })
     })
   }
@@ -163,7 +164,8 @@ export default function HomePage() {
         deleteGuideDismissedCardIdRef.current = null
 
         try {
-          const position = await getCurrentPosition()
+          const position = positionRef.current ?? (await getCurrentPosition())
+          positionRef.current = position
 
           const nearbyRes = await apiFetch<any>(
             `/api/cards/nearby?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}`
