@@ -134,8 +134,31 @@ export function sendChatMessage(
   roomId: string,
   body: ChatMessageSendRequest
 ): Promise<ApiResponse<ChatMessage>> {
-  return apiFetch<ApiResponse<ChatMessage>>(`/api/chat/rooms/${roomId}/messages`, {
+  return apiFetch<ApiResponse<ChatMessage>>(
+    `/api/chat/rooms/${roomId}/messages`,
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }
+  )
+}
+
+export interface CreateChatRoomRequest {
+  cardId: string
+}
+
+// 멱등(get-or-create). 수락자가 수락 액션 시 직접 호출
+export function createChatRoom(
+  body: CreateChatRoomRequest
+): Promise<ApiResponse<ChatRoomSummary>> {
+  return apiFetch<ApiResponse<ChatRoomSummary>>(`/api/chat/rooms`, {
     method: 'POST',
     body: JSON.stringify(body),
+  })
+}
+
+export function closeChatRoom(roomId: string): Promise<ApiResponse<null>> {
+  return apiFetch<ApiResponse<null>>(`/api/chat/rooms/${roomId}/close`, {
+    method: 'POST',
   })
 }

@@ -9,7 +9,12 @@ import ChatRoomInputBar from './ChatRoomInputBar'
 import ChatRoomMenuDropdown from './ChatRoomMenuDropdown'
 import ReportModal from './ReportModal'
 import { mockChatRooms } from './chatMockData'
-import { getChatMessages, markRoomAsRead, sendChatMessage } from '../../api/chat'
+import {
+  getChatMessages,
+  markRoomAsRead,
+  sendChatMessage,
+  closeChatRoom,
+} from '../../api/chat'
 import { getAccessToken } from '../../utils/authStorage'
 import { getUserIdFromToken } from '../../utils/jwt'
 import { formatMessageTime } from '../../utils/date'
@@ -228,11 +233,14 @@ export default function ChatRoomPage() {
           open={showCompleteModal}
           title="매칭을 완료하시겠습니까?"
           description="완료 시 위치 공유가 불가합니다."
-          // TODO: 요청 완료 처리 API 연동
           onConfirm={() => {
             setShowCompleteModal(false)
+            if (roomId) {
+              closeChatRoom(roomId).catch((error) =>
+                console.error('채팅방 종료 실패', error)
+              )
+            }
             setClosedMessage('상대방이 채팅을 종료했습니다.')
-            // 상대방이 종료 시에 종료 메시지 표시
           }}
           onCancel={() => setShowCompleteModal(false)}
         />
@@ -241,11 +249,14 @@ export default function ChatRoomPage() {
           open={showLeaveModal}
           title="채팅방을 나가시겠습니까?"
           description="매칭이 자동으로 종료됩니다."
-          // TODO: 채팅방 나가기 API 연동
           onConfirm={() => {
             setShowLeaveModal(false)
+            if (roomId) {
+              closeChatRoom(roomId).catch((error) =>
+                console.error('채팅방 종료 실패', error)
+              )
+            }
             setClosedMessage('채팅방을 나갔습니다.')
-            // 내가 종료 시에 종료 메시지 표시
           }}
           onCancel={() => setShowLeaveModal(false)}
         />
