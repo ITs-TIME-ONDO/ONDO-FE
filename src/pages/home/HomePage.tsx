@@ -103,6 +103,7 @@ export default function HomePage() {
   const [isApplying, setIsApplying] = useState(false)
   const [homeErrorMessage, setHomeErrorMessage] = useState<string | null>(null)
   const isFetchingRef = useRef(false)
+  const fetchGenerationRef = useRef(0)
   const isLoadingMoreRef = useRef(false)
   const positionRef = useRef<GeolocationPosition | null>(null)
   const deleteGuideDismissedCardIdRef = useRef<string | null>(null)
@@ -120,9 +121,13 @@ export default function HomePage() {
     if (isFetchingRef.current && !options?.force) return
 
     isFetchingRef.current = true
+    const fetchGeneration = ++fetchGenerationRef.current
+    const isLatestFetch = () => fetchGenerationRef.current === fetchGeneration
 
     try {
       const res = await apiFetch<any>('/api/cards/my/active')
+      if (!isLatestFetch()) return
+
       const card = getCardFromResponse(res)
       const activeCardData = res?.data ?? res
       const hasCreatedCard = activeCardData?.hasCreatedCard
@@ -134,12 +139,15 @@ export default function HomePage() {
         deleteGuideDismissedCardIdRef.current = null
 
         try {
-          const position = positionRef.current ?? (await getCurrentPosition())
+          const position = await getCurrentPosition()
+          if (!isLatestFetch()) return
+
           positionRef.current = position
 
           const nearbyRes = await apiFetch<any>(
             `/api/cards/nearby?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}`
           )
+          if (!isLatestFetch()) return
 
           const nearbyData = nearbyRes.data ?? nearbyRes
 
@@ -160,6 +168,8 @@ export default function HomePage() {
           }
           setHomeErrorMessage(null)
         } catch (error) {
+          if (!isLatestFetch()) return
+
           console.error('주변 요청 조회 실패:', error)
           setNearbyCards([])
           setNextCursor(null)
@@ -188,6 +198,8 @@ export default function HomePage() {
       }
       setHomeErrorMessage(null)
     } catch (e) {
+      if (!isLatestFetch()) return
+
       console.error('홈 데이터 조회 실패:', e)
       setMyRequest(null)
       setNearbyCards([])
@@ -197,7 +209,9 @@ export default function HomePage() {
         '\uD648 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.'
       )
     } finally {
-      isFetchingRef.current = false
+      if (isLatestFetch()) {
+        isFetchingRef.current = false
+      }
     }
   }, [])
 
