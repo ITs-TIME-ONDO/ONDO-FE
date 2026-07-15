@@ -39,36 +39,6 @@ const getCardFromResponse = (response: any): any | null => {
   return card?.id ? card : null
 }
 
-const getStoredMyRequest = (): any | null => {
-  const saved = localStorage.getItem(MY_REQUEST_STORAGE_KEY)
-  const accessToken = localStorage.getItem('accessToken')
-
-  if (!saved || !accessToken) return null
-
-  try {
-    const parsed = JSON.parse(saved)
-    const card = parsed.card ?? parsed
-    const savedAccessToken = parsed.accessToken
-    const expiresAt = card?.expiresAt ? new Date(card.expiresAt).getTime() : NaN
-
-    if (!card?.id || Number.isNaN(expiresAt) || expiresAt <= Date.now()) {
-      localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
-      return null
-    }
-
-    if (savedAccessToken && savedAccessToken !== accessToken) {
-      localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
-      return null
-    }
-
-    return card
-  } catch {
-    localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
-    return null
-  }
-}
-
-
 const getCurrentUserId = (): string | null => {
   const accessToken = localStorage.getItem('accessToken')
   const payload = accessToken?.split('.')[1]
@@ -97,9 +67,13 @@ const getCurrentUserId = (): string | null => {
 const filterOutMyCards = (cards: any[]): any[] => {
   const currentUserId = getCurrentUserId()
 
-  if (!currentUserId) return cards
+  const openCards = cards.filter((card) => card?.status === 'OPEN')
 
-  return cards.filter((card) => String(card?.requesterId) !== currentUserId)
+  if (!currentUserId) return openCards
+
+  return openCards.filter(
+    (card) => String(card?.requesterId) !== currentUserId
+  )
 }
 const saveStoredMyRequest = (card: any) => {
   const accessToken = localStorage.getItem('accessToken')
@@ -117,6 +91,7 @@ export default function HomePage() {
 
   const [myRequest, setMyRequest] = useState<any>(null)
   const [nearbyCards, setNearbyCards] = useState<any[]>([])
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showDeleteGuide, setShowDeleteGuide] = useState(false)
   const [nearbyGuideStep, setNearbyGuideStep] = useState<
@@ -124,8 +99,10 @@ export default function HomePage() {
   >(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
+  const [isApplying, setIsApplying] = useState(false)
   const [homeErrorMessage, setHomeErrorMessage] = useState<string | null>(null)
   const isFetchingRef = useRef(false)
+  const isLoadingMoreRef = useRef(false)
   const positionRef = useRef<GeolocationPosition | null>(null)
   const deleteGuideDismissedCardIdRef = useRef<string | null>(null)
 
@@ -150,15 +127,7 @@ export default function HomePage() {
       const hasCreatedCard = activeCardData?.hasCreatedCard
 
       if (!card || !card.id) {
-        const savedMyRequest = getStoredMyRequest()
-
-        if (savedMyRequest) {
-          setMyRequest(savedMyRequest)
-          setNearbyCards([])
-          setHomeErrorMessage(null)
-          return
-        }
-
+        localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
         setMyRequest(null)
         setShowDeleteGuide(false)
         deleteGuideDismissedCardIdRef.current = null
@@ -176,6 +145,7 @@ export default function HomePage() {
           const nextNearbyCards = filterOutMyCards(nearbyData?.cards ?? [])
 
           setNearbyCards(nextNearbyCards)
+          setNextCursor(nearbyData?.nextCursor ?? null)
           setCurrentIndex((prev) =>
             nextNearbyCards.length === 0
               ? 0
@@ -191,6 +161,7 @@ export default function HomePage() {
         } catch (error) {
           console.error('주변 요청 조회 실패:', error)
           setNearbyCards([])
+          setNextCursor(null)
           setHomeErrorMessage(getHomeErrorMessage(error))
         }
 
@@ -200,6 +171,7 @@ export default function HomePage() {
       saveStoredMyRequest(card)
       setMyRequest(card)
       setNearbyCards([])
+      setNextCursor(null)
       if (
         hasCreatedCard === false &&
         deleteGuideDismissedCardIdRef.current !== card.id
@@ -211,6 +183,7 @@ export default function HomePage() {
       console.error('홈 데이터 조회 실패:', e)
       setMyRequest(null)
       setNearbyCards([])
+      setNextCursor(null)
       setShowDeleteGuide(false)
       setHomeErrorMessage(
         '\uD648 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.'
@@ -226,6 +199,45 @@ export default function HomePage() {
 
     return () => window.clearInterval(intervalId)
   }, [fetchHomeData])
+
+  useEffect(() => {
+    if (
+      myRequest ||
+      !nextCursor ||
+      nearbyCards.length === 0 ||
+      currentIndex < nearbyCards.length - 2 ||
+      isLoadingMoreRef.current
+    ) {
+      return
+    }
+
+    const loadMoreNearbyCards = async () => {
+      isLoadingMoreRef.current = true
+
+      try {
+        const position = positionRef.current ?? (await getCurrentPosition())
+        positionRef.current = position
+
+        const response = await apiFetch<any>(
+          `/api/cards/nearby?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&cursor=${encodeURIComponent(nextCursor)}`
+        )
+        const data = response?.data ?? response
+        const newCards = filterOutMyCards(data?.cards ?? [])
+
+        setNearbyCards((cards) => {
+          const existingIds = new Set(cards.map((card) => card.id))
+          return [...cards, ...newCards.filter((card) => !existingIds.has(card.id))]
+        })
+        setNextCursor(data?.nextCursor ?? null)
+      } catch (error) {
+        console.error('주변 요청 추가 조회 실패:', error)
+      } finally {
+        isLoadingMoreRef.current = false
+      }
+    }
+
+    loadMoreNearbyCards()
+  }, [currentIndex, myRequest, nearbyCards.length, nextCursor])
 
   const handleNearbyGuideClick = () => {
     setNearbyGuideStep((step) => {
@@ -259,6 +271,62 @@ export default function HomePage() {
       await fetchHomeData({ force: true })
     } catch (error) {
       console.error('카드 취소 실패:', error)
+
+      const status =
+        typeof error === 'object' && error !== null && 'status' in error
+          ? (error as { status?: number }).status
+          : undefined
+
+      if (status === 404 || status === 409) {
+        setShowDeleteModal(false)
+        localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+        await fetchHomeData({ force: true })
+      }
+    }
+  }
+
+  const removeNearbyCard = (cardId: string) => {
+    setNearbyCards((cards) => {
+      const nextCards = cards.filter((card) => card.id !== cardId)
+
+      setCurrentIndex((index) =>
+        Math.min(index, Math.max(nextCards.length - 1, 0))
+      )
+
+      return nextCards
+    })
+  }
+
+  const handleHelpRequest = async () => {
+    const cardId = nearbyCards[currentIndex]?.id
+
+    if (!cardId || isApplying) return
+
+    setIsApplying(true)
+
+    try {
+      await apiFetch(`/api/cards/${cardId}/applies`, {
+        method: 'POST',
+      })
+
+      removeNearbyCard(cardId)
+      setShowHelpModal(false)
+      await fetchHomeData({ force: true })
+    } catch (error) {
+      const status =
+        typeof error === 'object' && error !== null && 'status' in error
+          ? (error as { status?: number }).status
+          : undefined
+
+      if (status === 403 || status === 404 || status === 409) {
+        removeNearbyCard(cardId)
+        setShowHelpModal(false)
+        await fetchHomeData({ force: true })
+      } else {
+        console.error('도움 신청 실패:', error)
+      }
+    } finally {
+      setIsApplying(false)
     }
   }
   return (
@@ -286,14 +354,48 @@ export default function HomePage() {
               onDragEnd={() => {}}
             />
           ) : nearbyCards.length > 0 ? (
-            <NearbyRequestCard
-              request={nearbyCards[currentIndex]}
-              onSwipeLeft={() =>
-                setCurrentIndex((i) => Math.min(i + 1, nearbyCards.length - 1))
-              }
-              onSwipeRight={() => setCurrentIndex((i) => Math.max(i - 1, 0))}
-              onHelp={() => setShowHelpModal(true)}
-            />
+            <div className="relative h-[508px] w-80">
+              {nearbyCards
+                .slice(currentIndex, currentIndex + 3)
+                .map((request, stackIndex) => (
+                  <div
+                    key={request.id}
+                    className={`absolute inset-0 ${
+                      stackIndex === 0 ? '' : 'pointer-events-none'
+                    }`}
+                    style={{
+                      zIndex: 3 - stackIndex,
+                      transform: `translateX(${stackIndex * 12}px) scale(${
+                        1 - stackIndex * 0.015
+                      })`,
+                      transformOrigin: 'left center',
+                    }}
+                    aria-hidden={stackIndex !== 0}
+                  >
+                    <NearbyRequestCard
+                      request={request}
+                      onSwipeLeft={
+                        stackIndex === 0
+                          ? () =>
+                              setCurrentIndex((i) =>
+                                Math.min(i + 1, nearbyCards.length - 1)
+                              )
+                          : undefined
+                      }
+                      onSwipeRight={
+                        stackIndex === 0
+                          ? () => setCurrentIndex((i) => Math.max(i - 1, 0))
+                          : undefined
+                      }
+                      onHelp={
+                        stackIndex === 0
+                          ? () => setShowHelpModal(true)
+                          : undefined
+                      }
+                    />
+                  </div>
+                ))}
+            </div>
           ) : homeErrorMessage ? (
             <div className="mt-[96px] flex flex-col items-center px-6 text-center">
               <img
@@ -344,10 +446,7 @@ export default function HomePage() {
           title="도와주시겠습니까?"
           confirmText="도와주기"
           cancelText="취소"
-          onConfirm={() => {
-            setShowHelpModal(false)
-            navigate(`/cards/${nearbyCards[currentIndex].id}`)
-          }}
+          onConfirm={handleHelpRequest}
           onCancel={() => setShowHelpModal(false)}
         />
         {/* 삭제 가이드 */}

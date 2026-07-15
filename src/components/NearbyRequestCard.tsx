@@ -57,6 +57,7 @@ export default function NearbyRequestCard({
   return (
     <motion.section
       drag
+      dragDirectionLock
       dragConstraints={{ left: -140, right: 140, top: -120, bottom: 0 }}
       dragElastic={0}
       dragSnapToOrigin

@@ -40,6 +40,7 @@ export default function MyRequestCard({
   const [bumpCount, setBumpCount] = useState(request.retryCount ?? 0)
   const [isBumping, setIsBumping] = useState(false)
   const [lastRetriedAt, setLastRetriedAt] = useState<string | null>(null)
+  const isOpen = request.status === 'OPEN'
 
   useEffect(() => {
     setBumpCount(request.retryCount ?? 0)
@@ -50,7 +51,7 @@ export default function MyRequestCard({
   }, [request.id])
 
   const handleBump = async () => {
-    if (isBumping || bumpCount >= 3) return
+    if (!isOpen || isBumping || bumpCount >= 3) return
 
     setIsBumping(true)
 
@@ -65,6 +66,15 @@ export default function MyRequestCard({
       await onRetry()
     } catch (error) {
       console.error('재요청 실패:', error)
+
+      const status =
+        typeof error === 'object' && error !== null && 'status' in error
+          ? (error as { status?: number }).status
+          : undefined
+
+      if (status === 404 || status === 409) {
+        await onRetry()
+      }
     } finally {
       setIsBumping(false)
     }
@@ -92,14 +102,14 @@ export default function MyRequestCard({
 
   return (
     <motion.section
-      drag="y"
+      drag={isOpen ? 'y' : false}
       dragConstraints={{ top: -100, bottom: 0 }}
       dragElastic={0.15}
       onDragStart={onDragStart}
       onDragEnd={(_, info) => {
         onDragEnd()
 
-        if (info.offset.y < -120) {
+        if (isOpen && info.offset.y < -120) {
           onDelete()
         }
       }}
@@ -143,15 +153,15 @@ export default function MyRequestCard({
 
       <button
         type="button"
-        disabled={isBumping || bumpCount >= 3}
+        disabled={!isOpen || isBumping || bumpCount >= 3}
         onClick={handleBump}
         className={`mt-auto h-12 w-full rounded-full text-lg font-semibold transition ${
-          isBumping || bumpCount >= 3
+          !isOpen || isBumping || bumpCount >= 3
             ? 'cursor-not-allowed bg-[#D9D9D9] text-[#8C8C8C]'
             : 'bg-black text-white'
         }`}
       >
-        다시 요청하기 ({bumpCount}/3회)
+        {isOpen ? `다시 요청하기 (${bumpCount}/3회)` : '매칭 진행 중'}
       </button>
     </motion.section>
   )
