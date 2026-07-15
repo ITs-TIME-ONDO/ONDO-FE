@@ -120,23 +120,20 @@ export default function MyPage() {
         </div>
         {/* 로그아웃 확인 모달 */}
         {showLogoutModal && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div
-              className="flex flex-col items-center gap-[20px] rounded-[20px] bg-white px-[28px] pb-[24px] pt-[32px]"
-              style={{ boxShadow: '0px 0px 2.8px rgba(0,0,0,0.25)' }}
-            >
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-[1.6px]">
+            <div className="flex flex-col items-center justify-center gap-5 rounded-[20px] bg-white/90 px-7 pb-6 pt-8 shadow-[0_0_5.6px_rgba(0,0,0,0.20)]">
               <div className="text-center">
-                <p className="text-[20px] font-semibold leading-[1.7] text-black">
+                <p className="text-lg font-semibold leading-8 text-zinc-800">
                   로그아웃 하시겠습니까?
                 </p>
-                <p className="text-[14px] leading-[1.7] text-[#666]">
-                  로그인 화면으로 이동합니다
+                <p className="text-sm font-normal leading-6 text-[#555555]">
+                  로그인 화면으로 이동합니다.
                 </p>
               </div>
-              <div className="flex gap-[8px]">
+              <div className="flex gap-2">
                 <button
                   type="button"
-                  className="flex h-[44px] w-[108px] items-center justify-center rounded-full bg-[#f3f3f3] text-[16px] font-semibold text-[#666]"
+                  className="flex h-11 w-28 items-center justify-center rounded-full bg-stone-300/60 text-base font-normal leading-6 text-[#666666] disabled:opacity-50"
                   onClick={() => setShowLogoutModal(false)}
                   disabled={isLoggingOut}
                 >
@@ -144,7 +141,7 @@ export default function MyPage() {
                 </button>
                 <button
                   type="button"
-                  className="flex h-[44px] w-[107px] items-center justify-center rounded-full bg-[#ff9e1b] text-[16px] font-semibold text-white disabled:opacity-50"
+                  className="flex h-11 w-28 items-center justify-center rounded-full bg-amber-500 text-base font-semibold leading-6 text-white disabled:opacity-50"
                   onClick={handleLogout}
                   disabled={isLoggingOut}
                 >
