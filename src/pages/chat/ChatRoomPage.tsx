@@ -18,7 +18,7 @@ import {
 import { getAccessToken } from '../../utils/authStorage'
 import { getUserIdFromToken } from '../../utils/jwt'
 import { formatMessageTime } from '../../utils/date'
-import { useChatSocketStore } from '../../stores/chatSocketStore'
+import { useChatSocketStore, EMPTY_MESSAGES } from '../../stores/chatSocketStore'
 
 import menuIcon from '../../assets/chat_menu_icon.svg'
 import chatRoomChar from '../../assets/chat_room_char.png'
@@ -41,7 +41,7 @@ export default function ChatRoomPage() {
   const myUserId = accessToken ? getUserIdFromToken(accessToken) : null
 
   const messages = useChatSocketStore((state) =>
-    roomId ? (state.messagesByRoom[roomId] ?? []) : []
+    roomId ? (state.messagesByRoom[roomId] ?? EMPTY_MESSAGES) : EMPTY_MESSAGES
   )
   const connect = useChatSocketStore((state) => state.connect)
   const subscribeToRoom = useChatSocketStore((state) => state.subscribeToRoom)

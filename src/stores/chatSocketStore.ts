@@ -6,6 +6,10 @@ import type { ChatMessage, ChatMessageSendRequest, ChatReadEvent } from '../api/
 
 const WS_URL = 'ws://54.117.1.94/ws'
 
+// selector fallback용 고정 참조 — 매번 새 배열([])을 반환하면 useSyncExternalStore가
+// 스냅샷이 계속 바뀌었다고 판단해 무한 리렌더링(Maximum update depth exceeded)이 발생함
+export const EMPTY_MESSAGES: ChatMessage[] = []
+
 interface ChatSocketState {
   client: Client | null
   connected: boolean
