@@ -27,9 +27,14 @@ const loadKakaoMapSdk = (appKey: string): Promise<void> =>
 
     if (existingScript) {
       existingScript.addEventListener('load', initialize, { once: true })
-      existingScript.addEventListener('error', () => reject(new Error()), {
-        once: true,
-      })
+      existingScript.addEventListener(
+        'error',
+        () => {
+          existingScript.remove()
+          reject(new Error('Kakao Maps SDK load failed'))
+        },
+        { once: true }
+      )
       return
     }
 
@@ -37,7 +42,10 @@ const loadKakaoMapSdk = (appKey: string): Promise<void> =>
     script.dataset.kakaoMapSdk = 'true'
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`
     script.onload = initialize
-    script.onerror = () => reject(new Error('Kakao Maps SDK load failed'))
+    script.onerror = () => {
+      script.remove()
+      reject(new Error('Kakao Maps SDK load failed'))
+    }
     document.head.appendChild(script)
   })
 
