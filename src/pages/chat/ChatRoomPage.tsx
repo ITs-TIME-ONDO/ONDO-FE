@@ -38,6 +38,7 @@ export default function ChatRoomPage() {
   const [closedMessage, setClosedMessage] = useState<string | null>(null)
   const [showMenu, setShowMenu] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false)
 
   const [hasNext, setHasNext] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -187,8 +188,11 @@ export default function ChatRoomPage() {
           open={showMenu}
           onClose={() => setShowMenu(false)}
           options={[
-            // TODO: 알림 켜기/끄기 연동
-            { label: '알림 켜기', onClick: () => {} },
+            // TODO: 알림 켜기/끄기 서버 연동 (지금은 로컬 상태만 토글)
+            {
+              label: notificationsEnabled ? '알림 끄기' : '알림 켜기',
+              onClick: () => setNotificationsEnabled((prev) => !prev),
+            },
             { label: '신고하기', onClick: () => setShowReportModal(true) },
             { label: '채팅방 나가기', onClick: () => setShowLeaveModal(true) },
           ]}
