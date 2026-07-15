@@ -28,7 +28,10 @@ export default function ConfirmModal({
   const dialogRef = useRef<HTMLDivElement>(null)
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
   const onCancelRef = useRef(onCancel)
-  onCancelRef.current = onCancel
+
+  useEffect(() => {
+    onCancelRef.current = onCancel
+  }, [onCancel])
 
   useEffect(() => {
     if (!open) return
