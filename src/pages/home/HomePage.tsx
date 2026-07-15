@@ -14,7 +14,6 @@ import cryingChar from '../../assets/crying_char.png'
 import upFinger from '../../assets/up_finger.png'
 import sideFinger from '../../assets/side_finger.png'
 import { apiFetch } from '../../api/client'
-import { getUserProfile } from '../../api/user'
 
 const getHomeErrorMessage = (error: unknown): string => {
   const code =
@@ -34,7 +33,6 @@ const getHomeErrorMessage = (error: unknown): string => {
 }
 
 const MY_REQUEST_STORAGE_KEY = 'myRequest'
-const NEARBY_REQUEST_GUIDE_STORAGE_KEY = 'nearbyRequestGuideSeen'
 const getCardFromResponse = (response: any): any | null => {
   const card = response?.data?.card ?? response?.data ?? response?.card ?? response
 
@@ -147,6 +145,8 @@ export default function HomePage() {
     try {
       const res = await apiFetch<any>('/api/cards/my/active')
       const card = getCardFromResponse(res)
+      const activeCardData = res?.data ?? res
+      const hasCreatedCard = activeCardData?.hasCreatedCard
 
       if (!card || !card.id) {
         const savedMyRequest = getStoredMyRequest()
@@ -179,6 +179,12 @@ export default function HomePage() {
               ? 0
               : Math.min(prev, nextNearbyCards.length - 1)
           )
+          if (
+            nextNearbyCards.length > 0 &&
+            nearbyData?.hasSeenCardViewOnboarding === false
+          ) {
+            setNearbyGuideStep((prev) => prev ?? 'help')
+          }
           setHomeErrorMessage(null)
         } catch (error) {
           console.error('주변 요청 조회 실패:', error)
@@ -189,15 +195,15 @@ export default function HomePage() {
         return
       }
 
-      const profile = await getUserProfile().catch(() => null)
-
       saveStoredMyRequest(card)
       setMyRequest(card)
       setNearbyCards([])
-      setShowDeleteGuide(
-        Boolean(profile?.hasCreatedCard) &&
-          deleteGuideDismissedCardIdRef.current !== card.id
-      )
+      if (
+        hasCreatedCard === false &&
+        deleteGuideDismissedCardIdRef.current !== card.id
+      ) {
+        setShowDeleteGuide(true)
+      }
       setHomeErrorMessage(null)
     } catch (e) {
       console.error('홈 데이터 조회 실패:', e)
@@ -219,26 +225,12 @@ export default function HomePage() {
     return () => window.clearInterval(intervalId)
   }, [fetchHomeData])
 
-  useEffect(() => {
-    if (
-      myRequest ||
-      nearbyCards.length === 0 ||
-      showDeleteGuide ||
-      localStorage.getItem(NEARBY_REQUEST_GUIDE_STORAGE_KEY) === 'true'
-    ) {
-      return
-    }
-
-    setNearbyGuideStep((prev) => prev ?? 'help')
-  }, [myRequest, nearbyCards.length, showDeleteGuide])
-
   const handleNearbyGuideClick = () => {
     setNearbyGuideStep((step) => {
       if (step === 'help') {
         return 'swipe'
       }
 
-      localStorage.setItem(NEARBY_REQUEST_GUIDE_STORAGE_KEY, 'true')
       return null
     })
   }
@@ -247,7 +239,6 @@ export default function HomePage() {
 
     if (!cardId) {
       console.error('카드 ID 없음:', myRequest)
-      alert('카드 ID를 찾을 수 없습니다.')
       return
     }
 
@@ -266,7 +257,6 @@ export default function HomePage() {
       await fetchHomeData({ force: true })
     } catch (error) {
       console.error('카드 취소 실패:', error)
-      alert('카드 취소에 실패했습니다.')
     }
   }
   return (
@@ -289,7 +279,7 @@ export default function HomePage() {
             <MyRequestCard
               request={myRequest}
               onDelete={() => setShowDeleteModal(true)}
-              onRetry={fetchHomeData}
+              onRetry={() => fetchHomeData({ force: true })}
               onDragStart={() => {}}
               onDragEnd={() => {}}
             />

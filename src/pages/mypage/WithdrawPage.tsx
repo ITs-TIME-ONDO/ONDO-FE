@@ -27,7 +27,6 @@ export default function WithdrawPage() {
       navigate('/login', { replace: true })
     } catch (error) {
       console.error('회원 탈퇴 실패:', error)
-      alert('회원 탈퇴에 실패했습니다. 다시 시도해주세요.')
     } finally {
       setIsSubmitting(false)
     }

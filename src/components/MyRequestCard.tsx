@@ -39,10 +39,15 @@ export default function MyRequestCard({
 }: Props) {
   const [bumpCount, setBumpCount] = useState(request.retryCount ?? 0)
   const [isBumping, setIsBumping] = useState(false)
+  const [lastRetriedAt, setLastRetriedAt] = useState<string | null>(null)
 
   useEffect(() => {
     setBumpCount(request.retryCount ?? 0)
   }, [request.retryCount])
+
+  useEffect(() => {
+    setLastRetriedAt(null)
+  }, [request.id])
 
   const handleBump = async () => {
     if (isBumping || bumpCount >= 3) return
@@ -55,12 +60,11 @@ export default function MyRequestCard({
       })
 
       setBumpCount((prev) => prev + 1)
-      alert('요청이 다시 전송되었습니다.')
+      setLastRetriedAt(new Date().toISOString())
 
       await onRetry()
     } catch (error) {
       console.error('재요청 실패:', error)
-      alert('재요청에 실패했습니다.')
     } finally {
       setIsBumping(false)
     }
@@ -82,7 +86,9 @@ export default function MyRequestCard({
 
   const genderLabel =
     genderLabelMap[request.preferredGender] ?? request.preferredGender
-  const elapsedTime = formatElapsedTime(request.updatedAt || request.createdAt)
+  const elapsedTime = formatElapsedTime(
+    lastRetriedAt || request.updatedAt || request.createdAt
+  )
 
   return (
     <motion.section
