@@ -10,6 +10,7 @@ declare global {
 }
 
 const DEFAULT_POSITION = { latitude: 37.5665, longitude: 126.978 }
+let currentPositionRequest: Promise<GeolocationPosition> | null = null
 
 const loadKakaoMapSdk = (appKey: string): Promise<void> =>
   new Promise((resolve, reject) => {
@@ -40,14 +41,27 @@ const loadKakaoMapSdk = (appKey: string): Promise<void> =>
     document.head.appendChild(script)
   })
 
-const getCurrentPosition = (): Promise<GeolocationPosition> =>
-  new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 30000,
+const getCurrentPosition = (): Promise<GeolocationPosition> => {
+  if (!currentPositionRequest) {
+    currentPositionRequest = new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      })
     })
-  })
+
+    const clearRequest = () => {
+      window.setTimeout(() => {
+        currentPositionRequest = null
+      }, 1000)
+    }
+
+    currentPositionRequest.then(clearRequest, clearRequest)
+  }
+
+  return currentPositionRequest
+}
 
 export default function LocationPage() {
   const navigate = useNavigate()
@@ -76,6 +90,13 @@ export default function LocationPage() {
               longitude: position.coords.longitude,
             }
           : DEFAULT_POSITION
+
+        console.info('지도에 적용한 위치:', {
+          ...coordinates,
+          accuracy: position?.coords.accuracy ?? null,
+          source: position ? 'browser' : 'default',
+        })
+
         const center = new window.kakao.maps.LatLng(
           coordinates.latitude,
           coordinates.longitude
