@@ -101,6 +101,7 @@ export default function HomePage() {
   >(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
+  const [selectedHelpCardId, setSelectedHelpCardId] = useState<string | null>(null)
   const [isApplying, setIsApplying] = useState(false)
   const [homeErrorMessage, setHomeErrorMessage] = useState<string | null>(null)
   const isFetchingRef = useRef(false)
@@ -189,6 +190,7 @@ export default function HomePage() {
         setShowDeleteGuide(false)
         setShowDeleteModal(false)
         setShowHelpModal(false)
+        setSelectedHelpCardId(null)
         setNearbyGuideStep(null)
       }
       if (
@@ -223,6 +225,12 @@ export default function HomePage() {
 
     return () => window.clearInterval(intervalId)
   }, [fetchHomeData])
+
+  useEffect(() => {
+    setCurrentIndex((index) =>
+      Math.min(index, Math.max(nearbyCards.length - 1, 0))
+    )
+  }, [nearbyCards.length])
 
   useEffect(() => {
     if (
@@ -311,19 +319,11 @@ export default function HomePage() {
   }
 
   const removeNearbyCard = (cardId: string) => {
-    setNearbyCards((cards) => {
-      const nextCards = cards.filter((card) => card.id !== cardId)
-
-      setCurrentIndex((index) =>
-        Math.min(index, Math.max(nextCards.length - 1, 0))
-      )
-
-      return nextCards
-    })
+    setNearbyCards((cards) => cards.filter((card) => card.id !== cardId))
   }
 
   const handleHelpRequest = async () => {
-    const cardId = nearbyCards[currentIndex]?.id
+    const cardId = selectedHelpCardId
 
     if (!cardId || isApplying) return
 
@@ -336,6 +336,7 @@ export default function HomePage() {
 
       removeNearbyCard(cardId)
       setShowHelpModal(false)
+      setSelectedHelpCardId(null)
       await fetchHomeData({ force: true })
     } catch (error) {
       const status =
@@ -346,6 +347,7 @@ export default function HomePage() {
       if (status === 403 || status === 404 || status === 409) {
         removeNearbyCard(cardId)
         setShowHelpModal(false)
+        setSelectedHelpCardId(null)
         await fetchHomeData({ force: true })
       } else {
         console.error('도움 신청 실패:', error)
@@ -426,7 +428,10 @@ export default function HomePage() {
                       }
                       onHelp={
                         stackIndex === 0
-                          ? () => setShowHelpModal(true)
+                          ? () => {
+                              setSelectedHelpCardId(request.id)
+                              setShowHelpModal(true)
+                            }
                           : undefined
                       }
                     />
@@ -484,7 +489,10 @@ export default function HomePage() {
           confirmText="도와주기"
           cancelText="취소"
           onConfirm={handleHelpRequest}
-          onCancel={() => setShowHelpModal(false)}
+          onCancel={() => {
+            setShowHelpModal(false)
+            setSelectedHelpCardId(null)
+          }}
         />
         {/* 삭제 가이드 */}
         {showDeleteGuide && (
