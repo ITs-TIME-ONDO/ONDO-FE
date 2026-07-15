@@ -11,6 +11,7 @@ import logo from '../../assets/logo.png'
 import alertIcon from '../../assets/alert.png'
 import profileBtn from '../../assets/top_small_profile_btn.png'
 import cryingChar from '../../assets/crying_char.png'
+import matchingImage from '../../assets/matching.png'
 import upFinger from '../../assets/up_finger.png'
 import sideFinger from '../../assets/side_finger.png'
 import { apiFetch } from '../../api/client'
@@ -172,7 +173,14 @@ export default function HomePage() {
       setMyRequest(card)
       setNearbyCards([])
       setNextCursor(null)
+      if (card.status === 'MATCHED') {
+        setShowDeleteGuide(false)
+        setShowDeleteModal(false)
+        setShowHelpModal(false)
+        setNearbyGuideStep(null)
+      }
       if (
+        card.status === 'OPEN' &&
         hasCreatedCard === false &&
         deleteGuideDismissedCardIdRef.current !== card.id
       ) {
@@ -345,7 +353,19 @@ export default function HomePage() {
         </header>
 
         <main className="absolute left-0 top-[171px] flex w-full flex-col items-center">
-          {myRequest ? (
+          {myRequest?.status === 'MATCHED' ? (
+            <div className="relative h-[508px] w-full" aria-live="polite">
+              <img
+                src={matchingImage}
+                alt="매칭 완료"
+                className="absolute left-1/2 top-[43px] h-[293px] w-[236px] -translate-x-1/2 object-contain"
+              />
+
+              <p className="absolute left-1/2 top-[307px] -translate-x-1/2 text-center text-lg font-normal leading-6 text-black">
+                매칭완료!
+              </p>
+            </div>
+          ) : myRequest ? (
             <MyRequestCard
               request={myRequest}
               onDelete={() => setShowDeleteModal(true)}
