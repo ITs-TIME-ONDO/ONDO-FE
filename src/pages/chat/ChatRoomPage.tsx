@@ -83,6 +83,18 @@ export default function ChatRoomPage() {
     onRoomRead,
   ])
 
+  // 서버가 발행하는 ROOM_CLOSED 시스템 메시지 수신 시 방 종료 처리
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1]
+    if (lastMessage?.messageType !== 'ROOM_CLOSED') return
+
+    setClosedMessage(
+      lastMessage.senderId === myUserId
+        ? '채팅방을 나갔습니다.'
+        : '상대방이 채팅을 종료했습니다.'
+    )
+  }, [messages, myUserId])
+
   const loadMoreMessages = () => {
     if (!roomId || !hasNext || !nextCursor || loadingMore) return
 
