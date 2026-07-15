@@ -9,10 +9,11 @@ import ChatRoomInputBar from './ChatRoomInputBar'
 import ChatRoomMenuDropdown from './ChatRoomMenuDropdown'
 import ReportModal from './ReportModal'
 import { mockChatRooms } from './chatMockData'
-import { getChatMessages, type ChatMessage } from '../../api/chat'
+import { getChatMessages } from '../../api/chat'
 import { getAccessToken } from '../../utils/authStorage'
 import { getUserIdFromToken } from '../../utils/jwt'
 import { formatMessageTime } from '../../utils/date'
+import { useChatSocketStore } from '../../stores/chatSocketStore'
 
 import menuIcon from '../../assets/chat_menu_icon.svg'
 import chatRoomChar from '../../assets/chat_room_char.png'
@@ -26,7 +27,6 @@ export default function ChatRoomPage() {
   const [showMenu, setShowMenu] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
 
-  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [hasNext, setHasNext] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -35,17 +35,34 @@ export default function ChatRoomPage() {
   const accessToken = getAccessToken()
   const myUserId = accessToken ? getUserIdFromToken(accessToken) : null
 
+  const messages = useChatSocketStore((state) =>
+    roomId ? (state.messagesByRoom[roomId] ?? []) : []
+  )
+  const connect = useChatSocketStore((state) => state.connect)
+  const subscribeToRoom = useChatSocketStore((state) => state.subscribeToRoom)
+  const unsubscribeFromRoom = useChatSocketStore((state) => state.unsubscribeFromRoom)
+  const setRoomMessages = useChatSocketStore((state) => state.setRoomMessages)
+  const prependRoomMessages = useChatSocketStore((state) => state.prependRoomMessages)
+
   useEffect(() => {
     if (!roomId) return
 
+    // 소켓 연결은 앱 전체 1개만 유지 (이미 연결돼 있으면 no-op)
+    connect()
+    subscribeToRoom(roomId)
+
     getChatMessages(roomId, { size: 30 })
       .then((res) => {
-        setMessages([...res.data.messages].reverse())
+        setRoomMessages(roomId, [...res.data.messages].reverse())
         setHasNext(res.data.hasNext)
         setNextCursor(res.data.nextCursor)
       })
       .catch((error) => console.error('메시지 목록 조회 실패', error))
-  }, [roomId])
+
+    return () => {
+      unsubscribeFromRoom(roomId)
+    }
+  }, [roomId, connect, subscribeToRoom, unsubscribeFromRoom, setRoomMessages])
 
   const loadMoreMessages = () => {
     if (!roomId || !hasNext || !nextCursor || loadingMore) return
@@ -53,7 +70,7 @@ export default function ChatRoomPage() {
     setLoadingMore(true)
     getChatMessages(roomId, { before: nextCursor, size: 30 })
       .then((res) => {
-        setMessages((prev) => [...[...res.data.messages].reverse(), ...prev])
+        prependRoomMessages(roomId, [...res.data.messages].reverse())
         setHasNext(res.data.hasNext)
         setNextCursor(res.data.nextCursor)
       })

@@ -6,6 +6,7 @@ import ChatHeader from './ChatHeader'
 import ChatEmptyState from './ChatEmptyState'
 import ChatRoomList from './ChatRoomList'
 import { useChatRoomStore } from '../../stores/chatRoomStore'
+import { useChatSocketStore } from '../../stores/chatSocketStore'
 
 const ROOM_LIST_BACKGROUND =
   'linear-gradient(180deg, #FFF 66.83%, rgba(255, 233, 204, 0.50) 86.87%, #FF9200 100%), #FFF'
@@ -13,10 +14,13 @@ const ROOM_LIST_BACKGROUND =
 export default function ChatPage() {
   const rooms = useChatRoomStore((state) => state.rooms)
   const fetchRooms = useChatRoomStore((state) => state.fetchRooms)
+  const connect = useChatSocketStore((state) => state.connect)
 
   useEffect(() => {
     fetchRooms()
-  }, [fetchRooms])
+    // 앱 전체 1개만 유지되는 소켓 연결 — 이미 연결돼 있으면 no-op
+    connect()
+  }, [fetchRooms, connect])
 
   const hasChatRooms = rooms.length > 0
 
