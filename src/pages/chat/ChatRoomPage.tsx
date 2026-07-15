@@ -10,10 +10,12 @@ import ChatRoomMenuDropdown from './ChatRoomMenuDropdown'
 import ReportModal from './ReportModal'
 import { mockChatRooms } from './chatMockData'
 import {
+  getChatRoom,
   getChatMessages,
   markRoomAsRead,
   sendChatMessage,
   closeChatRoom,
+  type ChatRoomSummary,
 } from '../../api/chat'
 import { getAccessToken } from '../../utils/authStorage'
 import { getUserIdFromToken } from '../../utils/jwt'
@@ -23,9 +25,14 @@ import { useChatSocketStore, EMPTY_MESSAGES } from '../../stores/chatSocketStore
 import menuIcon from '../../assets/chat_menu_icon.svg'
 import chatRoomChar from '../../assets/chat_room_char.png'
 
+// category/distanceMeters/matchedDate는 아직 API에 없는 필드라 목데이터로 임시 표시
+// (실제 필드 추가되면 room 데이터로 교체 필요)
+const mockRoomInfo = mockChatRooms[0]
+
 export default function ChatRoomPage() {
   const { roomId } = useParams<{ roomId: string }>()
-  const room = mockChatRooms.find((r) => r.id === roomId)
+  const [room, setRoom] = useState<ChatRoomSummary | null>(null)
+  const [roomNotFound, setRoomNotFound] = useState(false)
   const [showCompleteModal, setShowCompleteModal] = useState(false)
   const [showLeaveModal, setShowLeaveModal] = useState(false)
   const [closedMessage, setClosedMessage] = useState<string | null>(null)
@@ -52,6 +59,17 @@ export default function ChatRoomPage() {
   const onRoomRead = useChatSocketStore((state) => state.onRoomRead)
   const sendSocketMessage = useChatSocketStore((state) => state.sendMessage)
   const appendRoomMessage = useChatSocketStore((state) => state.appendRoomMessage)
+
+  useEffect(() => {
+    if (!roomId) return
+
+    getChatRoom(roomId)
+      .then((res) => setRoom(res.data))
+      .catch((error) => {
+        console.error('채팅방 조회 실패', error)
+        setRoomNotFound(true)
+      })
+  }, [roomId])
 
   useEffect(() => {
     if (!roomId) return
@@ -134,7 +152,7 @@ export default function ChatRoomPage() {
     }
   }
 
-  if (!room) {
+  if (roomNotFound) {
     return (
       <PageTransition>
         <div className="relative mx-auto flex h-[844px] w-[390px] flex-col items-center justify-center bg-white">
@@ -144,11 +162,19 @@ export default function ChatRoomPage() {
     )
   }
 
+  if (!room) {
+    return (
+      <PageTransition>
+        <div className="relative mx-auto h-[844px] w-[390px] bg-white" />
+      </PageTransition>
+    )
+  }
+
   return (
     <PageTransition>
       <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-white">
         <PageHeader
-          title={room.nickname}
+          title={room.opponentNickname ?? '알 수 없음'}
           fallbackPath="/chat"
           rightAction={
             <button type="button" onClick={() => setShowMenu((prev) => !prev)}>
@@ -176,10 +202,10 @@ export default function ChatRoomPage() {
         >
           <div>
             <p className="text-[18px] font-semibold text-black">
-              {room.category}
+              {mockRoomInfo.category}
             </p>
             <p className="mt-[10px] text-sm font-light text-[#343434]">
-              나와 {room.distanceMeters}m 떨어져 있음
+              나와 {mockRoomInfo.distanceMeters}m 떨어져 있음
             </p>
           </div>
 
@@ -203,7 +229,7 @@ export default function ChatRoomPage() {
           onScroll={handleScroll}
           className="absolute inset-x-0 top-[265px] bottom-[90px] overflow-y-auto"
         >
-          <p className="text-center text-xs text-[#666]">{room.matchedDate}</p>
+          <p className="text-center text-xs text-[#666]">{mockRoomInfo.matchedDate}</p>
 
           <div className="mt-6 flex flex-col gap-6">
             {messages.map((msg) => {

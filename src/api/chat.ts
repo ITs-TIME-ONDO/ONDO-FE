@@ -103,6 +103,11 @@ export function getChatRooms(
   )
 }
 
+// 참여자 아니면 403 FORBIDDEN
+export function getChatRoom(roomId: string): Promise<ApiResponse<ChatRoomSummary>> {
+  return apiFetch<ApiResponse<ChatRoomSummary>>(`/api/chat/rooms/${roomId}`)
+}
+
 export interface ChatMessageListParams {
   before?: string
   size?: number
