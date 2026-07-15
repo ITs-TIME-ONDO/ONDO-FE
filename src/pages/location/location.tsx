@@ -99,12 +99,6 @@ export default function LocationPage() {
             }
           : DEFAULT_POSITION
 
-        console.info('지도에 적용한 위치:', {
-          ...coordinates,
-          accuracy: position?.coords.accuracy ?? null,
-          source: position ? 'browser' : 'default',
-        })
-
         const center = new window.kakao.maps.LatLng(
           coordinates.latitude,
           coordinates.longitude
