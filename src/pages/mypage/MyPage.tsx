@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import PageHeader from '../../components/PageHeader'
+import ConfirmModal from '../../components/ConfirmModal'
 import profileChar from '../../assets/profile_char.svg'
 import { DEFAULT_NICKNAME } from '../../constants/user'
 import { getUserProfile, type UserProfile } from '../../api/user'
@@ -119,38 +120,17 @@ export default function MyPage() {
           </button>
         </div>
         {/* 로그아웃 확인 모달 */}
-        {showLogoutModal && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-[1.6px]">
-            <div className="flex flex-col items-center justify-center gap-5 rounded-[20px] bg-white/90 px-7 pb-6 pt-8 shadow-[0_0_5.6px_rgba(0,0,0,0.20)]">
-              <div className="text-center">
-                <p className="text-lg font-semibold leading-8 text-zinc-800">
-                  로그아웃 하시겠습니까?
-                </p>
-                <p className="text-sm font-normal leading-6 text-[#555555]">
-                  로그인 화면으로 이동합니다.
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="flex h-11 w-28 items-center justify-center rounded-full bg-stone-300/60 text-base font-normal leading-6 text-[#666666] disabled:opacity-50"
-                  onClick={() => setShowLogoutModal(false)}
-                  disabled={isLoggingOut}
-                >
-                  취소
-                </button>
-                <button
-                  type="button"
-                  className="flex h-11 w-28 items-center justify-center rounded-full bg-amber-500 text-base font-semibold leading-6 text-white disabled:opacity-50"
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                >
-                  {isLoggingOut ? '처리 중...' : '확인'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <ConfirmModal
+          open={showLogoutModal}
+          title="로그아웃 하시겠습니까?"
+          description="로그인 화면으로 이동합니다."
+          confirmText={isLoggingOut ? '처리 중...' : '확인'}
+          disabled={isLoggingOut}
+          onConfirm={handleLogout}
+          onCancel={() => {
+            if (!isLoggingOut) setShowLogoutModal(false)
+          }}
+        />
       </div>
     </PageTransition>
   )
