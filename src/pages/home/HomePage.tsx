@@ -88,6 +88,40 @@ const saveStoredMyRequest = (card: any) => {
   )
 }
 
+const saveStoredMatchedHelp = (card: any) => {
+  const accessToken = localStorage.getItem('accessToken')
+
+  if (!card?.id || !accessToken) return
+
+  localStorage.setItem(
+    MY_REQUEST_STORAGE_KEY,
+    JSON.stringify({ accessToken, card, role: 'helper' })
+  )
+}
+
+const getStoredMatchedHelp = (): any | null => {
+  const accessToken = localStorage.getItem('accessToken')
+  const storedRequest = localStorage.getItem(MY_REQUEST_STORAGE_KEY)
+
+  if (!accessToken || !storedRequest) return null
+
+  try {
+    const parsedRequest = JSON.parse(storedRequest)
+
+    if (
+      parsedRequest?.accessToken !== accessToken ||
+      parsedRequest?.role !== 'helper' ||
+      !parsedRequest?.card?.id
+    ) {
+      return null
+    }
+
+    return parsedRequest.card
+  } catch {
+    return null
+  }
+}
+
 export default function HomePage() {
   const navigate = useNavigate()
 
@@ -108,6 +142,7 @@ export default function HomePage() {
   const fetchGenerationRef = useRef(0)
   const isLoadingMoreRef = useRef(false)
   const positionRef = useRef<GeolocationPosition | null>(null)
+  const selectedHelpCardRef = useRef<any | null>(null)
   const deleteGuideDismissedCardIdRef = useRef<string | null>(null)
 
   const getCurrentPosition = (): Promise<GeolocationPosition> => {
@@ -135,6 +170,31 @@ export default function HomePage() {
       const hasCreatedCard = activeCardData?.hasCreatedCard
 
       if (!card || !card.id) {
+        const storedMatchedHelp = getStoredMatchedHelp()
+
+        if (storedMatchedHelp) {
+          const matchedCardRes = await apiFetch<any>(
+            `/api/cards/${storedMatchedHelp.id}`
+          )
+          if (!isLatestFetch()) return
+
+          const matchedCard = getCardFromResponse(matchedCardRes)
+
+          if (matchedCard?.status === 'MATCHED') {
+            saveStoredMatchedHelp(matchedCard)
+            setMyRequest(matchedCard)
+            setNearbyCards([])
+            setNextCursor(null)
+            setShowDeleteGuide(false)
+            setShowDeleteModal(false)
+            setShowHelpModal(false)
+            setSelectedHelpCardId(null)
+            setNearbyGuideStep(null)
+            setHomeErrorMessage(null)
+            return
+          }
+        }
+
         localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
         setMyRequest(null)
         setShowDeleteGuide(false)
@@ -334,9 +394,19 @@ export default function HomePage() {
         method: 'POST',
       })
 
-      removeNearbyCard(cardId)
+      const matchedCard = {
+        ...selectedHelpCardRef.current,
+        id: cardId,
+        status: 'MATCHED',
+      }
+
+      saveStoredMatchedHelp(matchedCard)
+      setMyRequest(matchedCard)
+      setNearbyCards([])
+      setNextCursor(null)
       setShowHelpModal(false)
       setSelectedHelpCardId(null)
+      selectedHelpCardRef.current = null
       await fetchHomeData({ force: true })
     } catch (error) {
       const status =
@@ -348,6 +418,7 @@ export default function HomePage() {
         removeNearbyCard(cardId)
         setShowHelpModal(false)
         setSelectedHelpCardId(null)
+        selectedHelpCardRef.current = null
         await fetchHomeData({ force: true })
       } else {
         console.error('도움 신청 실패:', error)
@@ -429,6 +500,7 @@ export default function HomePage() {
                       onHelp={
                         stackIndex === 0
                           ? () => {
+                              selectedHelpCardRef.current = request
                               setSelectedHelpCardId(request.id)
                               setShowHelpModal(true)
                             }
@@ -492,6 +564,7 @@ export default function HomePage() {
           onCancel={() => {
             setShowHelpModal(false)
             setSelectedHelpCardId(null)
+            selectedHelpCardRef.current = null
           }}
         />
         {/* 삭제 가이드 */}
