@@ -1,3 +1,8 @@
+export function formatMatchedDate(iso: string): string {
+  const date = new Date(iso)
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`
+}
+
 export function formatMessageTime(iso: string): string {
   const date = new Date(iso)
   const hours = date.getHours()

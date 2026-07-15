@@ -19,7 +19,7 @@ import {
 } from '../../api/chat'
 import { getAccessToken } from '../../utils/authStorage'
 import { getUserIdFromToken } from '../../utils/jwt'
-import { formatMessageTime } from '../../utils/date'
+import { formatMessageTime, formatMatchedDate } from '../../utils/date'
 import { useChatSocketStore, EMPTY_MESSAGES } from '../../stores/chatSocketStore'
 
 import menuIcon from '../../assets/chat_menu_icon.svg'
@@ -229,7 +229,7 @@ export default function ChatRoomPage() {
           onScroll={handleScroll}
           className="absolute inset-x-0 top-[265px] bottom-[90px] overflow-y-auto"
         >
-          <p className="text-center text-xs text-[#666]">{mockRoomInfo.matchedDate}</p>
+          <p className="text-center text-xs text-[#666]">{formatMatchedDate(room.createdAt)}</p>
 
           <div className="mt-6 flex flex-col gap-6">
             {messages.map((msg) => {
