@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 
 import ChatRoomListItem from '../../components/ChatRoomListItem'
-import type { ChatRoomSummary } from './chatMockData'
+import type { ChatRoomSummary } from '../../api/chat'
 
 type Props = {
   rooms: ChatRoomSummary[]
@@ -15,10 +15,11 @@ export default function ChatRoomList({ rooms }: Props) {
       {rooms.map((room) => (
         <ChatRoomListItem
           key={room.id}
-          nickname={room.nickname}
-          message={room.message}
-          time={room.time}
-          unread={room.unread}
+          nickname={room.opponentNickname ?? '알 수 없음'}
+          message={room.lastMessage ?? '대화를 시작해보세요'}
+          time=""
+          unread={room.unreadCount > 0}
+          profileImageUrl={room.opponentProfileImageUrl ?? undefined}
           onClick={() => navigate(`/chat/${room.id}`)}
         />
       ))}

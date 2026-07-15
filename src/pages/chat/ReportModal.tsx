@@ -1,30 +1,71 @@
 import { useEffect, useState } from 'react'
 
 import arrowIcon from '../../assets/chat_report_arrow.svg'
+import { createReport, type ReportReason } from '../../api/reports'
+import { ApiError } from '../../api/client'
 
-const REPORT_REASONS = ['욕설/인신공격', '음란성/선정성', '개인정보 노출']
+// reports.md엔 'HARASSMENT'(욕설/인신공격) 예시만 있음. 나머지 두 값은 추정 작성 — 백엔드 확인 필요
+const REASON_CODE_MAP: Record<string, ReportReason> = {
+  '욕설/인신공격': 'HARASSMENT',
+  '음란성/선정성': 'OBSCENE_CONTENT',
+  '개인정보 노출': 'PRIVACY_VIOLATION',
+}
+const REPORT_REASONS = Object.keys(REASON_CODE_MAP)
 
 type Props = {
   open: boolean
   onClose: () => void
+  reportedUserId: string | null
+  onSuccess: () => void
 }
 
-export default function ReportModal({ open, onClose }: Props) {
+export default function ReportModal({
+  open,
+  onClose,
+  reportedUserId,
+  onSuccess,
+}: Props) {
   const [reason, setReason] = useState<string | null>(null)
   const [description, setDescription] = useState('')
   const [isReasonOpen, setIsReasonOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (open) {
       setReason(null)
       setDescription('')
       setIsReasonOpen(false)
+      setSubmitting(false)
     }
   }, [open])
 
   if (!open) return null
 
   const isValid = Boolean(reason) && description.trim().length > 0
+
+  const handleSubmit = () => {
+    if (!isValid || !reason || !reportedUserId || submitting) return
+
+    setSubmitting(true)
+    createReport({
+      reportedUserId,
+      reason: REASON_CODE_MAP[reason],
+      description: description.trim(),
+    })
+      .then(() => {
+        onSuccess()
+        onClose()
+      })
+      .catch((error) => {
+        if (error instanceof ApiError && error.status === 409) {
+          alert('이미 신고한 사용자입니다.')
+        } else {
+          console.error('신고 접수 실패', error)
+          alert('신고 접수에 실패했습니다. 다시 시도해주세요.')
+        }
+      })
+      .finally(() => setSubmitting(false))
+  }
 
   return (
     <>
@@ -97,16 +138,18 @@ export default function ReportModal({ open, onClose }: Props) {
           </div>
         </div>
 
-        {/* TODO: 신고 접수 API 연동 전까지는 클릭해도 아무 동작도 하지 않음 */}
         <button
           type="button"
-          disabled={!isValid}
+          disabled={!isValid || !reportedUserId || submitting}
+          onClick={handleSubmit}
           className={
             'flex h-[50px] w-full items-center justify-center rounded-full text-xl font-bold text-white ' +
-            (isValid ? 'bg-[#FF9E1B]' : 'bg-[#FF9E1B]/50')
+            (isValid && reportedUserId && !submitting
+              ? 'bg-[#FF9E1B]'
+              : 'bg-[#FF9E1B]/50')
           }
         >
-          신고하기
+          {submitting ? '접수 중...' : '신고하기'}
         </button>
       </div>
     </>
