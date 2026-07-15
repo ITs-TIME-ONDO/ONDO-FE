@@ -34,6 +34,7 @@ const getHomeErrorMessage = (error: unknown): string => {
 }
 
 const MY_REQUEST_STORAGE_KEY = 'myRequest'
+const NEARBY_GUIDE_SEEN_STORAGE_KEY = 'hasSeenNearbyCardGuide'
 const getCardFromResponse = (response: any): any | null => {
   const card = response?.data?.card ?? response?.data ?? response?.card ?? response
 
@@ -162,7 +163,8 @@ export default function HomePage() {
           )
           if (
             nextNearbyCards.length > 0 &&
-            nearbyData?.hasSeenCardViewOnboarding === false
+            nearbyData?.hasSeenCardViewOnboarding === false &&
+            sessionStorage.getItem(NEARBY_GUIDE_SEEN_STORAGE_KEY) !== 'true'
           ) {
             setNearbyGuideStep((prev) => prev ?? 'help')
           }
@@ -267,6 +269,7 @@ export default function HomePage() {
         return 'swipe'
       }
 
+      sessionStorage.setItem(NEARBY_GUIDE_SEEN_STORAGE_KEY, 'true')
       return null
     })
   }
