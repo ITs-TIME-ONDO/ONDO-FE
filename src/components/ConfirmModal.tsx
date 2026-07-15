@@ -4,6 +4,7 @@ type Props = {
   description?: string
   confirmText?: string
   cancelText?: string
+  mutedConfirm?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
@@ -14,19 +15,19 @@ export default function ConfirmModal({
   description,
   confirmText = '확인',
   cancelText = '취소',
+  mutedConfirm = false,
   onConfirm,
   onCancel,
 }: Props) {
   if (!open) return null
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/25">
       <div
-        className="flex flex-col items-center gap-[20px] rounded-[20px] bg-white px-[28px] pb-[24px] pt-[32px]"
-        style={{ boxShadow: '0px 0px 2.8px rgba(0,0,0,0.25)' }}
+        className="flex flex-col items-center justify-center gap-5 rounded-[20px] bg-white/90 px-7 pb-6 pt-8 shadow-[0_0_5.6px_rgba(0,0,0,0.20)]"
       >
         <div className="text-center">
-          <p className="text-[20px] font-semibold leading-[1.7] text-black">
+          <p className="text-lg font-semibold leading-7 text-zinc-800">
             {title}
           </p>
 
@@ -37,11 +38,11 @@ export default function ConfirmModal({
           )}
         </div>
 
-        <div className="flex gap-[8px]">
+        <div className="flex gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="flex h-[44px] w-[108px] items-center justify-center rounded-full bg-[#f3f3f3] text-[16px] font-semibold text-[#666]"
+            className="flex h-11 w-28 items-center justify-center rounded-full bg-stone-300/60 text-base font-normal leading-6 text-[#666]"
           >
             {cancelText}
           </button>
@@ -49,7 +50,9 @@ export default function ConfirmModal({
           <button
             type="button"
             onClick={onConfirm}
-            className="flex h-[44px] w-[107px] items-center justify-center rounded-full bg-[#ff9e1b] text-[16px] font-semibold text-white"
+            className={`flex h-11 w-28 items-center justify-center rounded-full text-base font-semibold leading-6 text-white ${
+              mutedConfirm ? 'bg-amber-500/80' : 'bg-amber-500'
+            }`}
           >
             {confirmText}
           </button>

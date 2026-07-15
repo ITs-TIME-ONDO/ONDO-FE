@@ -329,9 +329,10 @@ export default function HomePage() {
 
         <ConfirmModal
           open={showDeleteModal}
-          title="요청을 삭제하시겠습니까?"
+          title="요청을 취소하시겠습니까?"
           confirmText="삭제"
           cancelText="취소"
+          mutedConfirm
           onConfirm={handleDeleteRequest}
           onCancel={() => setShowDeleteModal(false)}
         />
