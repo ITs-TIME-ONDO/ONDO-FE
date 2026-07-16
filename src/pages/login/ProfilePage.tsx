@@ -9,7 +9,6 @@ import { postUserProfile } from '../../api/user'
 export default function ProfilePage() {
   const navigate = useNavigate()
   const [nickname, setNickname] = useState('')
-  const [profileImage, setProfileImage] = useState<string | null>(null)
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -32,10 +31,7 @@ export default function ProfilePage() {
         <ProfileImagePicker
           defaultImage={profileChar}
           className="top-[261px]"
-          onChange={(file, previewUrl) => {
-            setProfileImageFile(file)
-            setProfileImage(previewUrl)
-          }}
+          onChange={(file) => setProfileImageFile(file)}
         />
 
         {/* 닉네임 입력 */}
@@ -58,11 +54,6 @@ export default function ProfilePage() {
               })
 
               localStorage.setItem('nickname', nickname)
-              if (profileImage) {
-                localStorage.setItem('profileImage', profileImage)
-              } else {
-                localStorage.removeItem('profileImage')
-              }
               navigate('/terms')
             } catch (error) {
               console.error('프로필 저장 실패:', error)

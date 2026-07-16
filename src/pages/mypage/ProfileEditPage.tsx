@@ -83,11 +83,6 @@ export default function ProfileEditPage() {
               })
 
               localStorage.setItem('nickname', trimmedNickname)
-              if (profileImage) {
-                localStorage.setItem('profileImage', profileImage)
-              } else {
-                localStorage.removeItem('profileImage')
-              }
               navigate('/mypage', { replace: true })
             } catch (error) {
               console.error('프로필 저장 실패:', error)
