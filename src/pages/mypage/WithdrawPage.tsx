@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import PageHeader from '../../components/PageHeader'
 import checkBox from '../../assets/check_box.svg'
 import { DEFAULT_NICKNAME } from '../../constants/user'
-import { deleteUser } from '../../api/user'
+import { deleteUser, getUserProfile, type UserProfile } from '../../api/user'
 
 const ITEMS = [
   '모든 매칭 내용과 채팅 기록은 즉시 삭제됩니다.',
@@ -14,8 +14,19 @@ const ITEMS = [
 
 export default function WithdrawPage() {
   const navigate = useNavigate()
-  const nickname = localStorage.getItem('nickname') ?? DEFAULT_NICKNAME
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    getUserProfile()
+      .then(setProfile)
+      .catch((error) => {
+        console.error('프로필 조회 실패:', error)
+      })
+  }, [])
+
+  const nickname =
+    profile?.nickname ?? localStorage.getItem('nickname') ?? DEFAULT_NICKNAME
 
   const handleWithdraw = async () => {
     if (isSubmitting) return

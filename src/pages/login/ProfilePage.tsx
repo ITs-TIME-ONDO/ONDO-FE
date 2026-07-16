@@ -10,6 +10,7 @@ export default function ProfilePage() {
   const navigate = useNavigate()
   const [nickname, setNickname] = useState('')
   const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   return (
@@ -31,7 +32,10 @@ export default function ProfilePage() {
         <ProfileImagePicker
           defaultImage={profileChar}
           className="top-[261px]"
-          onChange={setProfileImage}
+          onChange={(file, previewUrl) => {
+            setProfileImageFile(file)
+            setProfileImage(previewUrl)
+          }}
         />
 
         {/* 닉네임 입력 */}
@@ -50,7 +54,7 @@ export default function ProfilePage() {
 
               await postUserProfile({
                 nickname: nickname.trim(),
-                profileImageUrl: profileImage ?? '',
+                profileImage: profileImageFile,
               })
 
               localStorage.setItem('nickname', nickname)

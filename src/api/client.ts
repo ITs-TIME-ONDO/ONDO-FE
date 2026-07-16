@@ -26,11 +26,13 @@ export async function apiFetch<T>(
   const validAccessToken =
     accessToken && accessToken !== 'undefined' && accessToken !== 'null'
 
+  const isFormData = options.body instanceof FormData
+
   const res = await fetch(`${BASE_URL}${path}`, {
     credentials: 'include',
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(validAccessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...options.headers,
     },

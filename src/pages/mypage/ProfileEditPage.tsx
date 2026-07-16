@@ -16,6 +16,7 @@ export default function ProfileEditPage() {
   const [profileImage, setProfileImage] = useState<string | null>(() =>
     localStorage.getItem('profileImage')
   )
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const hasEditedRef = useRef(false)
 
@@ -36,9 +37,10 @@ export default function ProfileEditPage() {
     setNickname(value)
   }
 
-  const handleProfileImageChange = (value: string | null) => {
+  const handleProfileImageChange = (file: File, previewUrl: string) => {
     hasEditedRef.current = true
-    setProfileImage(value)
+    setProfileImageFile(file)
+    setProfileImage(previewUrl)
   }
 
   return (
@@ -77,7 +79,7 @@ export default function ProfileEditPage() {
 
               await putUserProfile({
                 nickname: trimmedNickname,
-                profileImageUrl: profileImage ?? '',
+                profileImage: profileImageFile,
               })
 
               localStorage.setItem('nickname', trimmedNickname)

@@ -5,7 +5,7 @@ interface ProfileImagePickerProps {
   defaultImage: string
   className?: string
   initialValue?: string | null
-  onChange?: (base64: string) => void
+  onChange?: (file: File, previewUrl: string) => void
 }
 
 export default function ProfileImagePicker({
@@ -25,7 +25,7 @@ export default function ProfileImagePicker({
     reader.onload = () => {
       const base64 = reader.result as string
       setImageUrl(base64)
-      onChange?.(base64)
+      onChange?.(file, base64)
     }
     reader.readAsDataURL(file)
   }
