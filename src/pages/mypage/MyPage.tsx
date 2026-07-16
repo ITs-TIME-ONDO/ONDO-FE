@@ -51,7 +51,7 @@ export default function MyPage() {
     <PageTransition>
       <div className="relative h-[844px] w-[390px] overflow-hidden bg-white">
         {/* 주황 배경 */}
-        <div className="absolute left-0 top-[89px] h-[299px] w-full bg-[#FF9E1B]/30" />
+        <div className="absolute left-0 top-0 h-[388px] w-full bg-[#FF9E1B]/20" />
 
         {/* 헤더 */}
         <PageHeader title="마이페이지" />
@@ -83,19 +83,19 @@ export default function MyPage() {
 
         {/* 활동 통계 카드 */}
         <div
-          className="absolute left-[27px] top-[342px] flex h-[90px] w-[339px] items-center justify-center gap-[58px] rounded-[10px] bg-white px-[50px] py-[20px]"
+          className="absolute left-[27px] top-[342px] flex h-[108px] w-[339px] items-center justify-center gap-[58px] rounded-[10px] bg-white px-[50px] py-[20px]"
           style={{ boxShadow: '0px 2px 3px rgba(0,0,0,0.2)' }}
         >
           <div className="flex flex-col items-center gap-[8px]">
             <p className="text-[12px] font-medium text-black">도움 요청</p>
-            <p className="text-[36px] font-bold leading-none text-black">
+            <p className="text-[36px] font-bold leading-none text-[#FF9E1B]">
               {helpRequestCount}
             </p>
           </div>
           <div className="h-[50px] w-px bg-[#e0e0e0]" />
           <div className="flex flex-col items-center gap-[8px]">
             <p className="text-[12px] font-medium text-black">도움 응답</p>
-            <p className="text-[36px] font-bold leading-none text-black">
+            <p className="text-[36px] font-bold leading-none text-[#FF9E1B]">
               {helpCount}
             </p>
           </div>

@@ -318,6 +318,11 @@ export default function ChatRoomPage() {
                     message={msg.content ?? ''}
                     time={formatMessageTime(msg.sentAt)}
                     nickname={sender === 'partner' ? msg.senderNickname : undefined}
+                    profileImageUrl={
+                      sender === 'partner'
+                        ? (room.opponentProfileImageUrl ?? undefined)
+                        : undefined
+                    }
                   />
                 )
               })}

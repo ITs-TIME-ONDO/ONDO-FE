@@ -17,16 +17,18 @@ export default function MyPageHeader({
 }: MyPageHeaderProps) {
   const navigate = useNavigate()
 
-  const handleBack = onBack ?? (() => {
-    if (window.history.state?.idx > 0) {
-      navigate(-1)
-    } else {
-      navigate(fallbackPath ?? '/', { replace: true })
-    }
-  })
+  const handleBack =
+    onBack ??
+    (() => {
+      if (window.history.state?.idx > 0) {
+        navigate(-1)
+      } else {
+        navigate(fallbackPath ?? '/', { replace: true })
+      }
+    })
 
   return (
-    <div className="absolute left-0 top-0 flex w-full items-center justify-center h-[89px]">
+    <div className="absolute left-0 top-[20px] flex w-full items-center justify-center h-[89px]">
       <button
         type="button"
         onClick={handleBack}
