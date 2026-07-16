@@ -63,6 +63,19 @@ export interface ChatRoomLocation {
   city: string
 }
 
+export type LiveLocationEventType = 'UPDATE' | 'STOP'
+
+export interface LiveLocationEvent {
+  type: LiveLocationEventType
+  senderId: string
+  latitude: number | null
+  longitude: number | null
+  accuracy: number | null
+  // 해당 senderId 사용자의 현재 위치 → 카드 목표 지점까지 남은 거리(m, 서버 계산·정수 반올림). type이 STOP이면 null
+  distanceToTargetMeters: number | null
+  sentAt: string
+}
+
 export interface ChatMessageLocation {
   latitude: number
   longitude: number
@@ -166,4 +179,13 @@ export function closeChatRoom(roomId: string): Promise<ApiResponse<null>> {
   return apiFetch<ApiResponse<null>>(`/api/chat/rooms/${roomId}/close`, {
     method: 'POST',
   })
+}
+
+// 채팅방 입장 시 초기값용 — 참여자들의 마지막 위치 스냅샷 (실시간 이벤트와 동일한 JSON 배열)
+export function getLiveLocations(
+  roomId: string
+): Promise<ApiResponse<LiveLocationEvent[]>> {
+  return apiFetch<ApiResponse<LiveLocationEvent[]>>(
+    `/api/chat/rooms/${roomId}/live-location`
+  )
 }

@@ -15,6 +15,7 @@ import {
   markRoomAsRead,
   sendChatMessage,
   closeChatRoom,
+  getLiveLocations,
   type ChatRoomSummary,
 } from '../../api/chat'
 import { getAccessToken } from '../../utils/authStorage'
@@ -25,8 +26,7 @@ import { useChatSocketStore, EMPTY_MESSAGES } from '../../stores/chatSocketStore
 import menuIcon from '../../assets/chat_menu_icon.svg'
 import chatRoomChar from '../../assets/chat_room_char.png'
 
-// category/distanceMeters/matchedDate는 아직 API에 없는 필드라 목데이터로 임시 표시
-// (실제 필드 추가되면 room 데이터로 교체 필요)
+// category는 아직 API에 없는 필드라 목데이터로 임시 표시 (실제 필드 추가되면 room 데이터로 교체 필요)
 const mockRoomInfo = mockChatRooms[0]
 
 export default function ChatRoomPage() {
@@ -65,6 +65,14 @@ export default function ChatRoomPage() {
   const onRoomRead = useChatSocketStore((state) => state.onRoomRead)
   const sendSocketMessage = useChatSocketStore((state) => state.sendMessage)
   const appendRoomMessage = useChatSocketStore((state) => state.appendRoomMessage)
+  const setLiveLocation = useChatSocketStore((state) => state.setLiveLocation)
+  const sendLiveLocation = useChatSocketStore((state) => state.sendLiveLocation)
+  const stopLiveLocation = useChatSocketStore((state) => state.stopLiveLocation)
+  const distanceMeters = useChatSocketStore((state) =>
+    roomId && myUserId
+      ? (state.liveLocationByRoom[roomId]?.[myUserId]?.distanceToTargetMeters ?? null)
+      : null
+  )
 
   useEffect(() => {
     if (!roomId) return
@@ -125,6 +133,39 @@ export default function ChatRoomPage() {
     markMessagesRead,
     onRoomRead,
   ])
+
+  // 입장 시 초기 거리값 세팅 (실시간 이벤트가 오기 전 빈 화면 방지)
+  useEffect(() => {
+    if (!roomId) return
+
+    getLiveLocations(roomId)
+      .then((res) => {
+        res.data.forEach((event) => setLiveLocation(roomId, event))
+      })
+      .catch((error) => console.error('실시간 위치 초기값 조회 실패', error))
+  }, [roomId, setLiveLocation])
+
+  // 내 위치를 지속적으로 서버에 발행해 목표 지점까지 남은 거리를 갱신 (서버가 1초 단위로 스로틀링)
+  useEffect(() => {
+    if (!roomId || !navigator.geolocation) return
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        sendLiveLocation(roomId, {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        })
+      },
+      (error) => console.error('실시간 위치 갱신 실패', error),
+      { enableHighAccuracy: true, maximumAge: 0 }
+    )
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId)
+      stopLiveLocation(roomId)
+    }
+  }, [roomId, sendLiveLocation, stopLiveLocation])
 
   // 서버가 발행하는 ROOM_CLOSED 시스템 메시지 수신 시 방 종료 처리
   useEffect(() => {
@@ -277,7 +318,9 @@ export default function ChatRoomPage() {
               {mockRoomInfo.category}
             </p>
             <p className="mt-[10px] text-sm font-light text-[#343434]">
-              나와 {mockRoomInfo.distanceMeters}m 떨어져 있음
+              {distanceMeters !== null
+                ? `나와 ${distanceMeters}m 떨어져 있음`
+                : '위치 정보를 불러오는 중...'}
             </p>
           </div>
 
