@@ -18,7 +18,7 @@ export default function ChatMessageBubble({
   if (sender === 'me') {
     return (
       <div className="flex items-end justify-end gap-[5px] px-6">
-        <span className="shrink-0 text-[8px] text-[#929292]">{time}</span>
+        <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">{time}</span>
         <div className="max-w-[220px] rounded-2xl bg-[#1BB3FF]/20 px-3 py-2">
           <p className="whitespace-pre-wrap break-words text-sm text-black">
             {message}
@@ -39,7 +39,7 @@ export default function ChatMessageBubble({
       </div>
 
       <div className="flex flex-col gap-1">
-        <p className="text-[10px] text-[#343434]">{nickname}</p>
+        <p className="text-xs text-[#343434]">{nickname}</p>
 
         <div className="flex items-end gap-[5px]">
           <div className="max-w-[220px] rounded-2xl bg-[#F3F3F3] px-3 py-2">
@@ -47,7 +47,7 @@ export default function ChatMessageBubble({
               {message}
             </p>
           </div>
-          <span className="shrink-0 text-[8px] text-[#929292]">{time}</span>
+          <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">{time}</span>
         </div>
       </div>
     </div>

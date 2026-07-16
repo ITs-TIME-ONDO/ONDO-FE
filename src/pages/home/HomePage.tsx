@@ -447,7 +447,7 @@ export default function HomePage() {
         <header className="absolute left-0 top-[38px] flex h-12 w-full items-center justify-between px-6">
           <img src={logo} alt="ONDO" className="h-6 w-[97px] object-contain" />
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <img src={alertIcon} alt="알림" className="h-6 w-5" />
 
             <button type="button" onClick={() => navigate('/mypage')}>

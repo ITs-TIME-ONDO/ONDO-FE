@@ -54,10 +54,10 @@ export default function LiveLocationShareCard({
       {(sender === 'me' || accepted) && (
         <div className="flex w-[232px] items-center justify-end gap-1.5">
           {accepted && (
-            <span className="size-1.5 shrink-0 rounded-full bg-[#FF9E1B]" />
+            <span className="size-1.5 shrink-0 rounded-full bg-[#22C55E]" />
           )}
           <p
-            className="text-[10px] font-medium text-[#8C8C8C]"
+            className="text-[10px] font-light text-[#737373]"
           >
             {accepted ? '위치 공유 중' : '요청 대기 중'}
           </p>

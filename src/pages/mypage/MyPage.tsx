@@ -49,7 +49,10 @@ export default function MyPage() {
 
   return (
     <PageTransition>
-      <div className="relative h-[844px] w-[390px] overflow-hidden bg-white">
+      <div
+        className="relative h-[844px] w-[390px] overflow-hidden bg-white"
+        style={{ boxShadow: '0 -120px 0 rgba(255, 158, 27, 0.2)' }}
+      >
         {/* 주황 배경 */}
         <div className="absolute left-0 top-0 h-[388px] w-full bg-[#FF9E1B]/20" />
 

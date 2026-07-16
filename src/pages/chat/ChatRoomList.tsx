@@ -25,7 +25,7 @@ export default function ChatRoomList({ rooms }: Props) {
           key={room.id}
           nickname={room.opponentNickname ?? '알 수 없음'}
           message={room.lastMessage ?? '대화를 시작해보세요'}
-          time={formatMessageTime(room.createdAt)}
+          time={formatMessageTime(room.latestMessageAt ?? room.createdAt)}
           unread={room.unreadCount > 0}
           profileImageUrl={room.opponentProfileImageUrl ?? undefined}
           onClick={() => navigate(`/chat/${room.id}`)}

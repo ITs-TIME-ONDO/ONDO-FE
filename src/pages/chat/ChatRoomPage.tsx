@@ -376,7 +376,7 @@ export default function ChatRoomPage() {
         />
 
         <div
-          className="absolute left-0 top-[99px] flex w-full flex-col gap-5 px-6 py-3"
+          className="absolute left-0 top-[99px] flex h-36 w-full flex-col gap-5 px-6 py-3"
           style={{
             background: 'linear-gradient(180deg, #FF9E1B -52.24%, #FFF 115.3%)',
           }}
@@ -390,7 +390,7 @@ export default function ChatRoomPage() {
           <button
             type="button"
             onClick={() => setShowCompleteModal(true)}
-            className="flex h-10 w-[107px] items-center justify-center rounded-full bg-black text-base font-medium text-white"
+            className="flex h-10 w-[107px] -translate-y-2 items-center justify-center rounded-full bg-black text-base font-medium text-white"
           >
             완료
           </button>
@@ -398,16 +398,18 @@ export default function ChatRoomPage() {
           <img
             src={chatRoomChar}
             alt=""
-            className="pointer-events-none absolute right-0 top-[-2px] h-[144px] w-[153px] object-contain"
+            className="pointer-events-none absolute right-0 top-0 h-36 w-[153px] object-contain"
           />
         </div>
+
+        <div className="pointer-events-none absolute inset-x-0 top-[243px] z-10 h-10 bg-gradient-to-b from-white to-transparent" />
 
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="chat-scrollbar absolute inset-x-0 top-[265px] bottom-[90px] overflow-y-auto"
+          className="chat-scrollbar absolute inset-x-0 top-[243px] bottom-[90px] overflow-y-auto"
         >
-          <p className="text-center text-xs text-[#666]">{formatMatchedDate(room.createdAt)}</p>
+          <p className="text-center text-[13px] text-[#666]">{formatMatchedDate(room.createdAt)}</p>
 
           <div className="mt-6 flex flex-col gap-6">
             {messages
@@ -433,7 +435,7 @@ export default function ChatRoomPage() {
                       }`}
                     >
                       {sender === 'me' && (
-                        <span className="shrink-0 text-[8px] text-[#929292]">
+                        <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">
                           {formatMessageTime(msg.sentAt)}
                         </span>
                       )}
@@ -446,7 +448,7 @@ export default function ChatRoomPage() {
                       />
 
                       {sender === 'partner' && (
-                        <span className="shrink-0 text-[8px] text-[#929292]">
+                        <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">
                           {formatMessageTime(msg.sentAt)}
                         </span>
                       )}

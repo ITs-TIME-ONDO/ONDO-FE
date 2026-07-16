@@ -35,6 +35,7 @@ export interface ChatRoomSummary {
   opponentProfileImageUrl: string | null
   // 메시지 없으면 null. 발신 시각 필드 없음
   lastMessage: string | null
+  latestMessageAt?: string | null
 }
 
 export type MessageType = 'TEXT' | 'IMAGE' | 'LOCATION' | 'ROOM_CLOSED'

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-import { getChatRooms, type ChatRoomSummary } from '../api/chat'
+import { getChatMessages, getChatRooms, type ChatRoomSummary } from '../api/chat'
 
 interface ChatRoomState {
   rooms: ChatRoomSummary[]
@@ -12,7 +12,20 @@ export const useChatRoomStore = create<ChatRoomState>((set) => ({
   fetchRooms: async () => {
     try {
       const res = await getChatRooms({ page: 0 })
-      set({ rooms: res.data.content })
+      const rooms = await Promise.all(
+        res.data.content.map(async (room) => {
+          try {
+            const messagesRes = await getChatMessages(room.id, { size: 1 })
+            return {
+              ...room,
+              latestMessageAt: messagesRes.data.messages[0]?.sentAt ?? null,
+            }
+          } catch {
+            return room
+          }
+        })
+      )
+      set({ rooms })
     } catch (error) {
       console.error('채팅방 목록 조회 실패', error)
     }
