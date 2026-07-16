@@ -37,13 +37,16 @@ export default function FloatingConfirmModal({
 
   return (
     <>
-      <div className="absolute inset-0 z-40" onClick={onCancel} />
+      <div
+        className="absolute inset-0 z-40 bg-black/25"
+        onClick={onCancel}
+      />
 
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="floating-confirm-modal-title"
-        className="absolute left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-5 rounded-[20px] bg-white/80 px-7 pb-6 pt-8"
+        className="absolute left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-5 rounded-[20px] bg-white/90 px-7 pb-6 pt-8"
         style={{ boxShadow: '0px 0px 5.6px rgba(0,0,0,0.2)' }}
       >
         <div className="text-center">

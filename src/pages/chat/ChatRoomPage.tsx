@@ -50,6 +50,7 @@ export default function ChatRoomPage() {
   const [showReportModal, setShowReportModal] = useState(false)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [showLocationGuide, setShowLocationGuide] = useState(false)
+  const [showLocationAgreeModal, setShowLocationAgreeModal] = useState(false)
   const [liveLocationSharingEnabled, setLiveLocationSharingEnabled] =
     useState(false)
   const [locationRequestCooldownUntil, setLocationRequestCooldownUntil] =
@@ -436,7 +437,7 @@ export default function ChatRoomPage() {
                       <LiveLocationShareCard
                         sender={sender}
                         status={accepted ? 'accepted' : 'requested'}
-                        onAgree={handleLocationAgree}
+                        onAgree={() => setShowLocationAgreeModal(true)}
                         onOpen={() => navigate(`/location?roomId=${roomId}`)}
                       />
 
@@ -479,6 +480,17 @@ export default function ChatRoomPage() {
           locationRequestDisabled={locationRequestCooldownUntil > Date.now()}
           onSend={handleSend}
           onLocationRequest={handleLocationRequest}
+        />
+
+        <FloatingConfirmModal
+          open={showLocationAgreeModal}
+          title="실시간 위치를 공유하시겠어요?"
+          description="상대방과 위치가 실시간으로 공유돼요."
+          onConfirm={() => {
+            setShowLocationAgreeModal(false)
+            void handleLocationAgree()
+          }}
+          onCancel={() => setShowLocationAgreeModal(false)}
         />
 
         <FloatingConfirmModal

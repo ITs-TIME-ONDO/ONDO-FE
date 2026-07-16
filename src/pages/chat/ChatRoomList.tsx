@@ -12,6 +12,13 @@ export default function ChatRoomList({ rooms }: Props) {
 
   return (
     <main className="absolute left-0 top-[123px] w-full border-t border-[#EDEDED]">
+      <ChatRoomListItem
+        nickname="위치 공유 UI 목업"
+        message="요청·수신·동의 완료 상태를 확인해보세요"
+        time=""
+        unread
+        onClick={() => navigate('/chat/mock-live-location')}
+      />
       {rooms.map((room) => (
         <ChatRoomListItem
           key={room.id}

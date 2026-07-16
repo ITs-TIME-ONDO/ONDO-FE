@@ -28,36 +28,42 @@ export default function LiveLocationShareCard({
     >
       <p className="text-sm leading-5 text-[#111]">실시간 위치 공유</p>
 
-      <button
-        type="button"
-        disabled={!accepted}
-        onClick={accepted ? onOpen : undefined}
-        aria-label={accepted ? '실시간 위치 지도 열기' : undefined}
-        className="relative h-[130px] w-[232px] overflow-hidden rounded-[5px] disabled:cursor-default"
-      >
-        <img src={mapImage} alt="" className="h-full w-full object-cover" />
-        {needsAgreement && <span className="absolute inset-0 bg-black/40" />}
-      </button>
-
-      {(sender === 'me' || accepted) && (
-        <p
-          className={`w-[232px] text-right text-[10px] font-medium ${
-            accepted ? 'text-[#FF9E1B]' : 'text-[#666]'
-          }`}
-        >
-          {accepted ? '공유 중' : '요청 대기 중'}
-        </p>
-      )}
-
-      {needsAgreement && (
+      <div className="relative h-[130px] w-[232px] overflow-hidden rounded-[5px]">
         <button
           type="button"
-          onClick={onAgree}
-          className="flex h-8 w-20 items-center justify-center rounded-full bg-[#FF9E1B] text-base font-medium text-white"
+          disabled={!accepted}
+          onClick={accepted ? onOpen : undefined}
+          aria-label={accepted ? '실시간 위치 지도 열기' : undefined}
+          className="absolute inset-0 disabled:cursor-default"
         >
-          동의
+          <img src={mapImage} alt="" className="h-full w-full object-cover" />
+          {needsAgreement && <span className="absolute inset-0 bg-black/40" />}
         </button>
+
+        {needsAgreement && (
+          <button
+            type="button"
+            onClick={onAgree}
+            className="absolute left-1/2 top-1/2 z-10 flex h-8 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#FF9E1B] text-base font-medium text-white"
+          >
+            동의
+          </button>
+        )}
+      </div>
+
+      {(sender === 'me' || accepted) && (
+        <div className="flex w-[232px] items-center justify-end gap-1.5">
+          {accepted && (
+            <span className="size-1.5 shrink-0 rounded-full bg-[#FF9E1B]" />
+          )}
+          <p
+            className="text-[10px] font-medium text-[#8C8C8C]"
+          >
+            {accepted ? '위치 공유 중' : '요청 대기 중'}
+          </p>
+        </div>
       )}
+
     </article>
   )
 }
