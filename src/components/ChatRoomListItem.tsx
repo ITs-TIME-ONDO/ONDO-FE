@@ -21,7 +21,7 @@ export default function ChatRoomListItem({
     <button
       type="button"
       onClick={onClick}
-      className="relative flex h-[83px] w-full items-center gap-3 px-6 text-left after:absolute after:bottom-0 after:left-6 after:right-6 after:h-px after:bg-[#EDEDED]"
+      className="relative flex h-[85px] w-full items-center gap-3 px-6 text-left after:absolute after:bottom-0 after:left-6 after:right-6 after:h-px after:bg-[#EDEDED]"
     >
       <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#FFF4E8]">
         <img
@@ -31,17 +31,19 @@ export default function ChatRoomListItem({
         />
       </div>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-base font-medium leading-6 text-black">
+      <div className="flex min-w-0 flex-1 flex-col justify-start">
+        <div className="flex h-6 flex-nowrap items-start justify-between gap-2">
+          <p className="min-w-0 flex-1 truncate text-base font-medium leading-6 text-black">
             {nickname}
           </p>
-          <span className="shrink-0 text-xs leading-4 text-[#666]">{time}</span>
+          <span className="shrink-0 pt-0.5 text-[11px] font-light leading-4 text-[#666]">
+            {time}
+          </span>
         </div>
 
-        <div className="mt-1 flex items-center justify-between gap-2">
+        <div className="mt-1.5 flex flex-nowrap items-center justify-between gap-2">
           <p
-            className={`truncate text-xs leading-4 ${
+            className={`min-w-0 flex-1 truncate whitespace-nowrap text-[13px] leading-4 ${
               unread ? 'font-semibold text-[#343434]' : 'text-[#929292]'
             }`}
           >
