@@ -11,7 +11,6 @@ export default function LoginPage() {
         className="relative h-[844px] w-[390px] overflow-hidden"
         style={{ background: 'rgba(255, 158, 27, 0.1)' }}
       >
-        {/* 큰 원형 배경 */}
         <div
           className="absolute -translate-x-1/2 rounded-full pointer-events-none"
           style={{
@@ -23,7 +22,6 @@ export default function LoginPage() {
           }}
         />
 
-        {/* 작은 타원 (하단 그림자) */}
         <div
           className="absolute rounded-full pointer-events-none"
           style={{
@@ -35,7 +33,6 @@ export default function LoginPage() {
           }}
         />
 
-        {/* 상단 슬로건 + 로고 */}
         <div
           className="absolute -translate-x-1/2 flex flex-col items-center"
           style={{ left: '50%', top: 104, gap: 9 }}
@@ -51,7 +48,6 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* 채팅 버블 */}
         <div
           className="absolute flex items-center rounded-[50px] bg-white px-5 py-3"
           style={{ left: 24, top: 308 }}
@@ -77,7 +73,6 @@ export default function LoginPage() {
           </span>
         </div>
 
-        {/* 캐릭터 이미지 */}
         <img
           alt="온도 캐릭터"
           className="absolute -translate-x-1/2 object-cover pointer-events-none"
@@ -85,7 +80,6 @@ export default function LoginPage() {
           src={loginChar}
         />
 
-        {/* 카카오 로그인 버튼 */}
         <button
           className="absolute -translate-x-1/2 flex items-center justify-center gap-3 rounded-full bg-[#f8e533]"
           style={{ left: '50%', bottom: 64, width: 342, height: 60 }}

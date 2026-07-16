@@ -34,7 +34,6 @@ const CARD_CATEGORY_LABELS: Record<string, string> = {
   ETC: '기타',
 }
 
-// HomePage.tsx의 첫 방문 가이드(hasSeenNearbyCardGuide)와 동일한 패턴 — 한 번 보면 다시 안 뜨도록 저장
 const LOCATION_GUIDE_SEEN_STORAGE_KEY = 'hasSeenChatLiveLocationGuide'
 const LOCATION_REQUEST_MESSAGE = '실시간 위치 공유 요청'
 const LOCATION_ACCEPT_MESSAGE = '실시간 위치 공유 동의'
@@ -113,9 +112,8 @@ export default function ChatRoomPage() {
           setShowLocationGuide(true)
         }
       })
-      .catch((error) => {
+      .catch(() => {
         if (!active) return
-        console.error('채팅방 조회 실패', error)
         setRoomNotFound(true)
       })
 
@@ -151,7 +149,6 @@ export default function ChatRoomPage() {
     isInitialLoadRef.current = true
     preserveScrollRef.current = null
 
-    // 소켓 연결은 앱 전체 1개만 유지 (이미 연결돼 있으면 no-op)
     connect()
     subscribeToRoom(roomId)
     onRoomRead(roomId, (event) => markMessagesRead(roomId, event.messageIds, event.readAt))
@@ -162,12 +159,9 @@ export default function ChatRoomPage() {
         setHasNext(res.data.hasNext)
         setNextCursor(res.data.nextCursor)
       })
-      .catch((error) => console.error('메시지 목록 조회 실패', error))
+      .catch(() => {})
 
-    // 채팅방 진입 시 상대방이 보낸 미읽음 메시지 읽음 처리
-    markRoomAsRead(roomId).catch((error) =>
-      console.error('읽음 처리 실패', error)
-    )
+    markRoomAsRead(roomId).catch(() => {})
 
     return () => {
       onRoomRead(roomId, null)
@@ -183,7 +177,6 @@ export default function ChatRoomPage() {
     onRoomRead,
   ])
 
-  // 입장 시 초기 거리값 세팅 (실시간 이벤트가 오기 전 빈 화면 방지)
   useEffect(() => {
     if (!roomId) return
 
@@ -191,10 +184,9 @@ export default function ChatRoomPage() {
       .then((res) => {
         res.data.forEach((event) => setLiveLocation(roomId, event))
       })
-      .catch((error) => console.error('실시간 위치 초기값 조회 실패', error))
+      .catch(() => {})
   }, [roomId, setLiveLocation])
 
-  // 내 위치를 지속적으로 서버에 발행해 목표 지점까지 남은 거리를 갱신 (서버가 1초 단위로 스로틀링)
   useEffect(() => {
     if (!roomId || !liveLocationSharingEnabled || !navigator.geolocation) return
 
@@ -206,7 +198,7 @@ export default function ChatRoomPage() {
           accuracy: position.coords.accuracy,
         })
       },
-      (error) => console.error('실시간 위치 갱신 실패', error),
+      () => {},
       { enableHighAccuracy: true, maximumAge: 0 }
     )
 
@@ -216,7 +208,6 @@ export default function ChatRoomPage() {
     }
   }, [roomId, liveLocationSharingEnabled, sendLiveLocation, stopLiveLocation])
 
-  // 서버가 발행하는 ROOM_CLOSED 시스템 메시지 수신 시 방 종료 처리
   useEffect(() => {
     const lastMessage = messages[messages.length - 1]
     if (lastMessage?.messageType !== 'ROOM_CLOSED') return
@@ -228,8 +219,6 @@ export default function ChatRoomPage() {
     )
   }, [messages, myUserId])
 
-  // 최초 로딩 시에는 최신 메시지가 보이도록 하단으로 스크롤하고,
-  // 이전 메시지를 위로 더 불러온 경우에는 기존에 보고 있던 위치를 유지한다.
   useLayoutEffect(() => {
     const el = scrollRef.current
     if (!el) return
@@ -265,9 +254,8 @@ export default function ChatRoomPage() {
         setHasNext(res.data.hasNext)
         setNextCursor(res.data.nextCursor)
       })
-      .catch((error) => {
+      .catch(() => {
         preserveScrollRef.current = null
-        console.error('이전 메시지 조회 실패', error)
       })
       .finally(() => setLoadingMore(false))
   }
@@ -278,16 +266,13 @@ export default function ChatRoomPage() {
     const body = { messageType: 'TEXT' as const, content: text }
     const sentViaSocket = sendSocketMessage(roomId, body)
 
-    // 소켓으로 보낸 메시지는 SUBSCRIBE 채널로 에코되어 돌아옴
     if (sentViaSocket) return true
 
-    // 소켓 미연결 시에만 REST 폴백
     try {
       const res = await sendChatMessage(roomId, body)
       appendRoomMessage(roomId, res.data)
       return true
-    } catch (error) {
-      console.error('메시지 전송 실패', error)
+    } catch {
       return false
     }
   }
@@ -322,10 +307,8 @@ export default function ChatRoomPage() {
 
     try {
       await closeChatRoom(roomId)
-      // 상대방 화면에는 ROOM_CLOSED 소켓 echo(위 useEffect)가 "OO님이 채팅을 종료했습니다."를 띄워줌
       setClosedMessage('채팅방을 나갔습니다.')
-    } catch (error) {
-      console.error('채팅방 종료 실패', error)
+    } catch {
       alert('채팅방 종료에 실패했습니다. 다시 시도해주세요.')
     }
   }
@@ -386,7 +369,6 @@ export default function ChatRoomPage() {
           open={showMenu}
           onClose={() => setShowMenu(false)}
           options={[
-            // TODO: 알림 켜기/끄기 서버 연동 (지금은 로컬 상태만 토글)
             {
               label: notificationsEnabled ? '알림 끄기' : '알림 켜기',
               onClick: () => setNotificationsEnabled((prev) => !prev),
@@ -561,7 +543,6 @@ export default function ChatRoomPage() {
           onSuccess={() => setClosedMessage('채팅방을 나갔습니다.')}
         />
 
-        {/* 실시간 위치 공유 최초 안내 — HomePage.tsx의 첫 방문 가이드와 동일한 패턴 */}
         {showLocationGuide && !closedMessage && (
           <div
             onClick={handleDismissLocationGuide}

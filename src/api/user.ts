@@ -13,7 +13,6 @@ export interface UserProfile {
   hasCreatedCard: boolean
 }
 
-// 닉네임/프로필 이미지 중 최소 하나는 필수. multipart/form-data로 전송 (request: JSON part, profileImage: 파일 part)
 function buildProfileFormData({ nickname, profileImage }: UpdateProfileRequest): FormData {
   const formData = new FormData()
   formData.append(

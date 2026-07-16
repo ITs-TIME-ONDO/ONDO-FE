@@ -15,7 +15,6 @@ export default function ChatPage() {
 
   useEffect(() => {
     fetchRooms()
-    // 앱 전체 1개만 유지되는 소켓 연결 — 이미 연결돼 있으면 no-op
     connect()
 
     const intervalId = window.setInterval(fetchRooms, 5000)

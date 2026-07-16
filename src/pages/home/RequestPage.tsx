@@ -60,9 +60,7 @@ export default function RequestPage() {
 
           navigate('/')
         }
-      } catch (error) {
-        console.error('active request check failed:', error)
-      }
+      } catch {}
     }
 
     checkActiveRequest()
@@ -110,9 +108,7 @@ export default function RequestPage() {
         )
       }
       navigate('/')
-    } catch (error) {
-      console.error('카드 생성 실패:', error)
-    } finally {
+    } catch {} finally {
       setIsSubmitting(false)
     }
   }

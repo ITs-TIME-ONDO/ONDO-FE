@@ -30,9 +30,7 @@ export default function ProfileEditPage() {
         setNickname(profile.nickname)
         setProfileImage(profile.profileImageUrl || null)
       })
-      .catch((error) => {
-        console.error('프로필 조회 실패:', error)
-      })
+      .catch(() => {})
   }, [])
 
   const handleNicknameChange = (value: string) => {
@@ -53,10 +51,8 @@ export default function ProfileEditPage() {
   return (
     <PageTransition>
       <div className="relative h-[844px] w-[390px] overflow-hidden bg-white">
-        {/* 헤더 */}
         <PageHeader title="프로필 편집" fallbackPath="/mypage" />
 
-        {/* 프로필 이미지 */}
         <ProfileImagePicker
           defaultImage={profileChar}
           className="top-[160px]"
@@ -64,14 +60,12 @@ export default function ProfileEditPage() {
           onChange={handleProfileImageChange}
         />
 
-        {/* 닉네임 입력 */}
         <NicknameInput
           value={nickname}
           onChange={handleNicknameChange}
           className="top-[422px]"
         />
 
-        {/* 저장하기 버튼 */}
         <button
           type="button"
           className={`absolute bottom-16 left-6 flex h-[60px] w-[342px] items-center justify-center rounded-full text-[20px] font-bold text-white transition-colors ${nickname.trim() && hasChanges && !isSubmitting ? 'bg-[#ff9e1b]' : 'bg-[#ff9e1b]/50'}`}
@@ -109,7 +103,6 @@ export default function ProfileEditPage() {
               originalNicknameRef.current = trimmedNickname
               navigate('/mypage', { replace: true })
             } catch (error) {
-              console.error('프로필 저장 실패:', error)
               if (error instanceof DOMException && error.name === 'AbortError') {
                 alert('이미지 업로드 시간이 초과되었습니다. 다시 시도해주세요.')
               } else if (error instanceof ApiError && error.status === 409) {

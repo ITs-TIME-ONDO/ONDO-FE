@@ -1,4 +1,3 @@
-// 다음 버튼
 type NextButtonProps = {
   disabled?: boolean
   onClick?: () => void

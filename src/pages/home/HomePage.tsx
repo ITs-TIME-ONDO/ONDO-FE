@@ -234,7 +234,6 @@ export default function HomePage() {
         } catch (error) {
           if (!isLatestFetch()) return
 
-          console.error('주변 요청 조회 실패:', error)
           setNearbyCards([])
           setNextCursor(null)
           setHomeErrorMessage(getHomeErrorMessage(error))
@@ -265,7 +264,6 @@ export default function HomePage() {
     } catch (e) {
       if (!isLatestFetch()) return
 
-      console.error('홈 데이터 조회 실패:', e)
       setMyRequest(null)
       setNearbyCards([])
       setNextCursor(null)
@@ -322,9 +320,7 @@ export default function HomePage() {
           return [...cards, ...newCards.filter((card) => !existingIds.has(card.id))]
         })
         setNextCursor(data?.nextCursor ?? null)
-      } catch (error) {
-        console.error('주변 요청 추가 조회 실패:', error)
-      } finally {
+      } catch {} finally {
         isLoadingMoreRef.current = false
       }
     }
@@ -346,7 +342,6 @@ export default function HomePage() {
     const cardId = myRequest?.id
 
     if (!cardId) {
-      console.error('카드 ID 없음:', myRequest)
       return
     }
 
@@ -364,8 +359,6 @@ export default function HomePage() {
 
       await fetchHomeData({ force: true })
     } catch (error) {
-      console.error('카드 취소 실패:', error)
-
       const status =
         typeof error === 'object' && error !== null && 'status' in error
           ? (error as { status?: number }).status
@@ -413,9 +406,7 @@ export default function HomePage() {
       try {
         const chatRoomRes = await createChatRoom({ cardId })
         navigate(`/chat/${chatRoomRes.data.id}`)
-      } catch (chatRoomError) {
-        console.error('채팅방 생성 또는 조회 실패:', chatRoomError)
-      }
+      } catch {}
     } catch (error) {
       const status =
         typeof error === 'object' && error !== null && 'status' in error
@@ -428,8 +419,6 @@ export default function HomePage() {
         setSelectedHelpCardId(null)
         selectedHelpCardRef.current = null
         await fetchHomeData({ force: true })
-      } else {
-        console.error('도움 신청 실패:', error)
       }
     } finally {
       setIsApplying(false)
@@ -581,7 +570,6 @@ export default function HomePage() {
             selectedHelpCardRef.current = null
           }}
         />
-        {/* 삭제 가이드 */}
         {showDeleteGuide && (
           <div
             onClick={() => {
@@ -604,7 +592,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Nearby request guide */}
         {nearbyGuideStep && (
           <div
             onClick={handleNearbyGuideClick}

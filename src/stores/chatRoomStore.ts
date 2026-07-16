@@ -26,8 +26,6 @@ export const useChatRoomStore = create<ChatRoomState>((set) => ({
         })
       )
       set({ rooms })
-    } catch (error) {
-      console.error('채팅방 목록 조회 실패', error)
-    }
+    } catch {}
   },
 }))

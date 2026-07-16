@@ -4,7 +4,6 @@ import arrowIcon from '../../assets/chat_report_arrow.svg'
 import { createChatRoomReport, type ReportReason } from '../../api/reports'
 import { ApiError } from '../../api/client'
 
-// reports.md엔 'HARASSMENT'(욕설/인신공격) 예시만 있음. 나머지 두 값은 추정 작성 — 백엔드 확인 필요
 const REASON_CODE_MAP: Record<string, ReportReason> = {
   '욕설/인신공격': 'HARASSMENT',
   '음란성/선정성': 'OBSCENE_CONTENT',
@@ -59,7 +58,6 @@ export default function ReportModal({
         if (error instanceof ApiError && error.status === 409) {
           alert('이미 신고한 사용자입니다.')
         } else {
-          console.error('신고 접수 실패', error)
           alert('신고 접수에 실패했습니다. 다시 시도해주세요.')
         }
       })

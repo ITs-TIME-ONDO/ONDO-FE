@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { check, sexual } from 'korcen' // korcen.ts 오픈소스 이용해서 한국어 비속어 블로킹
+import { check, sexual } from 'korcen'
 
 import mapIcon from '../../assets/chat_map_icon.svg'
 import sendIcon from '../../assets/chat_send_icon.svg'
@@ -31,8 +31,6 @@ export default function ChatRoomInputBar({
     const text = value.trim()
     if (disabled || sending || !text) return
 
-    // 클라이언트 단어사전 기반 경량 차단 — 우회 가능성 있어 실효성 있는 필터링은
-    // 백엔드/AI 모더레이션에서 별도로 처리해야 함
     if (check(text) || sexual(text)) {
       setError('부적절한 표현이 포함되어 있어 전송할 수 없습니다.')
       return
@@ -41,7 +39,6 @@ export default function ChatRoomInputBar({
     setError('')
     setSending(true)
 
-    // 전송 성공이 확인된 뒤에만 입력을 비운다 — 실패 시 값을 그대로 두어 원문이 보존됨
     const success = await onSend?.(text)
 
     setSending(false)

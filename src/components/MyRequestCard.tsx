@@ -68,8 +68,6 @@ export default function MyRequestCard({
 
       await onRetry()
     } catch (error) {
-      console.error('재요청 실패:', error)
-
       const status =
         typeof error === 'object' && error !== null && 'status' in error
           ? (error as { status?: number }).status

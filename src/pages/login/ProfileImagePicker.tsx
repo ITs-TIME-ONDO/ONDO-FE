@@ -17,7 +17,6 @@ export default function ProfileImagePicker({
   const [isImageMenuOpen, setIsImageMenuOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // initialValue가 마운트 이후 비동기로 도착(예: 프로필 API 응답)해도 반영되도록 동기화
   useEffect(() => {
     setImageUrl(initialValue ?? null)
   }, [initialValue])
@@ -52,9 +51,7 @@ export default function ProfileImagePicker({
         type: blob.type,
       })
       onChange?.(file, defaultImage)
-    } catch (error) {
-      console.error('기본 프로필 이미지 변환 실패:', error)
-    }
+    } catch {}
   }
 
   return (

@@ -18,9 +18,7 @@ export default function MyPage() {
   useEffect(() => {
     getUserProfile()
       .then(setProfile)
-      .catch((error) => {
-        console.error('프로필 조회 실패:', error)
-      })
+      .catch(() => {})
   }, [])
 
   const nickname =
@@ -36,9 +34,7 @@ export default function MyPage() {
     try {
       setIsLoggingOut(true)
       await postLogout()
-    } catch (error) {
-      console.error('로그아웃 요청 실패:', error)
-    } finally {
+    } catch {} finally {
       clearTokens()
       localStorage.removeItem('onboardingCompleted')
       localStorage.removeItem('nickname')
@@ -53,13 +49,10 @@ export default function MyPage() {
         className="relative h-[844px] w-[390px] overflow-hidden bg-white"
         style={{ boxShadow: '0 -120px 0 rgba(255, 158, 27, 0.2)' }}
       >
-        {/* 주황 배경 */}
         <div className="absolute left-0 top-0 h-[388px] w-full bg-[#FF9E1B]/20" />
 
-        {/* 헤더 */}
         <PageHeader title="마이페이지" />
 
-        {/* 프로필 이미지 */}
         <div className="absolute left-1/2 -translate-x-1/2 top-[125px] size-[100px] rounded-full bg-[#FF9E1B] overflow-hidden">
           <img
             src={profileImage || profileChar}
@@ -68,12 +61,10 @@ export default function MyPage() {
           />
         </div>
 
-        {/* 닉네임 */}
         <p className="absolute left-1/2 -translate-x-1/2 top-[241px] whitespace-nowrap text-[18px] font-medium text-black">
           {nickname}
         </p>
 
-        {/* 프로필 편집 버튼 */}
         <button
           type="button"
           onClick={() => navigate('/mypage/edit')}
@@ -84,7 +75,6 @@ export default function MyPage() {
           </span>
         </button>
 
-        {/* 활동 통계 카드 */}
         <div
           className="absolute left-[27px] top-[342px] flex h-[108px] w-[339px] items-center justify-center gap-[58px] rounded-[10px] bg-white px-[50px] py-[20px]"
           style={{ boxShadow: '0px 2px 3px rgba(0,0,0,0.2)' }}
@@ -104,7 +94,6 @@ export default function MyPage() {
           </div>
         </div>
 
-        {/* 로그아웃 / 회원탈퇴 */}
         <div className="absolute left-1/2 -translate-x-1/2 top-[487px] flex w-[338px] flex-col gap-[15px]">
           <button
             type="button"
@@ -122,7 +111,6 @@ export default function MyPage() {
             회원탈퇴
           </button>
         </div>
-        {/* 로그아웃 확인 모달 */}
         <ConfirmModal
           open={showLogoutModal}
           title="로그아웃 하시겠습니까?"

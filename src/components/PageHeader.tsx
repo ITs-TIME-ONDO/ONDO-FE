@@ -1,4 +1,3 @@
-// 홈화면 제외한 페이지들 헤더, 이전 버튼(<) 있는 헤더
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 

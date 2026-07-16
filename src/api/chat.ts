@@ -30,10 +30,8 @@ export interface ChatRoomSummary {
   createdAt: string
   closedAt: string | null
   unreadCount: number
-  // 상대방 미정 시 null (발생 조건 TBD)
   opponentNickname: string | null
   opponentProfileImageUrl: string | null
-  // 메시지 없으면 null. 발신 시각 필드 없음
   lastMessage: string | null
   latestMessageAt?: string | null
 }
@@ -48,7 +46,6 @@ export interface ChatMessage {
   messageType: MessageType
   content: string | null
   sentAt: string
-  // null이면 미읽음
   readAt: string | null
 }
 
@@ -72,7 +69,6 @@ export interface LiveLocationEvent {
   latitude: number | null
   longitude: number | null
   accuracy: number | null
-  // 해당 senderId 사용자의 현재 위치 → 카드 목표 지점까지 남은 거리(m, 서버 계산·정수 반올림). type이 STOP이면 null
   distanceToTargetMeters: number | null
   sentAt: string
 }
@@ -83,7 +79,6 @@ export interface ChatMessageLocation {
   placeName?: string
 }
 
-// TBD: TEXT 외 필드 스펙 (docs/api/chat.md TBD 참고)
 export interface ChatMessageSendRequest {
   messageType: MessageType
   content?: string | null
@@ -117,7 +112,6 @@ export function getChatRooms(
   )
 }
 
-// 참여자 아니면 403 FORBIDDEN
 export function getChatRoom(roomId: string): Promise<ApiResponse<ChatRoomSummary>> {
   return apiFetch<ApiResponse<ChatRoomSummary>>(`/api/chat/rooms/${roomId}`)
 }
@@ -141,14 +135,12 @@ export function getChatMessages(
   )
 }
 
-// 응답 바디 형태 TBD (chat.md에 명시 없음)
 export function markRoomAsRead(roomId: string): Promise<ApiResponse<null>> {
   return apiFetch<ApiResponse<null>>(`/api/chat/rooms/${roomId}/read`, {
     method: 'PATCH',
   })
 }
 
-// REST 폴백 전송 (WS 미지원 환경용). 실시간 전송은 WS SEND(chatSocketStore.sendMessage) 우선 사용
 export function sendChatMessage(
   roomId: string,
   body: ChatMessageSendRequest
@@ -166,7 +158,6 @@ export interface CreateChatRoomRequest {
   cardId: string
 }
 
-// 멱등(get-or-create). 수락자가 수락 액션 시 직접 호출
 export function createChatRoom(
   body: CreateChatRoomRequest
 ): Promise<ApiResponse<ChatRoomSummary>> {
@@ -182,7 +173,6 @@ export function closeChatRoom(roomId: string): Promise<ApiResponse<null>> {
   })
 }
 
-// 채팅방 입장 시 초기값용 — 참여자들의 마지막 위치 스냅샷 (실시간 이벤트와 동일한 JSON 배열)
 export function getLiveLocations(
   roomId: string
 ): Promise<ApiResponse<LiveLocationEvent[]>> {

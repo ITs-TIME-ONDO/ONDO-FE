@@ -113,8 +113,7 @@ export default function LocationPage() {
         if (!position) {
           setErrorMessage('현재 위치를 불러오지 못해 기본 위치를 표시했습니다.')
         }
-      } catch (error) {
-        console.error('카카오 지도 초기화 실패:', error)
+      } catch {
         if (!cancelled) {
           setErrorMessage('지도를 불러오지 못했습니다.')
         }
