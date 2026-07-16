@@ -8,9 +8,6 @@ import ChatRoomList from './ChatRoomList'
 import { useChatRoomStore } from '../../stores/chatRoomStore'
 import { useChatSocketStore } from '../../stores/chatSocketStore'
 
-const ROOM_LIST_BACKGROUND =
-  'linear-gradient(180deg, #FFF 66.83%, rgba(255, 233, 204, 0.50) 86.87%, #FF9200 100%), #FFF'
-
 export default function ChatPage() {
   const rooms = useChatRoomStore((state) => state.rooms)
   const fetchRooms = useChatRoomStore((state) => state.fetchRooms)
@@ -41,13 +38,11 @@ export default function ChatPage() {
   return (
     <PageTransition>
       <div
-        className={
-          'relative mx-auto h-[844px] w-[390px] overflow-hidden' +
-          (hasChatRooms
-            ? ''
-            : ' bg-gradient-to-b from-white via-[#FFF4E8] to-[#FFC679]')
-        }
-        style={hasChatRooms ? { background: ROOM_LIST_BACKGROUND } : undefined}
+        className="relative mx-auto h-[844px] w-[390px] overflow-hidden"
+        style={{
+          background:
+            'linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 65%, #FFF4E8 84%, #FFC679 100%)',
+        }}
       >
         <ChatHeader />
 
