@@ -11,12 +11,12 @@ type Props = {
 }
 
 const hasStoredActiveRequest = () => {
-  const accessToken = localStorage.getItem('accessToken')
-  const storedRequest = localStorage.getItem('myRequest')
-
-  if (!accessToken || !storedRequest) return false
-
   try {
+    const accessToken = localStorage.getItem('accessToken')
+    const storedRequest = localStorage.getItem('myRequest')
+
+    if (!accessToken || !storedRequest) return false
+
     const parsedRequest = JSON.parse(storedRequest)
     const status = parsedRequest?.card?.status
 
