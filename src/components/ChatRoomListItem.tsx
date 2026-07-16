@@ -21,34 +21,34 @@ export default function ChatRoomListItem({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 border-b border-[#EDEDED] px-6 py-[13px] text-left"
+      className="relative flex h-[83px] w-full items-center gap-3 px-6 text-left after:absolute after:bottom-0 after:left-6 after:right-6 after:h-px after:bg-[#EDEDED]"
     >
       <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#FFF4E8]">
         <img
           src={profileImageUrl || miniProfileChar}
           alt={nickname}
-          className="size-9 object-contain"
+          className="size-10 rounded-full object-cover"
         />
       </div>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-[16px] font-medium text-black">
+          <p className="truncate text-base font-medium leading-6 text-black">
             {nickname}
           </p>
-          <span className="shrink-0 text-[12px] text-[#666]">{time}</span>
+          <span className="shrink-0 text-xs leading-4 text-[#666]">{time}</span>
         </div>
 
-        <div className="mt-[3px] flex items-center justify-between gap-2">
+        <div className="mt-1 flex items-center justify-between gap-2">
           <p
-            className={`truncate text-[12px] ${
+            className={`truncate text-xs leading-4 ${
               unread ? 'font-semibold text-[#343434]' : 'text-[#929292]'
             }`}
           >
             {message}
           </p>
           {unread && (
-            <span className="size-[10px] shrink-0 rounded-full bg-[#1BB3FF]">
+            <span className="size-2.5 shrink-0 rounded-full bg-[#1BB3FF]">
               <span className="sr-only">읽지 않음</span>
             </span>
           )}
