@@ -7,7 +7,7 @@ export default function ChatEmptyState() {
         <img
           src={chatEmptyChar}
           alt="채팅 없음"
-          className="h-auto w-[226px] object-contain"
+          className="h-[200px] w-auto object-contain"
         />
 
         <p className="mt-5 text-sm leading-[25px] text-[#343434]">

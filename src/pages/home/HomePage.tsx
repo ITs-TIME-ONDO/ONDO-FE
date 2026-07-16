@@ -458,14 +458,14 @@ export default function HomePage() {
 
         <main className="absolute left-0 top-[171px] flex w-full flex-col items-center">
           {myRequest?.status === 'MATCHED' ? (
-            <div className="relative h-[508px] w-full" aria-live="polite">
+            <div className="mt-[96px] flex flex-col items-center" aria-live="polite">
               <img
                 src={matchingImage}
                 alt="매칭 완료"
-                className="absolute left-1/2 top-[43px] h-[293px] w-[236px] -translate-x-1/2 object-contain"
+                className="h-[200px] w-auto object-contain"
               />
 
-              <p className="absolute left-1/2 top-[307px] -translate-x-1/2 text-center text-lg font-normal leading-6 text-black">
+              <p className="mt-5 text-center text-sm leading-[25px] text-[#343434]">
                 매칭완료!
               </p>
             </div>
@@ -529,10 +529,10 @@ export default function HomePage() {
               <img
                 src={cryingChar}
                 alt="울고 있는 캐릭터"
-                className="h-auto w-[200px] object-contain"
+                className="h-[200px] w-auto object-contain"
               />
 
-              <p className="mt-5 text-sm leading-5 text-[#666666]">
+              <p className="mt-5 text-sm leading-[25px] text-[#343434]">
                 {homeErrorMessage}
               </p>
 
@@ -549,7 +549,7 @@ export default function HomePage() {
               <img
                 src={cryingChar}
                 alt="울고 있는 캐릭터"
-                className="h-auto w-[200px] object-contain"
+                className="h-[200px] w-auto object-contain"
               />
 
               <p className="mt-5 text-sm text-[#666666]">아직 요청이 없어요</p>
