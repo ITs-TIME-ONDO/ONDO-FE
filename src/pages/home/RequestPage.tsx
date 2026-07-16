@@ -109,13 +109,9 @@ export default function RequestPage() {
           JSON.stringify({ accessToken, card: createdCard })
         )
       }
-      localStorage.setItem('showDeleteGuide', 'true')
       navigate('/')
     } catch (error) {
       console.error('카드 생성 실패:', error)
-      alert(
-        '요청 생성에 실패했습니다. 위치 권한 또는 로그인 상태를 확인해주세요.'
-      )
     } finally {
       setIsSubmitting(false)
     }

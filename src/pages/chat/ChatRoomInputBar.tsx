@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { check, sexual } from 'korcen' // korcen.ts 오픈소스 이용해서 한국어 비속어 블로킹
 
 import mapIcon from '../../assets/chat_map_icon.svg'
@@ -11,6 +12,7 @@ type Props = {
 
 export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
   const [value, setValue] = useState('')
+  const navigate = useNavigate()
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
 
@@ -49,7 +51,12 @@ export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
       {error && <p className="px-1 text-xs text-red-500">{error}</p>}
 
       <div className="flex items-center gap-3">
-        <button type="button" disabled={disabled} className="shrink-0">
+        <button
+          type="button"
+          onClick={() => navigate('/location')}
+          disabled={disabled}
+          className="shrink-0"
+        >
           <img src={mapIcon} alt="위치 공유" className="h-5 w-5" />
         </button>
 

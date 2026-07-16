@@ -12,6 +12,7 @@ import ChatRoomPage from './pages/chat/ChatRoomPage'
 import MyPage from './pages/mypage/MyPage'
 import ProfileEditPage from './pages/mypage/ProfileEditPage'
 import WithdrawPage from './pages/mypage/WithdrawPage'
+import LocationPage from './pages/location/location'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isLoggedIn = localStorage.getItem('onboardingCompleted') === 'true'
@@ -91,6 +92,11 @@ function App() {
                 <WithdrawPage />
               </ProtectedRoute>
             }
+          />
+
+          <Route
+            path="/location"
+            element={<LocationPage />}
           />
 
           <Route

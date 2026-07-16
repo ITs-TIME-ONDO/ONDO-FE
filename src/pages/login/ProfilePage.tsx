@@ -62,7 +62,6 @@ export default function ProfilePage() {
               navigate('/terms')
             } catch (error) {
               console.error('프로필 저장 실패:', error)
-              alert('프로필 저장에 실패했습니다. 다시 시도해주세요.')
             } finally {
               setIsSubmitting(false)
             }

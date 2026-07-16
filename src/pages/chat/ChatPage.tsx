@@ -20,6 +20,20 @@ export default function ChatPage() {
     fetchRooms()
     // 앱 전체 1개만 유지되는 소켓 연결 — 이미 연결돼 있으면 no-op
     connect()
+
+    const intervalId = window.setInterval(fetchRooms, 5000)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchRooms()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [fetchRooms, connect])
 
   const hasChatRooms = rooms.length > 0

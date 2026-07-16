@@ -11,9 +11,11 @@ import logo from '../../assets/logo.png'
 import alertIcon from '../../assets/alert.png'
 import profileBtn from '../../assets/top_small_profile_btn.png'
 import cryingChar from '../../assets/crying_char.png'
+import matchingImage from '../../assets/matching.png'
 import upFinger from '../../assets/up_finger.png'
 import sideFinger from '../../assets/side_finger.png'
 import { apiFetch } from '../../api/client'
+import { createChatRoom } from '../../api/chat'
 
 const getHomeErrorMessage = (error: unknown): string => {
   const code =
@@ -33,42 +35,12 @@ const getHomeErrorMessage = (error: unknown): string => {
 }
 
 const MY_REQUEST_STORAGE_KEY = 'myRequest'
-const NEARBY_REQUEST_GUIDE_STORAGE_KEY = 'nearbyRequestGuideSeen'
+const NEARBY_GUIDE_SEEN_STORAGE_KEY = 'hasSeenNearbyCardGuide'
 const getCardFromResponse = (response: any): any | null => {
   const card = response?.data?.card ?? response?.data ?? response?.card ?? response
 
   return card?.id ? card : null
 }
-
-const getStoredMyRequest = (): any | null => {
-  const saved = localStorage.getItem(MY_REQUEST_STORAGE_KEY)
-  const accessToken = localStorage.getItem('accessToken')
-
-  if (!saved || !accessToken) return null
-
-  try {
-    const parsed = JSON.parse(saved)
-    const card = parsed.card ?? parsed
-    const savedAccessToken = parsed.accessToken
-    const expiresAt = card?.expiresAt ? new Date(card.expiresAt).getTime() : NaN
-
-    if (!card?.id || Number.isNaN(expiresAt) || expiresAt <= Date.now()) {
-      localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
-      return null
-    }
-
-    if (savedAccessToken && savedAccessToken !== accessToken) {
-      localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
-      return null
-    }
-
-    return card
-  } catch {
-    localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
-    return null
-  }
-}
-
 
 const getCurrentUserId = (): string | null => {
   const accessToken = localStorage.getItem('accessToken')
@@ -98,9 +70,13 @@ const getCurrentUserId = (): string | null => {
 const filterOutMyCards = (cards: any[]): any[] => {
   const currentUserId = getCurrentUserId()
 
-  if (!currentUserId) return cards
+  const openCards = cards.filter((card) => card?.status === 'OPEN')
 
-  return cards.filter((card) => String(card?.requesterId) !== currentUserId)
+  if (!currentUserId) return openCards
+
+  return openCards.filter(
+    (card) => String(card?.requesterId) !== currentUserId
+  )
 }
 const saveStoredMyRequest = (card: any) => {
   const accessToken = localStorage.getItem('accessToken')
@@ -113,11 +89,46 @@ const saveStoredMyRequest = (card: any) => {
   )
 }
 
+const saveStoredMatchedHelp = (card: any) => {
+  const accessToken = localStorage.getItem('accessToken')
+
+  if (!card?.id || !accessToken) return
+
+  localStorage.setItem(
+    MY_REQUEST_STORAGE_KEY,
+    JSON.stringify({ accessToken, card, role: 'helper' })
+  )
+}
+
+const getStoredMatchedHelp = (): any | null => {
+  const accessToken = localStorage.getItem('accessToken')
+  const storedRequest = localStorage.getItem(MY_REQUEST_STORAGE_KEY)
+
+  if (!accessToken || !storedRequest) return null
+
+  try {
+    const parsedRequest = JSON.parse(storedRequest)
+
+    if (
+      parsedRequest?.accessToken !== accessToken ||
+      parsedRequest?.role !== 'helper' ||
+      !parsedRequest?.card?.id
+    ) {
+      return null
+    }
+
+    return parsedRequest.card
+  } catch {
+    return null
+  }
+}
+
 export default function HomePage() {
   const navigate = useNavigate()
 
   const [myRequest, setMyRequest] = useState<any>(null)
   const [nearbyCards, setNearbyCards] = useState<any[]>([])
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showDeleteGuide, setShowDeleteGuide] = useState(false)
   const [nearbyGuideStep, setNearbyGuideStep] = useState<
@@ -125,15 +136,22 @@ export default function HomePage() {
   >(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
+  const [selectedHelpCardId, setSelectedHelpCardId] = useState<string | null>(null)
+  const [isApplying, setIsApplying] = useState(false)
   const [homeErrorMessage, setHomeErrorMessage] = useState<string | null>(null)
   const isFetchingRef = useRef(false)
+  const fetchGenerationRef = useRef(0)
+  const isLoadingMoreRef = useRef(false)
+  const positionRef = useRef<GeolocationPosition | null>(null)
+  const selectedHelpCardRef = useRef<any | null>(null)
+  const deleteGuideDismissedCardIdRef = useRef<string | null>(null)
 
   const getCurrentPosition = (): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+        enableHighAccuracy: false,
+        timeout: 15000,
+        maximumAge: 300000,
       })
     })
   }
@@ -141,51 +159,84 @@ export default function HomePage() {
     if (isFetchingRef.current && !options?.force) return
 
     isFetchingRef.current = true
-    const shouldShowDeleteGuide =
-      localStorage.getItem('showDeleteGuide') === 'true'
-
-    if (shouldShowDeleteGuide) {
-      setShowDeleteGuide(true)
-      localStorage.removeItem('showDeleteGuide')
-    }
+    const fetchGeneration = ++fetchGenerationRef.current
+    const isLatestFetch = () => fetchGenerationRef.current === fetchGeneration
 
     try {
       const res = await apiFetch<any>('/api/cards/my/active')
+      if (!isLatestFetch()) return
+
       const card = getCardFromResponse(res)
+      const activeCardData = res?.data ?? res
+      const hasCreatedCard = activeCardData?.hasCreatedCard
 
       if (!card || !card.id) {
-        const savedMyRequest = getStoredMyRequest()
+        const storedMatchedHelp = getStoredMatchedHelp()
 
-        if (savedMyRequest) {
-          setMyRequest(savedMyRequest)
-          setNearbyCards([])
-          setHomeErrorMessage(null)
-          return
+        if (storedMatchedHelp) {
+          const matchedCardRes = await apiFetch<any>(
+            `/api/cards/${storedMatchedHelp.id}`
+          )
+          if (!isLatestFetch()) return
+
+          const matchedCard = getCardFromResponse(matchedCardRes)
+
+          if (matchedCard?.status === 'MATCHED') {
+            saveStoredMatchedHelp(matchedCard)
+            setMyRequest(matchedCard)
+            setNearbyCards([])
+            setNextCursor(null)
+            setShowDeleteGuide(false)
+            setShowDeleteModal(false)
+            setShowHelpModal(false)
+            setSelectedHelpCardId(null)
+            setNearbyGuideStep(null)
+            setHomeErrorMessage(null)
+            return
+          }
         }
 
+        localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
         setMyRequest(null)
+        setShowDeleteGuide(false)
+        deleteGuideDismissedCardIdRef.current = null
 
         try {
           const position = await getCurrentPosition()
+          if (!isLatestFetch()) return
+
+          positionRef.current = position
 
           const nearbyRes = await apiFetch<any>(
             `/api/cards/nearby?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}`
           )
+          if (!isLatestFetch()) return
 
           const nearbyData = nearbyRes.data ?? nearbyRes
 
           const nextNearbyCards = filterOutMyCards(nearbyData?.cards ?? [])
 
           setNearbyCards(nextNearbyCards)
+          setNextCursor(nearbyData?.nextCursor ?? null)
           setCurrentIndex((prev) =>
             nextNearbyCards.length === 0
               ? 0
               : Math.min(prev, nextNearbyCards.length - 1)
           )
+          if (
+            nextNearbyCards.length > 0 &&
+            nearbyData?.hasSeenCardViewOnboarding === false &&
+            sessionStorage.getItem(NEARBY_GUIDE_SEEN_STORAGE_KEY) !== 'true'
+          ) {
+            setNearbyGuideStep((prev) => prev ?? 'help')
+          }
           setHomeErrorMessage(null)
         } catch (error) {
+          if (!isLatestFetch()) return
+
           console.error('주변 요청 조회 실패:', error)
           setNearbyCards([])
+          setNextCursor(null)
           setHomeErrorMessage(getHomeErrorMessage(error))
         }
 
@@ -195,16 +246,37 @@ export default function HomePage() {
       saveStoredMyRequest(card)
       setMyRequest(card)
       setNearbyCards([])
+      setNextCursor(null)
+      if (card.status === 'MATCHED') {
+        setShowDeleteGuide(false)
+        setShowDeleteModal(false)
+        setShowHelpModal(false)
+        setSelectedHelpCardId(null)
+        setNearbyGuideStep(null)
+      }
+      if (
+        card.status === 'OPEN' &&
+        hasCreatedCard === false &&
+        deleteGuideDismissedCardIdRef.current !== card.id
+      ) {
+        setShowDeleteGuide(true)
+      }
       setHomeErrorMessage(null)
     } catch (e) {
+      if (!isLatestFetch()) return
+
       console.error('홈 데이터 조회 실패:', e)
       setMyRequest(null)
       setNearbyCards([])
+      setNextCursor(null)
+      setShowDeleteGuide(false)
       setHomeErrorMessage(
         '\uD648 \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.'
       )
     } finally {
-      isFetchingRef.current = false
+      if (isLatestFetch()) {
+        isFetchingRef.current = false
+      }
     }
   }, [])
 
@@ -216,17 +288,49 @@ export default function HomePage() {
   }, [fetchHomeData])
 
   useEffect(() => {
+    setCurrentIndex((index) =>
+      Math.min(index, Math.max(nearbyCards.length - 1, 0))
+    )
+  }, [nearbyCards.length])
+
+  useEffect(() => {
     if (
       myRequest ||
+      !nextCursor ||
       nearbyCards.length === 0 ||
-      showDeleteGuide ||
-      localStorage.getItem(NEARBY_REQUEST_GUIDE_STORAGE_KEY) === 'true'
+      currentIndex < nearbyCards.length - 2 ||
+      isLoadingMoreRef.current
     ) {
       return
     }
 
-    setNearbyGuideStep((prev) => prev ?? 'help')
-  }, [myRequest, nearbyCards.length, showDeleteGuide])
+    const loadMoreNearbyCards = async () => {
+      isLoadingMoreRef.current = true
+
+      try {
+        const position = positionRef.current ?? (await getCurrentPosition())
+        positionRef.current = position
+
+        const response = await apiFetch<any>(
+          `/api/cards/nearby?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&cursor=${encodeURIComponent(nextCursor)}`
+        )
+        const data = response?.data ?? response
+        const newCards = filterOutMyCards(data?.cards ?? [])
+
+        setNearbyCards((cards) => {
+          const existingIds = new Set(cards.map((card) => card.id))
+          return [...cards, ...newCards.filter((card) => !existingIds.has(card.id))]
+        })
+        setNextCursor(data?.nextCursor ?? null)
+      } catch (error) {
+        console.error('주변 요청 추가 조회 실패:', error)
+      } finally {
+        isLoadingMoreRef.current = false
+      }
+    }
+
+    loadMoreNearbyCards()
+  }, [currentIndex, myRequest, nearbyCards.length, nextCursor])
 
   const handleNearbyGuideClick = () => {
     setNearbyGuideStep((step) => {
@@ -234,7 +338,7 @@ export default function HomePage() {
         return 'swipe'
       }
 
-      localStorage.setItem(NEARBY_REQUEST_GUIDE_STORAGE_KEY, 'true')
+      sessionStorage.setItem(NEARBY_GUIDE_SEEN_STORAGE_KEY, 'true')
       return null
     })
   }
@@ -243,7 +347,6 @@ export default function HomePage() {
 
     if (!cardId) {
       console.error('카드 ID 없음:', myRequest)
-      alert('카드 ID를 찾을 수 없습니다.')
       return
     }
 
@@ -262,7 +365,74 @@ export default function HomePage() {
       await fetchHomeData({ force: true })
     } catch (error) {
       console.error('카드 취소 실패:', error)
-      alert('카드 취소에 실패했습니다.')
+
+      const status =
+        typeof error === 'object' && error !== null && 'status' in error
+          ? (error as { status?: number }).status
+          : undefined
+
+      if (status === 404 || status === 409) {
+        setShowDeleteModal(false)
+        localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+        await fetchHomeData({ force: true })
+      }
+    }
+  }
+
+  const removeNearbyCard = (cardId: string) => {
+    setNearbyCards((cards) => cards.filter((card) => card.id !== cardId))
+  }
+
+  const handleHelpRequest = async () => {
+    const cardId = selectedHelpCardId
+
+    if (!cardId || isApplying) return
+
+    setIsApplying(true)
+
+    try {
+      await apiFetch(`/api/cards/${cardId}/applies`, {
+        method: 'POST',
+      })
+
+      const matchedCard = {
+        ...selectedHelpCardRef.current,
+        id: cardId,
+        status: 'MATCHED',
+      }
+
+      saveStoredMatchedHelp(matchedCard)
+      setMyRequest(matchedCard)
+      setNearbyCards([])
+      setNextCursor(null)
+      setShowHelpModal(false)
+      setSelectedHelpCardId(null)
+      selectedHelpCardRef.current = null
+      await fetchHomeData({ force: true })
+
+      try {
+        const chatRoomRes = await createChatRoom({ cardId })
+        navigate(`/chat/${chatRoomRes.data.id}`)
+      } catch (chatRoomError) {
+        console.error('채팅방 생성 또는 조회 실패:', chatRoomError)
+      }
+    } catch (error) {
+      const status =
+        typeof error === 'object' && error !== null && 'status' in error
+          ? (error as { status?: number }).status
+          : undefined
+
+      if (status === 403 || status === 404 || status === 409) {
+        removeNearbyCard(cardId)
+        setShowHelpModal(false)
+        setSelectedHelpCardId(null)
+        selectedHelpCardRef.current = null
+        await fetchHomeData({ force: true })
+      } else {
+        console.error('도움 신청 실패:', error)
+      }
+    } finally {
+      setIsApplying(false)
     }
   }
   return (
@@ -281,23 +451,73 @@ export default function HomePage() {
         </header>
 
         <main className="absolute left-0 top-[171px] flex w-full flex-col items-center">
-          {myRequest ? (
+          {myRequest?.status === 'MATCHED' ? (
+            <div className="relative h-[508px] w-full" aria-live="polite">
+              <img
+                src={matchingImage}
+                alt="매칭 완료"
+                className="absolute left-1/2 top-[43px] h-[293px] w-[236px] -translate-x-1/2 object-contain"
+              />
+
+              <p className="absolute left-1/2 top-[307px] -translate-x-1/2 text-center text-lg font-normal leading-6 text-black">
+                매칭완료!
+              </p>
+            </div>
+          ) : myRequest ? (
             <MyRequestCard
               request={myRequest}
               onDelete={() => setShowDeleteModal(true)}
-              onRetry={fetchHomeData}
+              onRetry={() => fetchHomeData({ force: true })}
               onDragStart={() => {}}
               onDragEnd={() => {}}
             />
           ) : nearbyCards.length > 0 ? (
-            <NearbyRequestCard
-              request={nearbyCards[currentIndex]}
-              onSwipeLeft={() =>
-                setCurrentIndex((i) => Math.min(i + 1, nearbyCards.length - 1))
-              }
-              onSwipeRight={() => setCurrentIndex((i) => Math.max(i - 1, 0))}
-              onHelp={() => setShowHelpModal(true)}
-            />
+            <div className="relative h-[508px] w-80">
+              {nearbyCards
+                .slice(currentIndex, currentIndex + 3)
+                .map((request, stackIndex) => (
+                  <div
+                    key={request.id}
+                    className={`absolute inset-0 ${
+                      stackIndex === 0 ? '' : 'pointer-events-none'
+                    }`}
+                    style={{
+                      zIndex: 3 - stackIndex,
+                      transform: `translateX(${stackIndex * 12}px) scale(${
+                        1 - stackIndex * 0.015
+                      })`,
+                      transformOrigin: 'left center',
+                    }}
+                    aria-hidden={stackIndex !== 0}
+                  >
+                    <NearbyRequestCard
+                      request={request}
+                      onSwipeLeft={
+                        stackIndex === 0
+                          ? () =>
+                              setCurrentIndex((i) =>
+                                Math.min(i + 1, nearbyCards.length - 1)
+                              )
+                          : undefined
+                      }
+                      onSwipeRight={
+                        stackIndex === 0
+                          ? () => setCurrentIndex((i) => Math.max(i - 1, 0))
+                          : undefined
+                      }
+                      onHelp={
+                        stackIndex === 0
+                          ? () => {
+                              selectedHelpCardRef.current = request
+                              setSelectedHelpCardId(request.id)
+                              setShowHelpModal(true)
+                            }
+                          : undefined
+                      }
+                    />
+                  </div>
+                ))}
+            </div>
           ) : homeErrorMessage ? (
             <div className="mt-[96px] flex flex-col items-center px-6 text-center">
               <img
@@ -335,9 +555,10 @@ export default function HomePage() {
 
         <ConfirmModal
           open={showDeleteModal}
-          title="요청을 삭제하시겠습니까?"
+          title="요청을 취소하시겠습니까?"
           confirmText="삭제"
           cancelText="취소"
+          mutedConfirm
           onConfirm={handleDeleteRequest}
           onCancel={() => setShowDeleteModal(false)}
         />
@@ -347,16 +568,20 @@ export default function HomePage() {
           title="도와주시겠습니까?"
           confirmText="도와주기"
           cancelText="취소"
-          onConfirm={() => {
+          onConfirm={handleHelpRequest}
+          onCancel={() => {
             setShowHelpModal(false)
-            navigate(`/cards/${nearbyCards[currentIndex].id}`)
+            setSelectedHelpCardId(null)
+            selectedHelpCardRef.current = null
           }}
-          onCancel={() => setShowHelpModal(false)}
         />
         {/* 삭제 가이드 */}
         {showDeleteGuide && (
           <div
-            onClick={() => setShowDeleteGuide(false)}
+            onClick={() => {
+              deleteGuideDismissedCardIdRef.current = myRequest?.id ?? null
+              setShowDeleteGuide(false)
+            }}
             className="absolute inset-0 z-50 flex items-center justify-center bg-black/50"
           >
             <div className="flex flex-col items-center">

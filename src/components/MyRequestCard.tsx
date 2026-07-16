@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
 import photo from '../assets/photo.png'
+import meal from '../assets/합석.png'
+import other from '../assets/기타.png'
 import { apiFetch } from '../api/client'
+import { formatElapsedTime } from '../utils/formatElapsedTime'
 
 type MyRequest = {
   id: string
@@ -24,7 +27,7 @@ type MyRequest = {
 type Props = {
   request: MyRequest
   onDelete: () => void
-  onRetry: () => void
+  onRetry: () => void | Promise<void>
   onDragStart: () => void
   onDragEnd: () => void
 }
@@ -38,13 +41,19 @@ export default function MyRequestCard({
 }: Props) {
   const [bumpCount, setBumpCount] = useState(request.retryCount ?? 0)
   const [isBumping, setIsBumping] = useState(false)
+  const [lastRetriedAt, setLastRetriedAt] = useState<string | null>(null)
+  const isOpen = request.status === 'OPEN'
 
   useEffect(() => {
     setBumpCount(request.retryCount ?? 0)
   }, [request.retryCount])
 
+  useEffect(() => {
+    setLastRetriedAt(null)
+  }, [request.id])
+
   const handleBump = async () => {
-    if (isBumping || bumpCount >= 3) return
+    if (!isOpen || isBumping || bumpCount >= 3) return
 
     setIsBumping(true)
 
@@ -54,12 +63,20 @@ export default function MyRequestCard({
       })
 
       setBumpCount((prev) => prev + 1)
-      alert('요청이 다시 전송되었습니다.')
+      setLastRetriedAt(new Date().toISOString())
 
-      onRetry()
+      await onRetry()
     } catch (error) {
       console.error('재요청 실패:', error)
-      alert('재요청에 실패했습니다.')
+
+      const status =
+        typeof error === 'object' && error !== null && 'status' in error
+          ? (error as { status?: number }).status
+          : undefined
+
+      if (status === 404 || status === 409) {
+        await onRetry()
+      }
     } finally {
       setIsBumping(false)
     }
@@ -71,6 +88,12 @@ export default function MyRequestCard({
     OTHER: '기타',
   }
 
+  const categoryImageMap: Record<string, string> = {
+    PHOTO: photo,
+    MEAL: meal,
+    OTHER: other,
+  }
+
   const genderLabelMap: Record<string, string> = {
     MALE: '남성',
     FEMALE: '여성',
@@ -78,30 +101,38 @@ export default function MyRequestCard({
   }
 
   const categoryLabel = categoryLabelMap[request.category] ?? request.category
+  const categoryImage = categoryImageMap[request.category] ?? photo
 
   const genderLabel =
     genderLabelMap[request.preferredGender] ?? request.preferredGender
+  const elapsedTime = formatElapsedTime(
+    lastRetriedAt || request.updatedAt || request.createdAt
+  )
 
   return (
     <motion.section
-      drag="y"
+      drag={isOpen ? 'y' : false}
       dragConstraints={{ top: -100, bottom: 0 }}
       dragElastic={0.15}
       onDragStart={onDragStart}
       onDragEnd={(_, info) => {
         onDragEnd()
 
-        if (info.offset.y < -120) {
+        if (isOpen && info.offset.y < -120) {
           onDelete()
         }
       }}
       className="flex h-[508px] w-[342px] flex-col rounded-[20px] border border-[#FFC878] bg-white px-[26px] py-5 shadow-[0_0_4px_rgba(255,158,27,1),0_4px_4px_rgba(0,0,0,0.15)]"
     >
-      <p className="text-center text-sm text-[#666666]">30분 전</p>
+      <p className="text-center text-sm text-[#666666]">{elapsedTime}</p>
 
       <div className="mt-4 flex justify-center">
         <div className="relative h-[250px] w-[290px] overflow-hidden rounded-2xl">
-          <img src={photo} alt="" className="h-full w-full object-cover" />
+          <img
+            src={categoryImage}
+            alt=""
+            className="h-full w-full object-cover"
+          />
 
           <div className="absolute inset-0 bg-black/50" />
 
@@ -135,15 +166,15 @@ export default function MyRequestCard({
 
       <button
         type="button"
-        disabled={isBumping || bumpCount >= 3}
+        disabled={!isOpen || isBumping || bumpCount >= 3}
         onClick={handleBump}
         className={`mt-auto h-12 w-full rounded-full text-lg font-semibold transition ${
-          isBumping || bumpCount >= 3
+          !isOpen || isBumping || bumpCount >= 3
             ? 'cursor-not-allowed bg-[#D9D9D9] text-[#8C8C8C]'
             : 'bg-black text-white'
         }`}
       >
-        다시 요청하기 ({bumpCount}/3회)
+        {isOpen ? `다시 요청하기 (${bumpCount}/3회)` : '매칭 진행 중'}
       </button>
     </motion.section>
   )

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import PageTransition from '../../components/PageTransition'
 import PageHeader from '../../components/PageHeader'
@@ -30,6 +30,7 @@ import chatRoomChar from '../../assets/chat_room_char.png'
 const mockRoomInfo = mockChatRooms[0]
 
 export default function ChatRoomPage() {
+  const navigate = useNavigate()
   const { roomId } = useParams<{ roomId: string }>()
   const [room, setRoom] = useState<ChatRoomSummary | null>(null)
   const [roomNotFound, setRoomNotFound] = useState(false)
@@ -44,6 +45,7 @@ export default function ChatRoomPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [loadingMore, setLoadingMore] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialLoadRef = useRef(true)
   const preserveScrollRef = useRef<{ height: number; top: number } | null>(null)
 
@@ -53,6 +55,7 @@ export default function ChatRoomPage() {
   const messages = useChatSocketStore((state) =>
     roomId ? (state.messagesByRoom[roomId] ?? EMPTY_MESSAGES) : EMPTY_MESSAGES
   )
+  const lastMessageId = messages[messages.length - 1]?.id
   // 방 정보엔 상대방 userId가 없어서, 받은 메시지의 senderId로 유추 (메시지가 없으면 신고 불가)
   const opponentUserId =
     messages.find((msg) => msg.senderId !== myUserId)?.senderId ?? null
@@ -151,11 +154,14 @@ export default function ChatRoomPage() {
       return
     }
 
-    if (isInitialLoadRef.current && messages.length > 0) {
-      el.scrollTop = el.scrollHeight
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: isInitialLoadRef.current ? 'auto' : 'smooth',
+        block: 'end',
+      })
       isInitialLoadRef.current = false
     }
-  }, [messages])
+  }, [lastMessageId, messages.length])
 
   const loadMoreMessages = () => {
     if (!roomId || !hasNext || !nextCursor || loadingMore) return
@@ -241,7 +247,7 @@ export default function ChatRoomPage() {
       <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-white">
         <PageHeader
           title={room.opponentNickname ?? '알 수 없음'}
-          fallbackPath="/chat"
+          onBack={() => navigate('/chat', { replace: true })}
           rightAction={
             <button type="button" onClick={() => setShowMenu((prev) => !prev)}>
               <img src={menuIcon} alt="메뉴" className="h-6 w-6" />
@@ -296,7 +302,7 @@ export default function ChatRoomPage() {
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="absolute inset-x-0 top-[265px] bottom-[90px] overflow-y-auto"
+          className="chat-scrollbar absolute inset-x-0 top-[265px] bottom-[90px] overflow-y-auto"
         >
           <p className="text-center text-xs text-[#666]">{formatMatchedDate(room.createdAt)}</p>
 
@@ -322,6 +328,7 @@ export default function ChatRoomPage() {
               {closedMessage}
             </p>
           )}
+          <div ref={messagesEndRef} aria-hidden="true" />
         </div>
 
         <ChatRoomInputBar disabled={Boolean(closedMessage)} onSend={handleSend} />

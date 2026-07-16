@@ -10,9 +10,30 @@ type Props = {
   disableRequestButton?: boolean
 }
 
+const hasStoredActiveRequest = () => {
+  try {
+    const accessToken = localStorage.getItem('accessToken')
+    const storedRequest = localStorage.getItem('myRequest')
+
+    if (!accessToken || !storedRequest) return false
+
+    const parsedRequest = JSON.parse(storedRequest)
+    const status = parsedRequest?.card?.status
+
+    return (
+      parsedRequest?.accessToken === accessToken &&
+      (status === 'OPEN' || status === 'MATCHED')
+    )
+  } catch {
+    return false
+  }
+}
+
 export default function BottomNav({ disableRequestButton = false }: Props) {
   const location = useLocation()
   const navigate = useNavigate()
+  const isRequestButtonDisabled =
+    disableRequestButton || hasStoredActiveRequest()
 
   const isHome = location.pathname === '/' || location.pathname === '/home'
   const isChat = location.pathname === '/chat'
@@ -60,15 +81,15 @@ export default function BottomNav({ disableRequestButton = false }: Props) {
 
       <button
         type="button"
-        disabled={disableRequestButton}
+        disabled={isRequestButtonDisabled}
         onClick={() => navigate('/request')}
         className={
           'absolute left-1/2 top-0 z-20 h-[70px] w-[70px] -translate-x-1/2 rounded-full shadow-[0_8px_16px_rgba(255,158,27,0.35)] ' +
-          (disableRequestButton
+          (isRequestButtonDisabled
             ? 'cursor-not-allowed opacity-45 grayscale'
             : '')
         }
-        aria-disabled={disableRequestButton}
+        aria-disabled={isRequestButtonDisabled}
       >
         <img
           src={helpBtn}

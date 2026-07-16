@@ -1,7 +1,10 @@
 import { motion } from 'framer-motion'
 
 import photo from '../assets/photo.png'
+import meal from '../assets/합석.png'
+import other from '../assets/기타.png'
 import miniProfileChar from '../assets/mini_profile_char.png'
+import { formatElapsedTime } from '../utils/formatElapsedTime'
 
 type NearbyRequest = {
   id: string
@@ -34,41 +37,16 @@ const categoryLabelMap: Record<string, string> = {
   OTHER: '기타',
 }
 
+const categoryImageMap: Record<string, string> = {
+  PHOTO: photo,
+  MEAL: meal,
+  OTHER: other,
+}
+
 const genderLabelMap: Record<string, string> = {
   MALE: '남성',
   FEMALE: '여성',
   ANY: '상관없음',
-}
-
-const formatElapsedTime = (createdAt: string): string => {
-  const createdTime = new Date(createdAt).getTime()
-
-  if (Number.isNaN(createdTime)) {
-    return '방금 전'
-  }
-
-  const diffMinutes = Math.max(
-    0,
-    Math.floor((Date.now() - createdTime) / 1000 / 60)
-  )
-
-  if (diffMinutes < 1) {
-    return '방금 전'
-  }
-
-  if (diffMinutes < 60) {
-    return `${diffMinutes}분 전`
-  }
-
-  const diffHours = Math.floor(diffMinutes / 60)
-
-  if (diffHours < 24) {
-    return `${diffHours}시간 전`
-  }
-
-  const diffDays = Math.floor(diffHours / 24)
-
-  return `${diffDays}일 전`
 }
 
 export default function NearbyRequestCard({
@@ -78,6 +56,7 @@ export default function NearbyRequestCard({
   onHelp,
 }: Props) {
   const categoryLabel = categoryLabelMap[request.category] ?? request.category
+  const categoryImage = categoryImageMap[request.category] ?? photo
   const genderLabel =
     genderLabelMap[request.preferredGender] ?? request.preferredGender
   const requesterProfileImage =
@@ -87,6 +66,7 @@ export default function NearbyRequestCard({
   return (
     <motion.section
       drag
+      dragDirectionLock
       dragConstraints={{ left: -140, right: 140, top: -120, bottom: 0 }}
       dragElastic={0}
       dragSnapToOrigin
@@ -107,12 +87,12 @@ export default function NearbyRequestCard({
       className="flex h-[508px] w-80 cursor-pointer flex-col items-center justify-between rounded-[20px] bg-white pb-7 pt-5 shadow-[0_4px_4px_rgba(0,0,0,0.25),0_0_4px_rgba(255,158,27,1)]"
     >
       <p className="h-5 text-sm font-normal text-[#555555]">
-        {formatElapsedTime(request.createdAt)}
+        {formatElapsedTime(request.updatedAt || request.createdAt)}
       </p>
 
       <div className="relative h-64 w-72 overflow-hidden rounded-2xl">
         <img
-          src={photo}
+          src={categoryImage}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
         />
