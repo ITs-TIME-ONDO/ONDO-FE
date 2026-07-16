@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import arrowIcon from '../../assets/chat_report_arrow.svg'
-import { createReport, type ReportReason } from '../../api/reports'
+import { createChatRoomReport, type ReportReason } from '../../api/reports'
 import { ApiError } from '../../api/client'
 
 // reports.md엔 'HARASSMENT'(욕설/인신공격) 예시만 있음. 나머지 두 값은 추정 작성 — 백엔드 확인 필요
@@ -15,14 +15,14 @@ const REPORT_REASONS = Object.keys(REASON_CODE_MAP)
 type Props = {
   open: boolean
   onClose: () => void
-  reportedUserId: string | null
+  roomId: string | undefined
   onSuccess: () => void
 }
 
 export default function ReportModal({
   open,
   onClose,
-  reportedUserId,
+  roomId,
   onSuccess,
 }: Props) {
   const [reason, setReason] = useState<string | null>(null)
@@ -44,11 +44,10 @@ export default function ReportModal({
   const isValid = Boolean(reason) && description.trim().length > 0
 
   const handleSubmit = () => {
-    if (!isValid || !reason || !reportedUserId || submitting) return
+    if (!isValid || !reason || !roomId || submitting) return
 
     setSubmitting(true)
-    createReport({
-      reportedUserId,
+    createChatRoomReport(roomId, {
       reason: REASON_CODE_MAP[reason],
       description: description.trim(),
     })
@@ -140,11 +139,11 @@ export default function ReportModal({
 
         <button
           type="button"
-          disabled={!isValid || !reportedUserId || submitting}
+          disabled={!isValid || !roomId || submitting}
           onClick={handleSubmit}
           className={
             'flex h-[50px] w-full items-center justify-center rounded-full text-xl font-bold text-white ' +
-            (isValid && reportedUserId && !submitting
+            (isValid && roomId && !submitting
               ? 'bg-[#FF9E1B]'
               : 'bg-[#FF9E1B]/50')
           }

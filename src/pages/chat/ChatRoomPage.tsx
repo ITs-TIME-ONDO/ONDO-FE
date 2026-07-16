@@ -56,9 +56,6 @@ export default function ChatRoomPage() {
     roomId ? (state.messagesByRoom[roomId] ?? EMPTY_MESSAGES) : EMPTY_MESSAGES
   )
   const lastMessageId = messages[messages.length - 1]?.id
-  // 방 정보엔 상대방 userId가 없어서, 받은 메시지의 senderId로 유추 (메시지가 없으면 신고 불가)
-  const opponentUserId =
-    messages.find((msg) => msg.senderId !== myUserId)?.senderId ?? null
   const connect = useChatSocketStore((state) => state.connect)
   const subscribeToRoom = useChatSocketStore((state) => state.subscribeToRoom)
   const unsubscribeFromRoom = useChatSocketStore((state) => state.unsubscribeFromRoom)
@@ -363,7 +360,7 @@ export default function ChatRoomPage() {
         <ReportModal
           open={showReportModal}
           onClose={() => setShowReportModal(false)}
-          reportedUserId={opponentUserId}
+          roomId={roomId}
           onSuccess={() => setClosedMessage('채팅방을 나갔습니다.')}
         />
       </div>
