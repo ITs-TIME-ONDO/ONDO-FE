@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import cameraIcon from '../../assets/gridicons_camera.svg'
 
 interface ProfileImagePickerProps {
@@ -17,6 +17,11 @@ export default function ProfileImagePicker({
   const [imageUrl, setImageUrl] = useState<string | null>(initialValue ?? null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // initialValue가 마운트 이후 비동기로 도착(예: 프로필 API 응답)해도 반영되도록 동기화
+  useEffect(() => {
+    setImageUrl(initialValue ?? null)
+  }, [initialValue])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
