@@ -37,10 +37,14 @@ export function getUserProfile(): Promise<UserProfile> {
   return apiFetch<UserProfile>('/api/user/profile')
 }
 
-export function putUserProfile(body: UpdateProfileRequest): Promise<void> {
+export function putUserProfile(
+  body: UpdateProfileRequest,
+  signal?: AbortSignal
+): Promise<void> {
   return apiFetch<void>('/api/user/profile', {
     method: 'PUT',
     body: buildProfileFormData(body),
+    signal,
   })
 }
 

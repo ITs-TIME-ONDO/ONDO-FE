@@ -25,6 +25,16 @@ export default function ProfileImagePicker({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 선택할 수 있습니다.')
+      e.target.value = ''
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('10MB 이하의 이미지를 선택해주세요.')
+      e.target.value = ''
+      return
+    }
     const previewUrl = URL.createObjectURL(file)
     setImageUrl(previewUrl)
     onChange?.(file, previewUrl)
@@ -70,11 +80,11 @@ export default function ProfileImagePicker({
             <button
               type="button"
               aria-label="이미지 선택 메뉴 닫기"
-              className="fixed inset-0 z-40 cursor-default bg-black/25"
+              className="fixed inset-0 z-20 cursor-default bg-black/25"
               onPointerDown={() => setIsImageMenuOpen(false)}
             />
             <div
-              className="absolute bottom-[-93px] right-[-17px] z-50 flex w-36 flex-col divide-y divide-[#E8E8E8] rounded-[5px] border border-white/60 bg-white/90 backdrop-blur-[2px]"
+              className="absolute bottom-[-93px] left-1/2 z-50 flex w-36 flex-col divide-y divide-[#E8E8E8] rounded-[5px] border border-white/60 bg-white/90 backdrop-blur-[2px]"
               style={{ boxShadow: '0px 2px 4px rgba(0,0,0,0.25)' }}
             >
               <button
