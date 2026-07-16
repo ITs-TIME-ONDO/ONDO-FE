@@ -87,7 +87,12 @@ export default function ConfirmModal({
   if (!open) return null
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/25">
+    <div
+      className="absolute inset-0 z-50 flex items-center justify-center bg-black/25"
+      onClick={() => {
+        if (!disabled) onCancel()
+      }}
+    >
       <div
         ref={dialogRef}
         role="dialog"
@@ -95,6 +100,7 @@ export default function ConfirmModal({
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
+        onClick={(event) => event.stopPropagation()}
         className="flex flex-col items-center justify-center gap-5 rounded-[20px] bg-white/90 px-7 pb-6 pt-8 shadow-[0_0_5.6px_rgba(0,0,0,0.20)]"
       >
         <div className="text-center">

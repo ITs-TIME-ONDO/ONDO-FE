@@ -68,7 +68,10 @@ export default function ReportModal({
 
   return (
     <>
-      <div className="absolute inset-0 z-40 bg-black/25" onClick={onClose} />
+      <div
+        className="absolute inset-0 z-40 bg-white/20 backdrop-blur-[3px]"
+        onClick={onClose}
+      />
 
       <div
         className="absolute left-1/2 top-1/2 z-50 flex w-[342px] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-5 rounded-[20px] bg-white/90 px-7 pb-6 pt-8"
@@ -142,7 +145,7 @@ export default function ReportModal({
           disabled={!isValid || !roomId || submitting}
           onClick={handleSubmit}
           className={
-            'flex h-12 w-full items-center justify-center rounded-full text-base font-semibold text-white ' +
+            'flex h-[50px] w-[286px] items-center justify-center rounded-full text-lg font-semibold text-white ' +
             (isValid && roomId && !submitting
               ? 'bg-[#FF9E1B]'
               : 'bg-[#FF9E1B]/50')

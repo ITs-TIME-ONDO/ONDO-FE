@@ -77,9 +77,9 @@ export default function MyPage() {
         <button
           type="button"
           onClick={() => navigate('/mypage/edit')}
-          className="absolute left-1/2 -translate-x-1/2 top-[277px] flex items-center justify-center rounded-full bg-white px-[15px] py-[4px]"
+          className="absolute left-1/2 -translate-x-1/2 top-[277px] flex items-center justify-center rounded-full bg-white px-[18px] py-[5px]"
         >
-          <span className="text-[12px] font-medium text-[#343434] whitespace-nowrap">
+          <span className="text-[13px] font-medium text-[#343434] whitespace-nowrap">
             프로필 편집
           </span>
         </button>
@@ -90,14 +90,14 @@ export default function MyPage() {
           style={{ boxShadow: '0px 2px 3px rgba(0,0,0,0.2)' }}
         >
           <div className="flex flex-col items-center gap-[8px]">
-            <p className="text-[12px] font-medium text-black">도움 요청</p>
+            <p className="text-[14px] font-medium text-black">도움 요청</p>
             <p className="text-[36px] font-bold leading-none text-[#FF9E1B]">
               {helpRequestCount}
             </p>
           </div>
           <div className="h-[50px] w-px bg-[#e0e0e0]" />
           <div className="flex flex-col items-center gap-[8px]">
-            <p className="text-[12px] font-medium text-black">도움 응답</p>
+            <p className="text-[14px] font-medium text-black">도움 응답</p>
             <p className="text-[36px] font-bold leading-none text-[#FF9E1B]">
               {helpCount}
             </p>
@@ -108,7 +108,7 @@ export default function MyPage() {
         <div className="absolute left-1/2 -translate-x-1/2 top-[487px] flex w-[338px] flex-col gap-[15px]">
           <button
             type="button"
-            className="text-left text-[14px] text-black"
+            className="text-left text-[15px] text-black"
             onClick={() => setShowLogoutModal(true)}
           >
             로그아웃
@@ -116,7 +116,7 @@ export default function MyPage() {
           <div className="h-px w-full bg-[#e0e0e0]" />
           <button
             type="button"
-            className="text-left text-[14px] text-black"
+            className="text-left text-[15px] text-black"
             onClick={() => navigate('/mypage/withdraw')}
           >
             회원탈퇴

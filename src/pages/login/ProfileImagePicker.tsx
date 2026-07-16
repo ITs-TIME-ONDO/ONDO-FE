@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import cameraIcon from '../../assets/gridicons_camera.svg'
 
 interface ProfileImagePickerProps {
   defaultImage: string
@@ -15,7 +14,7 @@ export default function ProfileImagePicker({
   onChange,
 }: ProfileImagePickerProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(initialValue ?? null)
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [isImageMenuOpen, setIsImageMenuOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // initialValue가 마운트 이후 비동기로 도착(예: 프로필 API 응답)해도 반영되도록 동기화
@@ -31,10 +30,27 @@ export default function ProfileImagePicker({
     onChange?.(file, previewUrl)
   }
 
+  const handleUseDefaultImage = async () => {
+    setIsImageMenuOpen(false)
+    setImageUrl(null)
+
+    try {
+      const response = await fetch(defaultImage)
+      const blob = await response.blob()
+      const extension = blob.type.includes('svg') ? 'svg' : 'png'
+      const file = new File([blob], `default-profile.${extension}`, {
+        type: blob.type,
+      })
+      onChange?.(file, defaultImage)
+    } catch (error) {
+      console.error('기본 프로필 이미지 변환 실패:', error)
+    }
+  }
+
   return (
     <>
       <div
-        className={`absolute left-1/2 -translate-x-1/2 size-[220px] ${className}`}
+        className={`absolute left-[calc(50%_-_110px)] z-20 size-[220px] ${className}`}
       >
         <div
           className="absolute inset-0 rounded-full"
@@ -42,22 +58,45 @@ export default function ProfileImagePicker({
         />
         <img
           alt="프로필 이미지"
-          className="absolute inset-0 size-full object-cover rounded-full cursor-pointer"
+          className={`absolute inset-0 z-30 size-full cursor-pointer rounded-full object-cover transition-transform duration-200 ease-out ${
+            isImageMenuOpen ? 'scale-[1.03]' : 'scale-100'
+          }`}
           src={imageUrl ?? defaultImage}
-          onClick={() => setIsPreviewOpen(true)}
+          onClick={() => setIsImageMenuOpen((prev) => !prev)}
         />
 
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="absolute bottom-[10px] right-[-10px] flex size-10 items-center justify-center rounded-full"
-          style={{
-            background: 'rgba(243, 243, 243)',
-            filter: 'drop-shadow(0 0 1px #FF9E1B)',
-          }}
-        >
-          <img alt="사진 변경" className="size-[22px]" src={cameraIcon} />
-        </button>
+        {isImageMenuOpen && (
+          <>
+            <button
+              type="button"
+              aria-label="이미지 선택 메뉴 닫기"
+              className="fixed inset-0 z-40 cursor-default bg-black/25"
+              onPointerDown={() => setIsImageMenuOpen(false)}
+            />
+            <div
+              className="absolute bottom-[-93px] right-[-17px] z-50 flex w-36 flex-col divide-y divide-[#E8E8E8] rounded-[5px] border border-white/60 bg-white/90 backdrop-blur-[2px]"
+              style={{ boxShadow: '0px 2px 4px rgba(0,0,0,0.25)' }}
+            >
+              <button
+                type="button"
+                className="px-4 py-2.5 text-left text-sm text-black"
+                onClick={() => {
+                  setIsImageMenuOpen(false)
+                  fileInputRef.current?.click()
+                }}
+              >
+                사진 선택
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2.5 text-left text-sm text-black"
+                onClick={() => void handleUseDefaultImage()}
+              >
+                기본 이미지 사용
+              </button>
+            </div>
+          </>
+        )}
 
         <input
           ref={fileInputRef}
@@ -68,19 +107,6 @@ export default function ProfileImagePicker({
         />
       </div>
 
-      {isPreviewOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-          onClick={() => setIsPreviewOpen(false)}
-        >
-          <img
-            alt="프로필 확대"
-            className="size-[300px] rounded-full object-cover"
-            src={imageUrl ?? defaultImage}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
     </>
   )
 }

@@ -38,7 +38,7 @@ export default function FloatingConfirmModal({
   return (
     <>
       <div
-        className="absolute inset-0 z-40 bg-black/25"
+        className="absolute inset-0 z-40 bg-white/20 backdrop-blur-[3px]"
         onClick={onCancel}
       />
 

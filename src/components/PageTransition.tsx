@@ -2,9 +2,9 @@ import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 
 const variants = {
-  initial: { x: '100%', opacity: 0 },
-  animate: { x: 0, opacity: 1 },
-  exit: { x: '-30%', opacity: 0 },
+  initial: { scale: 0.997 },
+  animate: { scale: 1 },
+  exit: { scale: 1 },
 }
 
 export default function PageTransition({ children }: { children: ReactNode }) {
@@ -14,7 +14,7 @@ export default function PageTransition({ children }: { children: ReactNode }) {
       initial="initial"
       animate="animate"
       exit="exit"
-      transition={{ duration: 0.25, ease: 'easeInOut' }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
       className="w-full"
     >
       {children}

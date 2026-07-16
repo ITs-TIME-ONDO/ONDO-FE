@@ -176,7 +176,7 @@ export default function MyRequestCard({
         type="button"
         disabled={!isOpen || isBumping || bumpCount >= 3}
         onClick={handleBump}
-        className={`mt-auto h-12 w-full rounded-full text-lg font-semibold transition ${
+        className={`mt-auto h-[50px] w-[286px] self-center rounded-full text-lg font-semibold transition ${
           !isOpen || isBumping || bumpCount >= 3
             ? 'cursor-not-allowed bg-[#D9D9D9] text-[#8C8C8C]'
             : 'bg-black text-white'
