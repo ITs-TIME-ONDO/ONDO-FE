@@ -7,8 +7,10 @@ import LiveLocationShareCard from '../../components/LiveLocationShareCard'
 import ChatMessageBubble from '../../components/ChatMessageBubble'
 import FloatingConfirmModal from '../../components/FloatingConfirmModal'
 import ChatRoomInputBar from './ChatRoomInputBar'
+import ChatRoomMenuDropdown from './ChatRoomMenuDropdown'
 import chatRoomChar from '../../assets/chat_room_char.png'
 import miniProfileChar from '../../assets/mini_profile_char.png'
+import menuIcon from '../../assets/chat_menu_icon.png'
 
 const MOCK_TIME = '오후 8:34'
 
@@ -67,6 +69,8 @@ export default function LiveLocationMockChatPage() {
   const navigate = useNavigate()
   const [receivedAccepted, setReceivedAccepted] = useState(false)
   const [showAgreeModal, setShowAgreeModal] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [mockMessages, setMockMessages] = useState<
     Array<{ id: string; message: string }>
   >([])
@@ -83,7 +87,32 @@ export default function LiveLocationMockChatPage() {
   return (
     <PageTransition>
       <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-white">
-        <PageHeader title="위치 공유 UI 목업" onBack={() => navigate('/chat')} />
+        <PageHeader
+          title="위치 공유 UI 목업"
+          onBack={() => navigate('/chat')}
+          rightAction={
+            <button
+              type="button"
+              onClick={() => setShowMenu((open) => !open)}
+              className="flex h-6 w-6 items-center justify-center"
+            >
+              <img src={menuIcon} alt="메뉴" className="h-[18px] w-[3px]" />
+            </button>
+          }
+        />
+
+        <ChatRoomMenuDropdown
+          open={showMenu}
+          onClose={() => setShowMenu(false)}
+          options={[
+            {
+              label: notificationsEnabled ? '알림 끄기' : '알림 켜기',
+              onClick: () => setNotificationsEnabled((enabled) => !enabled),
+            },
+            { label: '신고하기', onClick: () => {} },
+            { label: '채팅방 나가기', onClick: () => navigate('/chat') },
+          ]}
+        />
 
         <div
           className="absolute left-0 top-[99px] flex h-[166px] w-full flex-col gap-5 px-6 py-3"

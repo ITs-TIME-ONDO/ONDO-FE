@@ -24,9 +24,9 @@ import { getUserIdFromToken } from '../../utils/jwt'
 import { formatMessageTime, formatMatchedDate } from '../../utils/date'
 import { useChatSocketStore, EMPTY_MESSAGES } from '../../stores/chatSocketStore'
 
-import menuIcon from '../../assets/chat_menu_icon.svg'
 import chatRoomChar from '../../assets/chat_room_char.png'
 import tapFinger from '../../assets/tap_finger.svg'
+import menuIcon from '../../assets/chat_menu_icon.png'
 
 // category는 아직 API에 없는 필드라 목데이터로 임시 표시 (실제 필드 추가되면 room 데이터로 교체 필요)
 const mockRoomInfo = mockChatRooms[0]
@@ -351,8 +351,12 @@ export default function ChatRoomPage() {
           title={room.opponentNickname ?? '알 수 없음'}
           onBack={() => navigate('/chat', { replace: true })}
           rightAction={
-            <button type="button" onClick={() => setShowMenu((prev) => !prev)}>
-              <img src={menuIcon} alt="메뉴" className="h-6 w-6" />
+            <button
+              type="button"
+              onClick={() => setShowMenu((prev) => !prev)}
+              className="flex h-6 w-6 items-center justify-center"
+            >
+              <img src={menuIcon} alt="메뉴" className="h-[18px] w-[3px]" />
             </button>
           }
         />

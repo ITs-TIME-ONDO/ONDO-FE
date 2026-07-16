@@ -88,7 +88,7 @@ export default function LoginPage() {
         {/* 카카오 로그인 버튼 */}
         <button
           className="absolute -translate-x-1/2 flex items-center justify-center gap-3 rounded-full bg-[#f8e533]"
-          style={{ left: '50%', top: 720, width: 342, height: 60 }}
+          style={{ left: '50%', bottom: 64, width: 342, height: 60 }}
           onClick={() => {
             window.location.href = getKakaoLoginUrl()
           }}

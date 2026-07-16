@@ -28,11 +28,11 @@ export default function MyPageHeader({
     })
 
   return (
-    <div className="absolute left-0 top-[20px] flex w-full items-center justify-center h-[89px]">
+    <header className="absolute left-0 top-[38px] flex h-12 w-full items-center justify-center px-6">
       <button
         type="button"
         onClick={handleBack}
-        className="absolute left-6 flex items-center justify-center"
+        className="absolute left-6 flex h-6 w-6 items-center justify-start"
       >
         <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
           <path
@@ -47,10 +47,10 @@ export default function MyPageHeader({
       <p className="text-[20px] font-medium text-black">{title}</p>
 
       {rightAction && (
-        <div className="absolute right-6 flex items-center justify-center">
+        <div className="absolute right-6 flex h-6 w-6 items-center justify-center">
           {rightAction}
         </div>
       )}
-    </div>
+    </header>
   )
 }
