@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+import { animate, motion, useMotionValue, useTransform } from 'framer-motion'
 import miniProfileChar from '../assets/mini_profile_char.png'
 
 type Props = {
@@ -7,6 +9,10 @@ type Props = {
   unread?: boolean
   profileImageUrl?: string
   onClick?: () => void
+  onLeave?: () => void
+  swipeOpen?: boolean
+  onSwipeOpen?: () => void
+  onSwipeClose?: () => void
 }
 
 export default function ChatRoomListItem({
@@ -16,13 +22,61 @@ export default function ChatRoomListItem({
   unread = false,
   profileImageUrl,
   onClick,
+  onLeave,
+  swipeOpen = false,
+  onSwipeOpen,
+  onSwipeClose,
 }: Props) {
+  const x = useMotionValue(0)
+  const leaveButtonX = useTransform(x, [-76, 0], [0, 76])
+  const [isDragging, setIsDragging] = useState(false)
+
+  useEffect(() => {
+    const animation = animate(x, swipeOpen ? -76 : 0, {
+      type: 'spring',
+      stiffness: 320,
+      damping: 30,
+    })
+    return () => animation.stop()
+  }, [swipeOpen, x])
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="relative flex h-[85px] w-full items-center gap-3 px-6 text-left after:absolute after:bottom-0 after:left-6 after:right-6 after:h-px after:bg-[#EDEDED]"
-    >
+    <div className="relative h-[85px] w-full overflow-hidden">
+      <motion.button
+        type="button"
+        onClick={onLeave}
+        style={{ x: leaveButtonX }}
+        className={`absolute inset-y-0 right-0 flex w-[76px] items-center justify-center bg-[#F06464] text-sm font-semibold text-white transition-opacity duration-100 ${
+          swipeOpen || isDragging ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+      >
+        나가기
+      </motion.button>
+
+      <motion.button
+        type="button"
+        drag="x"
+        dragConstraints={{ left: -76, right: 0 }}
+        dragElastic={0.12}
+        onDragStart={() => setIsDragging(true)}
+        style={{ x }}
+        onDragEnd={(_, info) => {
+          setIsDragging(false)
+          if (info.offset.x <= -42 || info.velocity.x <= -450) {
+            onSwipeOpen?.()
+          } else {
+            onSwipeClose?.()
+          }
+        }}
+        onClick={() => {
+          if (swipeOpen) {
+            onSwipeClose?.()
+            return
+          }
+          onClick?.()
+        }}
+        className="relative flex h-[85px] w-full items-center gap-3 bg-white px-6 text-left after:absolute after:bottom-0 after:left-6 after:right-6 after:h-px after:bg-[#EDEDED]"
+      >
       <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#FFF4E8]">
         <img
           src={profileImageUrl || miniProfileChar}
@@ -56,6 +110,7 @@ export default function ChatRoomListItem({
           )}
         </div>
       </div>
-    </button>
+      </motion.button>
+    </div>
   )
 }

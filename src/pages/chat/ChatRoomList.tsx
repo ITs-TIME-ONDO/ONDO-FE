@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import ChatRoomListItem from '../../components/ChatRoomListItem'
@@ -6,14 +7,16 @@ import { formatMessageTime } from '../../utils/date'
 
 type Props = {
   rooms: ChatRoomSummary[]
+  onLeave: (room: ChatRoomSummary) => void
 }
 
-export default function ChatRoomList({ rooms }: Props) {
+export default function ChatRoomList({ rooms, onLeave }: Props) {
   const navigate = useNavigate()
+  const [openRoomId, setOpenRoomId] = useState<string | null>(null)
 
   return (
     <main className="absolute left-0 top-[113px] w-full">
-      {rooms.map((room) => (
+      {rooms.filter((room) => room.status === 'ACTIVE').map((room) => (
         <ChatRoomListItem
           key={room.id}
           nickname={room.opponentNickname ?? '알 수 없음'}
@@ -22,6 +25,10 @@ export default function ChatRoomList({ rooms }: Props) {
           unread={room.unreadCount > 0}
           profileImageUrl={room.opponentProfileImageUrl ?? undefined}
           onClick={() => navigate(`/chat/${room.id}`)}
+          onLeave={() => onLeave(room)}
+          swipeOpen={openRoomId === room.id}
+          onSwipeOpen={() => setOpenRoomId(room.id)}
+          onSwipeClose={() => setOpenRoomId(null)}
         />
       ))}
     </main>
