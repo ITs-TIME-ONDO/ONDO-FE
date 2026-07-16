@@ -25,9 +25,13 @@ import { useChatSocketStore, EMPTY_MESSAGES } from '../../stores/chatSocketStore
 
 import menuIcon from '../../assets/chat_menu_icon.svg'
 import chatRoomChar from '../../assets/chat_room_char.png'
+import tapFinger from '../../assets/tap_finger.svg'
 
 // category는 아직 API에 없는 필드라 목데이터로 임시 표시 (실제 필드 추가되면 room 데이터로 교체 필요)
 const mockRoomInfo = mockChatRooms[0]
+
+// HomePage.tsx의 첫 방문 가이드(hasSeenNearbyCardGuide)와 동일한 패턴 — 한 번 보면 다시 안 뜨도록 저장
+const LOCATION_GUIDE_SEEN_STORAGE_KEY = 'hasSeenChatLiveLocationGuide'
 
 export default function ChatRoomPage() {
   const navigate = useNavigate()
@@ -40,6 +44,7 @@ export default function ChatRoomPage() {
   const [showMenu, setShowMenu] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
+  const [showLocationGuide, setShowLocationGuide] = useState(false)
 
   const [hasNext, setHasNext] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -83,7 +88,11 @@ export default function ChatRoomPage() {
 
     getChatRoom(roomId)
       .then((res) => {
-        if (active) setRoom(res.data)
+        if (!active) return
+        setRoom(res.data)
+        if (localStorage.getItem(LOCATION_GUIDE_SEEN_STORAGE_KEY) !== 'true') {
+          setShowLocationGuide(true)
+        }
       })
       .catch((error) => {
         if (!active) return
@@ -262,6 +271,11 @@ export default function ChatRoomPage() {
     }
   }
 
+  const handleDismissLocationGuide = () => {
+    localStorage.setItem(LOCATION_GUIDE_SEEN_STORAGE_KEY, 'true')
+    setShowLocationGuide(false)
+  }
+
   if (roomNotFound) {
     return (
       <PageTransition>
@@ -406,6 +420,24 @@ export default function ChatRoomPage() {
           roomId={roomId}
           onSuccess={() => setClosedMessage('채팅방을 나갔습니다.')}
         />
+
+        {/* 실시간 위치 공유 최초 안내 — HomePage.tsx의 첫 방문 가이드와 동일한 패턴 */}
+        {showLocationGuide && !closedMessage && (
+          <div
+            onClick={handleDismissLocationGuide}
+            className="absolute inset-0 z-50 bg-black/40"
+          >
+            <div className="absolute left-[17px] top-[682px] animate-bounce">
+              <p className="text-base text-white">실시간 위치 공유하기</p>
+
+              <img
+                src={tapFinger}
+                alt="실시간 위치 공유하기"
+                className="mt-[3px] h-[43px] w-[38px] rotate-180"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </PageTransition>
   )
