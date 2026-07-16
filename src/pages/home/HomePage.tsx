@@ -444,7 +444,7 @@ export default function HomePage() {
             'linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 65%, #FFF4E8 84%, #FFC679 100%)',
         }}
       >
-        <header className="absolute left-0 top-[50px] flex w-full items-center justify-between px-6">
+        <header className="absolute left-0 top-[38px] flex h-12 w-full items-center justify-between px-6">
           <img src={logo} alt="ONDO" className="h-6 w-[97px] object-contain" />
 
           <div className="flex items-center gap-3">
