@@ -1,8 +1,8 @@
 import { apiFetch } from './client'
 
 export interface UpdateProfileRequest {
-  nickname: string
-  profileImageUrl: string
+  nickname?: string
+  profileImage?: File | null
 }
 
 export interface UserProfile {
@@ -13,10 +13,23 @@ export interface UserProfile {
   hasCreatedCard: boolean
 }
 
+// 닉네임/프로필 이미지 중 최소 하나는 필수. multipart/form-data로 전송 (request: JSON part, profileImage: 파일 part)
+function buildProfileFormData({ nickname, profileImage }: UpdateProfileRequest): FormData {
+  const formData = new FormData()
+  formData.append(
+    'request',
+    new Blob([JSON.stringify({ nickname })], { type: 'application/json' })
+  )
+  if (profileImage) {
+    formData.append('profileImage', profileImage)
+  }
+  return formData
+}
+
 export function postUserProfile(body: UpdateProfileRequest): Promise<void> {
   return apiFetch<void>('/api/user/profile', {
     method: 'POST',
-    body: JSON.stringify(body),
+    body: buildProfileFormData(body),
   })
 }
 
@@ -24,12 +37,10 @@ export function getUserProfile(): Promise<UserProfile> {
   return apiFetch<UserProfile>('/api/user/profile')
 }
 
-export function putUserProfile(
-  body: UpdateProfileRequest
-): Promise<UserProfile> {
-  return apiFetch<UserProfile>('/api/user/profile', {
+export function putUserProfile(body: UpdateProfileRequest): Promise<void> {
+  return apiFetch<void>('/api/user/profile', {
     method: 'PUT',
-    body: JSON.stringify(body),
+    body: buildProfileFormData(body),
   })
 }
 

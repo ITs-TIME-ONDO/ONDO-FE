@@ -1,11 +1,11 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import cameraIcon from '../../assets/gridicons_camera.svg'
 
 interface ProfileImagePickerProps {
   defaultImage: string
   className?: string
   initialValue?: string | null
-  onChange?: (base64: string) => void
+  onChange?: (file: File, previewUrl: string) => void
 }
 
 export default function ProfileImagePicker({
@@ -18,16 +18,17 @@ export default function ProfileImagePicker({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // initialValue가 마운트 이후 비동기로 도착(예: 프로필 API 응답)해도 반영되도록 동기화
+  useEffect(() => {
+    setImageUrl(initialValue ?? null)
+  }, [initialValue])
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const base64 = reader.result as string
-      setImageUrl(base64)
-      onChange?.(base64)
-    }
-    reader.readAsDataURL(file)
+    const previewUrl = URL.createObjectURL(file)
+    setImageUrl(previewUrl)
+    onChange?.(file, previewUrl)
   }
 
   return (

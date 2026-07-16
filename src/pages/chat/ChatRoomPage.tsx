@@ -15,6 +15,7 @@ import {
   markRoomAsRead,
   sendChatMessage,
   closeChatRoom,
+  getLiveLocations,
   type ChatRoomSummary,
 } from '../../api/chat'
 import { getAccessToken } from '../../utils/authStorage'
@@ -24,10 +25,13 @@ import { useChatSocketStore, EMPTY_MESSAGES } from '../../stores/chatSocketStore
 
 import menuIcon from '../../assets/chat_menu_icon.svg'
 import chatRoomChar from '../../assets/chat_room_char.png'
+import tapFinger from '../../assets/tap_finger.svg'
 
-// category/distanceMeters/matchedDate는 아직 API에 없는 필드라 목데이터로 임시 표시
-// (실제 필드 추가되면 room 데이터로 교체 필요)
+// category는 아직 API에 없는 필드라 목데이터로 임시 표시 (실제 필드 추가되면 room 데이터로 교체 필요)
 const mockRoomInfo = mockChatRooms[0]
+
+// HomePage.tsx의 첫 방문 가이드(hasSeenNearbyCardGuide)와 동일한 패턴 — 한 번 보면 다시 안 뜨도록 저장
+const LOCATION_GUIDE_SEEN_STORAGE_KEY = 'hasSeenChatLiveLocationGuide'
 
 export default function ChatRoomPage() {
   const navigate = useNavigate()
@@ -40,6 +44,7 @@ export default function ChatRoomPage() {
   const [showMenu, setShowMenu] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
+  const [showLocationGuide, setShowLocationGuide] = useState(false)
 
   const [hasNext, setHasNext] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -56,9 +61,6 @@ export default function ChatRoomPage() {
     roomId ? (state.messagesByRoom[roomId] ?? EMPTY_MESSAGES) : EMPTY_MESSAGES
   )
   const lastMessageId = messages[messages.length - 1]?.id
-  // 방 정보엔 상대방 userId가 없어서, 받은 메시지의 senderId로 유추 (메시지가 없으면 신고 불가)
-  const opponentUserId =
-    messages.find((msg) => msg.senderId !== myUserId)?.senderId ?? null
   const connect = useChatSocketStore((state) => state.connect)
   const subscribeToRoom = useChatSocketStore((state) => state.subscribeToRoom)
   const unsubscribeFromRoom = useChatSocketStore((state) => state.unsubscribeFromRoom)
@@ -68,6 +70,14 @@ export default function ChatRoomPage() {
   const onRoomRead = useChatSocketStore((state) => state.onRoomRead)
   const sendSocketMessage = useChatSocketStore((state) => state.sendMessage)
   const appendRoomMessage = useChatSocketStore((state) => state.appendRoomMessage)
+  const setLiveLocation = useChatSocketStore((state) => state.setLiveLocation)
+  const sendLiveLocation = useChatSocketStore((state) => state.sendLiveLocation)
+  const stopLiveLocation = useChatSocketStore((state) => state.stopLiveLocation)
+  const distanceMeters = useChatSocketStore((state) =>
+    roomId && myUserId
+      ? (state.liveLocationByRoom[roomId]?.[myUserId]?.distanceToTargetMeters ?? null)
+      : null
+  )
 
   useEffect(() => {
     if (!roomId) return
@@ -78,7 +88,11 @@ export default function ChatRoomPage() {
 
     getChatRoom(roomId)
       .then((res) => {
-        if (active) setRoom(res.data)
+        if (!active) return
+        setRoom(res.data)
+        if (localStorage.getItem(LOCATION_GUIDE_SEEN_STORAGE_KEY) !== 'true') {
+          setShowLocationGuide(true)
+        }
       })
       .catch((error) => {
         if (!active) return
@@ -128,6 +142,39 @@ export default function ChatRoomPage() {
     markMessagesRead,
     onRoomRead,
   ])
+
+  // 입장 시 초기 거리값 세팅 (실시간 이벤트가 오기 전 빈 화면 방지)
+  useEffect(() => {
+    if (!roomId) return
+
+    getLiveLocations(roomId)
+      .then((res) => {
+        res.data.forEach((event) => setLiveLocation(roomId, event))
+      })
+      .catch((error) => console.error('실시간 위치 초기값 조회 실패', error))
+  }, [roomId, setLiveLocation])
+
+  // 내 위치를 지속적으로 서버에 발행해 목표 지점까지 남은 거리를 갱신 (서버가 1초 단위로 스로틀링)
+  useEffect(() => {
+    if (!roomId || !navigator.geolocation) return
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        sendLiveLocation(roomId, {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        })
+      },
+      (error) => console.error('실시간 위치 갱신 실패', error),
+      { enableHighAccuracy: true, maximumAge: 0 }
+    )
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId)
+      stopLiveLocation(roomId)
+    }
+  }, [roomId, sendLiveLocation, stopLiveLocation])
 
   // 서버가 발행하는 ROOM_CLOSED 시스템 메시지 수신 시 방 종료 처리
   useEffect(() => {
@@ -224,6 +271,11 @@ export default function ChatRoomPage() {
     }
   }
 
+  const handleDismissLocationGuide = () => {
+    localStorage.setItem(LOCATION_GUIDE_SEEN_STORAGE_KEY, 'true')
+    setShowLocationGuide(false)
+  }
+
   if (roomNotFound) {
     return (
       <PageTransition>
@@ -280,7 +332,9 @@ export default function ChatRoomPage() {
               {mockRoomInfo.category}
             </p>
             <p className="mt-[10px] text-sm font-light text-[#343434]">
-              나와 {mockRoomInfo.distanceMeters}m 떨어져 있음
+              {distanceMeters !== null
+                ? `나와 ${distanceMeters}m 떨어져 있음`
+                : '위치 정보를 불러오는 중...'}
             </p>
           </div>
 
@@ -318,6 +372,11 @@ export default function ChatRoomPage() {
                     message={msg.content ?? ''}
                     time={formatMessageTime(msg.sentAt)}
                     nickname={sender === 'partner' ? msg.senderNickname : undefined}
+                    profileImageUrl={
+                      sender === 'partner'
+                        ? (room.opponentProfileImageUrl ?? undefined)
+                        : undefined
+                    }
                   />
                 )
               })}
@@ -358,9 +417,27 @@ export default function ChatRoomPage() {
         <ReportModal
           open={showReportModal}
           onClose={() => setShowReportModal(false)}
-          reportedUserId={opponentUserId}
+          roomId={roomId}
           onSuccess={() => setClosedMessage('채팅방을 나갔습니다.')}
         />
+
+        {/* 실시간 위치 공유 최초 안내 — HomePage.tsx의 첫 방문 가이드와 동일한 패턴 */}
+        {showLocationGuide && !closedMessage && (
+          <div
+            onClick={handleDismissLocationGuide}
+            className="absolute inset-0 z-50 bg-black/40"
+          >
+            <div className="absolute left-[17px] top-[682px] animate-bounce">
+              <p className="text-base text-white">실시간 위치 공유하기</p>
+
+              <img
+                src={tapFinger}
+                alt="실시간 위치 공유하기"
+                className="mt-[3px] h-[43px] w-[38px] rotate-180"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </PageTransition>
   )
