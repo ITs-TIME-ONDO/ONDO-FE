@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { check, sexual } from 'korcen' // korcen.ts 오픈소스 이용해서 한국어 비속어 블로킹
 
 import mapIcon from '../../assets/chat_map_icon.svg'
@@ -7,12 +6,18 @@ import sendIcon from '../../assets/chat_send_icon.svg'
 
 type Props = {
   disabled?: boolean
+  locationRequestDisabled?: boolean
   onSend: (text: string) => Promise<boolean>
+  onLocationRequest: () => void
 }
 
-export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
+export default function ChatRoomInputBar({
+  disabled = false,
+  locationRequestDisabled = false,
+  onSend,
+  onLocationRequest,
+}: Props) {
   const [value, setValue] = useState('')
-  const navigate = useNavigate()
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
 
@@ -53,9 +58,11 @@ export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={() => navigate('/location')}
-          disabled={disabled}
-          className="shrink-0"
+          onClick={onLocationRequest}
+          disabled={disabled || locationRequestDisabled}
+          aria-label="실시간 위치 공유 요청"
+          title={locationRequestDisabled ? '10분 후 다시 요청할 수 있어요' : undefined}
+          className="shrink-0 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <img src={mapIcon} alt="위치 공유" className="h-5 w-5" />
         </button>

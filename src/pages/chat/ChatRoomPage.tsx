@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import PageHeader from '../../components/PageHeader'
 import ChatMessageBubble from '../../components/ChatMessageBubble'
+import LiveLocationShareCard from '../../components/LiveLocationShareCard'
 import FloatingConfirmModal from '../../components/FloatingConfirmModal'
 import ChatRoomInputBar from './ChatRoomInputBar'
 import ChatRoomMenuDropdown from './ChatRoomMenuDropdown'
@@ -32,6 +33,10 @@ const mockRoomInfo = mockChatRooms[0]
 
 // HomePage.tsx의 첫 방문 가이드(hasSeenNearbyCardGuide)와 동일한 패턴 — 한 번 보면 다시 안 뜨도록 저장
 const LOCATION_GUIDE_SEEN_STORAGE_KEY = 'hasSeenChatLiveLocationGuide'
+const LOCATION_REQUEST_MESSAGE = '실시간 위치 공유 요청'
+const LOCATION_ACCEPT_MESSAGE = '실시간 위치 공유 동의'
+const LOCATION_REQUEST_COOLDOWN_MS = 10 * 60 * 1000
+const LOCATION_REQUEST_COOLDOWN_PREFIX = 'chatLocationRequestCooldown:'
 
 export default function ChatRoomPage() {
   const navigate = useNavigate()
@@ -45,6 +50,10 @@ export default function ChatRoomPage() {
   const [showReportModal, setShowReportModal] = useState(false)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [showLocationGuide, setShowLocationGuide] = useState(false)
+  const [liveLocationSharingEnabled, setLiveLocationSharingEnabled] =
+    useState(false)
+  const [locationRequestCooldownUntil, setLocationRequestCooldownUntil] =
+    useState(0)
 
   const [hasNext, setHasNext] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -73,12 +82,6 @@ export default function ChatRoomPage() {
   const setLiveLocation = useChatSocketStore((state) => state.setLiveLocation)
   const sendLiveLocation = useChatSocketStore((state) => state.sendLiveLocation)
   const stopLiveLocation = useChatSocketStore((state) => state.stopLiveLocation)
-  const distanceMeters = useChatSocketStore((state) =>
-    roomId && myUserId
-      ? (state.liveLocationByRoom[roomId]?.[myUserId]?.distanceToTargetMeters ?? null)
-      : null
-  )
-
   useEffect(() => {
     if (!roomId) return
 
@@ -103,6 +106,27 @@ export default function ChatRoomPage() {
     return () => {
       active = false
     }
+  }, [roomId])
+
+  useEffect(() => {
+    if (!roomId) return
+
+    const storageKey = `${LOCATION_REQUEST_COOLDOWN_PREFIX}${roomId}`
+    const savedUntil = Number(localStorage.getItem(storageKey) ?? 0)
+    const validUntil = savedUntil > Date.now() ? savedUntil : 0
+    setLocationRequestCooldownUntil(validUntil)
+
+    if (!validUntil) {
+      localStorage.removeItem(storageKey)
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      localStorage.removeItem(storageKey)
+      setLocationRequestCooldownUntil(0)
+    }, validUntil - Date.now())
+
+    return () => window.clearTimeout(timeoutId)
   }, [roomId])
 
   useEffect(() => {
@@ -156,7 +180,7 @@ export default function ChatRoomPage() {
 
   // 내 위치를 지속적으로 서버에 발행해 목표 지점까지 남은 거리를 갱신 (서버가 1초 단위로 스로틀링)
   useEffect(() => {
-    if (!roomId || !navigator.geolocation) return
+    if (!roomId || !liveLocationSharingEnabled || !navigator.geolocation) return
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
@@ -174,7 +198,7 @@ export default function ChatRoomPage() {
       navigator.geolocation.clearWatch(watchId)
       stopLiveLocation(roomId)
     }
-  }, [roomId, sendLiveLocation, stopLiveLocation])
+  }, [roomId, liveLocationSharingEnabled, sendLiveLocation, stopLiveLocation])
 
   // 서버가 발행하는 ROOM_CLOSED 시스템 메시지 수신 시 방 종료 처리
   useEffect(() => {
@@ -202,13 +226,13 @@ export default function ChatRoomPage() {
     }
 
     if (messages.length > 0) {
-      messagesEndRef.current?.scrollIntoView({
+      el.scrollTo({
+        top: el.scrollHeight,
         behavior: isInitialLoadRef.current ? 'auto' : 'smooth',
-        block: 'end',
       })
       isInitialLoadRef.current = false
     }
-  }, [lastMessageId, messages.length])
+  }, [room?.id, lastMessageId, messages.length])
 
   const loadMoreMessages = () => {
     if (!roomId || !hasNext || !nextCursor || loadingMore) return
@@ -251,6 +275,31 @@ export default function ChatRoomPage() {
       return false
     }
   }
+
+  const handleLocationRequest = async () => {
+    if (!roomId || locationRequestCooldownUntil > Date.now()) return
+
+    const sent = await handleSend(LOCATION_REQUEST_MESSAGE)
+    if (!sent) return
+
+    const cooldownUntil = Date.now() + LOCATION_REQUEST_COOLDOWN_MS
+    localStorage.setItem(
+      `${LOCATION_REQUEST_COOLDOWN_PREFIX}${roomId}`,
+      String(cooldownUntil)
+    )
+    setLocationRequestCooldownUntil(cooldownUntil)
+  }
+
+  const handleLocationAgree = async () => {
+    const sent = await handleSend(LOCATION_ACCEPT_MESSAGE)
+    if (sent) setLiveLocationSharingEnabled(true)
+  }
+
+  useEffect(() => {
+    if (messages.some((message) => message.content === LOCATION_ACCEPT_MESSAGE)) {
+      setLiveLocationSharingEnabled(true)
+    }
+  }, [messages])
 
   const handleCloseRoom = async () => {
     if (!roomId) return
@@ -328,13 +377,8 @@ export default function ChatRoomPage() {
           }}
         >
           <div>
-            <p className="text-[18px] font-semibold text-black">
+            <p className="mt-[30px] text-[18px] font-semibold text-black">
               {mockRoomInfo.category}
-            </p>
-            <p className="mt-[10px] text-sm font-light text-[#343434]">
-              {distanceMeters !== null
-                ? `나와 ${distanceMeters}m 떨어져 있음`
-                : '위치 정보를 불러오는 중...'}
             </p>
           </div>
 
@@ -362,9 +406,49 @@ export default function ChatRoomPage() {
 
           <div className="mt-6 flex flex-col gap-6">
             {messages
-              .filter((msg) => msg.messageType !== 'ROOM_CLOSED')
+              .filter(
+                (msg) =>
+                  msg.messageType !== 'ROOM_CLOSED' &&
+                  msg.content !== LOCATION_ACCEPT_MESSAGE
+              )
               .map((msg) => {
                 const sender = msg.senderId === myUserId ? 'me' : 'partner'
+                if (msg.content === LOCATION_REQUEST_MESSAGE) {
+                  const accepted = messages.some(
+                    (message) =>
+                      message.content === LOCATION_ACCEPT_MESSAGE &&
+                      message.sentAt >= msg.sentAt
+                  )
+
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex items-end gap-[5px] px-6 ${
+                        sender === 'me' ? 'justify-end' : 'justify-start'
+                      }`}
+                    >
+                      {sender === 'me' && (
+                        <span className="shrink-0 text-[8px] text-[#929292]">
+                          {formatMessageTime(msg.sentAt)}
+                        </span>
+                      )}
+
+                      <LiveLocationShareCard
+                        sender={sender}
+                        status={accepted ? 'accepted' : 'requested'}
+                        onAgree={handleLocationAgree}
+                        onOpen={() => navigate(`/location?roomId=${roomId}`)}
+                      />
+
+                      {sender === 'partner' && (
+                        <span className="shrink-0 text-[8px] text-[#929292]">
+                          {formatMessageTime(msg.sentAt)}
+                        </span>
+                      )}
+                    </div>
+                  )
+                }
+
                 return (
                   <ChatMessageBubble
                     key={msg.id}
@@ -390,7 +474,12 @@ export default function ChatRoomPage() {
           <div ref={messagesEndRef} aria-hidden="true" />
         </div>
 
-        <ChatRoomInputBar disabled={Boolean(closedMessage)} onSend={handleSend} />
+        <ChatRoomInputBar
+          disabled={Boolean(closedMessage)}
+          locationRequestDisabled={locationRequestCooldownUntil > Date.now()}
+          onSend={handleSend}
+          onLocationRequest={handleLocationRequest}
+        />
 
         <FloatingConfirmModal
           open={showCompleteModal}
