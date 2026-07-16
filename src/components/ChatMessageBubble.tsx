@@ -6,6 +6,9 @@ type Props = {
   time: string
   nickname?: string
   profileImageUrl?: string
+  showSenderInfo?: boolean
+  compact?: boolean
+  showTime?: boolean
 }
 
 export default function ChatMessageBubble({
@@ -14,16 +17,38 @@ export default function ChatMessageBubble({
   time,
   nickname,
   profileImageUrl,
+  showSenderInfo = true,
+  compact = false,
+  showTime = true,
 }: Props) {
   if (sender === 'me') {
     return (
-      <div className="flex items-end justify-end gap-[5px] px-6">
-        <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">{time}</span>
+      <div className={`flex items-end justify-end gap-[5px] px-6 ${compact ? '-mt-3' : ''}`}>
+        {showTime && (
+          <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">{time}</span>
+        )}
         <div className="max-w-[220px] rounded-2xl bg-[#1BB3FF]/20 px-3 py-2">
           <p className="whitespace-pre-wrap break-words text-sm text-black">
             {message}
           </p>
         </div>
+      </div>
+    )
+  }
+
+  if (!showSenderInfo) {
+    return (
+      <div className={`flex items-end gap-[5px] pl-[62px] pr-6 ${compact ? '-mt-3' : ''}`}>
+        <div className="max-w-[220px] rounded-2xl bg-[#F3F3F3] px-3 py-2">
+          <p className="whitespace-pre-wrap break-words text-sm text-black">
+            {message}
+          </p>
+        </div>
+        {showTime && (
+          <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">
+            {time}
+          </span>
+        )}
       </div>
     )
   }
@@ -47,7 +72,9 @@ export default function ChatMessageBubble({
               {message}
             </p>
           </div>
-          <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">{time}</span>
+          {showTime && (
+            <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">{time}</span>
+          )}
         </div>
       </div>
     </div>

@@ -9,7 +9,6 @@ import TermsPage from './pages/login/TermsPage'
 import RequestPage from './pages/home/RequestPage'
 import ChatPage from './pages/chat/ChatPage'
 import ChatRoomPage from './pages/chat/ChatRoomPage'
-import LiveLocationMockChatPage from './pages/chat/LiveLocationMockChatPage'
 import MyPage from './pages/mypage/MyPage'
 import ProfileEditPage from './pages/mypage/ProfileEditPage'
 import WithdrawPage from './pages/mypage/WithdrawPage'
@@ -55,15 +54,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <ChatPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/chat/mock-live-location"
-            element={
-              <ProtectedRoute>
-                <LiveLocationMockChatPage />
               </ProtectedRoute>
             }
           />

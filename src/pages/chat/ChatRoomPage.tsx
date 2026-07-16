@@ -9,7 +9,7 @@ import FloatingConfirmModal from '../../components/FloatingConfirmModal'
 import ChatRoomInputBar from './ChatRoomInputBar'
 import ChatRoomMenuDropdown from './ChatRoomMenuDropdown'
 import ReportModal from './ReportModal'
-import { mockChatRooms } from './chatMockData'
+import { apiFetch } from '../../api/client'
 import {
   getChatRoom,
   getChatMessages,
@@ -28,8 +28,11 @@ import chatRoomChar from '../../assets/chat_room_char.png'
 import tapFinger from '../../assets/tap_finger.svg'
 import menuIcon from '../../assets/chat_menu_icon.png'
 
-// category는 아직 API에 없는 필드라 목데이터로 임시 표시 (실제 필드 추가되면 room 데이터로 교체 필요)
-const mockRoomInfo = mockChatRooms[0]
+const CARD_CATEGORY_LABELS: Record<string, string> = {
+  PHOTO: '사진 찍기',
+  MEAL: '합석',
+  ETC: '기타',
+}
 
 // HomePage.tsx의 첫 방문 가이드(hasSeenNearbyCardGuide)와 동일한 패턴 — 한 번 보면 다시 안 뜨도록 저장
 const LOCATION_GUIDE_SEEN_STORAGE_KEY = 'hasSeenChatLiveLocationGuide'
@@ -42,6 +45,7 @@ export default function ChatRoomPage() {
   const navigate = useNavigate()
   const { roomId } = useParams<{ roomId: string }>()
   const [room, setRoom] = useState<ChatRoomSummary | null>(null)
+  const [cardCategory, setCardCategory] = useState('도움 요청')
   const [roomNotFound, setRoomNotFound] = useState(false)
   const [showCompleteModal, setShowCompleteModal] = useState(false)
   const [showLeaveModal, setShowLeaveModal] = useState(false)
@@ -94,6 +98,17 @@ export default function ChatRoomPage() {
       .then((res) => {
         if (!active) return
         setRoom(res.data)
+        apiFetch<any>(`/api/cards/${res.data.cardId}`)
+          .then((cardRes) => {
+            if (!active) return
+            const card = cardRes?.data?.card ?? cardRes?.data ?? cardRes
+            setCardCategory(
+              CARD_CATEGORY_LABELS[card?.category] ?? card?.category ?? '도움 요청'
+            )
+          })
+          .catch(() => {
+            if (active) setCardCategory('도움 요청')
+          })
         if (localStorage.getItem(LOCATION_GUIDE_SEEN_STORAGE_KEY) !== 'true') {
           setShowLocationGuide(true)
         }
@@ -344,6 +359,12 @@ export default function ChatRoomPage() {
     )
   }
 
+  const visibleMessages = messages.filter(
+    (msg) =>
+      msg.messageType !== 'ROOM_CLOSED' &&
+      msg.content !== LOCATION_ACCEPT_MESSAGE
+  )
+
   return (
     <PageTransition>
       <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-white">
@@ -376,14 +397,14 @@ export default function ChatRoomPage() {
         />
 
         <div
-          className="absolute left-0 top-[99px] flex h-36 w-full flex-col gap-5 px-6 py-3"
+          className="absolute left-0 top-[99px] flex h-[145px] w-full flex-col gap-5 px-6 py-3"
           style={{
             background: 'linear-gradient(180deg, #FF9E1B -52.24%, #FFF 115.3%)',
           }}
         >
           <div>
             <p className="mt-[30px] text-[18px] font-semibold text-black">
-              {mockRoomInfo.category}
+              {cardCategory}
             </p>
           </div>
 
@@ -407,19 +428,28 @@ export default function ChatRoomPage() {
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="chat-scrollbar absolute inset-x-0 top-[243px] bottom-[90px] overflow-y-auto"
+          className="chat-scrollbar absolute inset-x-0 top-[243px] bottom-[73px] overflow-y-auto"
         >
           <p className="text-center text-[13px] text-[#666]">{formatMatchedDate(room.createdAt)}</p>
 
           <div className="mt-6 flex flex-col gap-6">
-            {messages
-              .filter(
-                (msg) =>
-                  msg.messageType !== 'ROOM_CLOSED' &&
-                  msg.content !== LOCATION_ACCEPT_MESSAGE
-              )
-              .map((msg) => {
+            {visibleMessages.map((msg, index) => {
                 const sender = msg.senderId === myUserId ? 'me' : 'partner'
+                const previousMessage = visibleMessages[index - 1]
+                const nextMessage = visibleMessages[index + 1]
+                const isSameGroupAsPrevious =
+                  Boolean(previousMessage) &&
+                  previousMessage.senderId === msg.senderId &&
+                  formatMessageTime(previousMessage.sentAt) ===
+                    formatMessageTime(msg.sentAt)
+                const compact = isSameGroupAsPrevious
+                const showTime =
+                  !nextMessage ||
+                  nextMessage.senderId !== msg.senderId ||
+                  formatMessageTime(nextMessage.sentAt) !==
+                    formatMessageTime(msg.sentAt)
+                const showSenderInfo =
+                  sender === 'partner' && !isSameGroupAsPrevious
                 if (msg.content === LOCATION_REQUEST_MESSAGE) {
                   const accepted = messages.some(
                     (message) =>
@@ -430,11 +460,11 @@ export default function ChatRoomPage() {
                   return (
                     <div
                       key={msg.id}
-                      className={`flex items-end gap-[5px] px-6 ${
+                      className={`flex items-end gap-[5px] px-6 ${compact ? '-mt-3' : ''} ${
                         sender === 'me' ? 'justify-end' : 'justify-start'
                       }`}
                     >
-                      {sender === 'me' && (
+                      {sender === 'me' && showTime && (
                         <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">
                           {formatMessageTime(msg.sentAt)}
                         </span>
@@ -447,7 +477,7 @@ export default function ChatRoomPage() {
                         onOpen={() => navigate(`/location?roomId=${roomId}`)}
                       />
 
-                      {sender === 'partner' && (
+                      {sender === 'partner' && showTime && (
                         <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">
                           {formatMessageTime(msg.sentAt)}
                         </span>
@@ -463,6 +493,9 @@ export default function ChatRoomPage() {
                     message={msg.content ?? ''}
                     time={formatMessageTime(msg.sentAt)}
                     nickname={sender === 'partner' ? msg.senderNickname : undefined}
+                    showSenderInfo={showSenderInfo}
+                    compact={compact}
+                    showTime={showTime}
                     profileImageUrl={
                       sender === 'partner'
                         ? (room.opponentProfileImageUrl ?? undefined)
@@ -478,7 +511,7 @@ export default function ChatRoomPage() {
               {closedMessage}
             </p>
           )}
-          <div ref={messagesEndRef} aria-hidden="true" />
+          <div ref={messagesEndRef} className="h-6" aria-hidden="true" />
         </div>
 
         <ChatRoomInputBar

@@ -3,6 +3,7 @@ import { check, sexual } from 'korcen' // korcen.ts 오픈소스 이용해서 �
 
 import mapIcon from '../../assets/chat_map_icon.svg'
 import sendIcon from '../../assets/chat_send_icon.svg'
+import sendIconActive from '../../assets/chat_send_icon_active.svg'
 
 type Props = {
   disabled?: boolean
@@ -20,6 +21,7 @@ export default function ChatRoomInputBar({
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
+  const isSendActive = Boolean(value.trim()) && !disabled && !sending
 
   useEffect(() => {
     if (disabled) setValue('')
@@ -52,7 +54,7 @@ export default function ChatRoomInputBar({
   }
 
   return (
-    <div className="absolute bottom-6 left-0 flex w-full flex-col gap-1 px-6">
+    <div className="absolute bottom-0 left-0 z-20 flex min-h-[74px] w-full flex-col gap-1 bg-white px-6 pb-6 before:pointer-events-none before:absolute before:bottom-full before:left-0 before:h-8 before:w-full before:bg-[linear-gradient(to_top,rgba(255,255,255,1)_0%,rgba(255,255,255,0.98)_30%,rgba(255,255,255,0)_75%)]">
       {error && <p className="px-1 text-xs text-red-500">{error}</p>}
 
       <div className="flex items-center gap-3">
@@ -82,7 +84,7 @@ export default function ChatRoomInputBar({
               disabled ? '메시지를 보낼 수 없습니다' : '메시지 보내기'
             }
             disabled={disabled}
-            className="min-w-0 flex-1 bg-transparent text-sm text-[#343434] placeholder:text-[#343434] focus:outline-none"
+            className="min-w-0 flex-1 bg-transparent text-sm text-[#343434] placeholder:text-[#929292] focus:outline-none"
           />
 
           <button
@@ -91,7 +93,11 @@ export default function ChatRoomInputBar({
             disabled={disabled || sending}
             className="shrink-0"
           >
-            <img src={sendIcon} alt="전송" className="h-6 w-[23px]" />
+            <img
+              src={isSendActive ? sendIconActive : sendIcon}
+              alt="전송"
+              className="h-6 w-[23px]"
+            />
           </button>
         </div>
       </div>
