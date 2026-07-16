@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useAnimationControls } from 'framer-motion'
 
 import photo from '../assets/photo.png'
 import meal from '../assets/합석.png'
@@ -39,6 +39,7 @@ export default function MyRequestCard({
   onDragStart,
   onDragEnd,
 }: Props) {
+  const controls = useAnimationControls()
   const [bumpCount, setBumpCount] = useState(request.retryCount ?? 0)
   const [isBumping, setIsBumping] = useState(false)
   const [lastRetriedAt, setLastRetriedAt] = useState<string | null>(null)
@@ -114,6 +115,7 @@ export default function MyRequestCard({
       drag={isOpen ? 'y' : false}
       dragConstraints={{ top: -100, bottom: 0 }}
       dragElastic={0.15}
+      animate={controls}
       onDragStart={onDragStart}
       onDragEnd={(_, info) => {
         onDragEnd()
@@ -121,6 +123,12 @@ export default function MyRequestCard({
         if (isOpen && info.offset.y < -120) {
           onDelete()
         }
+
+        void controls.start({
+          x: 0,
+          y: 0,
+          transition: { type: 'spring', stiffness: 280, damping: 26 },
+        })
       }}
       className="flex h-[508px] w-[342px] flex-col rounded-[20px] border border-[#FFC878] bg-white px-[26px] py-5 shadow-[0_0_4px_rgba(255,158,27,1),0_4px_4px_rgba(0,0,0,0.15)]"
     >
