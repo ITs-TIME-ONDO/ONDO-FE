@@ -36,7 +36,7 @@ export default function ChatPage() {
     }
   }, [fetchRooms, connect])
 
-  const hasChatRooms = rooms.some((room) => room.status === 'ACTIVE')
+  const hasChatRooms = true
 
   return (
     <PageTransition>

@@ -3,6 +3,7 @@ import { animate, motion, useMotionValue, useTransform } from 'framer-motion'
 import miniProfileChar from '../assets/mini_profile_char.png'
 
 type Props = {
+  roomId: string
   nickname: string
   message: string
   time: string
@@ -13,9 +14,11 @@ type Props = {
   swipeOpen?: boolean
   onSwipeOpen?: () => void
   onSwipeClose?: () => void
+  swipeEnabled?: boolean
 }
 
 export default function ChatRoomListItem({
+  roomId,
   nickname,
   message,
   time,
@@ -26,6 +29,7 @@ export default function ChatRoomListItem({
   swipeOpen = false,
   onSwipeOpen,
   onSwipeClose,
+  swipeEnabled = true,
 }: Props) {
   const x = useMotionValue(0)
   const leaveButtonX = useTransform(x, [-76, 0], [0, 76])
@@ -41,28 +45,41 @@ export default function ChatRoomListItem({
   }, [swipeOpen, x])
 
   return (
-    <div className="relative h-[85px] w-full overflow-hidden">
-      <motion.button
-        type="button"
-        onClick={onLeave}
-        style={{ x: leaveButtonX }}
-        className={`absolute inset-y-0 right-0 flex w-[76px] items-center justify-center bg-[#F06464] text-sm font-semibold text-white transition-opacity duration-100 ${
-          swipeOpen || isDragging ? 'opacity-100' : 'pointer-events-none opacity-0'
-        }`}
-      >
-        나가기
-      </motion.button>
+    <div
+      data-chat-room-id={roomId}
+      className="relative h-[85px] w-full overflow-hidden"
+    >
+      {swipeEnabled && (
+        <motion.button
+          type="button"
+          onClick={onLeave}
+          style={{ x: leaveButtonX }}
+          className={`absolute inset-y-0 right-0 flex w-[76px] items-center justify-center bg-[#F06464] text-sm font-semibold text-white transition-opacity duration-100 ${
+            swipeOpen || isDragging ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        >
+          나가기
+        </motion.button>
+      )}
 
       <motion.button
         type="button"
-        drag="x"
+        drag={swipeEnabled ? 'x' : false}
         dragConstraints={{ left: -76, right: 0 }}
         dragElastic={0.12}
         onDragStart={() => setIsDragging(true)}
         style={{ x }}
         onDragEnd={(_, info) => {
           setIsDragging(false)
-          if (info.offset.x <= -42 || info.velocity.x <= -450) {
+          const shouldOpen = info.offset.x <= -42 || info.velocity.x <= -450
+
+          void animate(x, shouldOpen ? -76 : 0, {
+            type: 'spring',
+            stiffness: 320,
+            damping: 30,
+          })
+
+          if (shouldOpen) {
             onSwipeOpen?.()
           } else {
             onSwipeClose?.()

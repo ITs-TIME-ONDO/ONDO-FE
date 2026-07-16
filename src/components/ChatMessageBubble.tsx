@@ -1,3 +1,4 @@
+import type { Ref } from 'react'
 import miniProfileChar from '../assets/mini_profile_char.png'
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
   showSenderInfo?: boolean
   compact?: boolean
   showTime?: boolean
+  containerRef?: Ref<HTMLDivElement>
 }
 
 export default function ChatMessageBubble({
@@ -20,10 +22,11 @@ export default function ChatMessageBubble({
   showSenderInfo = true,
   compact = false,
   showTime = true,
+  containerRef,
 }: Props) {
   if (sender === 'me') {
     return (
-      <div className={`flex items-end justify-end gap-[5px] px-6 ${compact ? '-mt-3' : ''}`}>
+      <div ref={containerRef} className={`flex items-end justify-end gap-[5px] px-6 ${compact ? '-mt-3' : ''}`}>
         {showTime && (
           <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">{time}</span>
         )}
@@ -38,7 +41,7 @@ export default function ChatMessageBubble({
 
   if (!showSenderInfo) {
     return (
-      <div className={`flex items-end gap-[5px] pl-[62px] pr-6 ${compact ? '-mt-3' : ''}`}>
+      <div ref={containerRef} className={`flex items-end gap-[5px] pl-[62px] pr-6 ${compact ? '-mt-3' : ''}`}>
         <div className="max-w-[220px] rounded-2xl bg-[#F3F3F3] px-3 py-2">
           <p className="whitespace-pre-wrap break-words text-sm text-black">
             {message}
@@ -54,7 +57,7 @@ export default function ChatMessageBubble({
   }
 
   return (
-    <div className="flex items-start gap-2 px-6">
+    <div ref={containerRef} className="flex items-start gap-2 px-6">
       <div className="flex size-[30px] shrink-0 items-center justify-center rounded-full bg-[#FFF4E8]">
         <img
           src={profileImageUrl || miniProfileChar}
