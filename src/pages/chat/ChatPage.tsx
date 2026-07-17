@@ -9,6 +9,7 @@ import FloatingConfirmModal from '../../components/FloatingConfirmModal'
 import { closeChatRoom, type ChatRoomSummary } from '../../api/chat'
 import { useChatRoomStore } from '../../stores/chatRoomStore'
 import { useChatSocketStore } from '../../stores/chatSocketStore'
+import { getHiddenChatRoomIds, hideChatRoom } from '../../utils/hiddenChatRooms'
 
 export default function ChatPage() {
   const rooms = useChatRoomStore((state) => state.rooms)
@@ -16,6 +17,7 @@ export default function ChatPage() {
   const connect = useChatSocketStore((state) => state.connect)
   const [leaveRoom, setLeaveRoom] = useState<ChatRoomSummary | null>(null)
   const [isLeaving, setIsLeaving] = useState(false)
+  const [hiddenRoomIds, setHiddenRoomIds] = useState(getHiddenChatRoomIds)
 
   useEffect(() => {
     fetchRooms()
@@ -50,7 +52,10 @@ export default function ChatPage() {
         <ChatHeader />
 
         {hasChatRooms ? (
-          <ChatRoomList rooms={rooms} onLeave={setLeaveRoom} />
+          <ChatRoomList
+            rooms={rooms.filter((room) => !hiddenRoomIds.includes(room.id))}
+            onLeave={setLeaveRoom}
+          />
         ) : (
           <ChatEmptyState />
         )}
@@ -72,6 +77,7 @@ export default function ChatPage() {
             try {
               setIsLeaving(true)
               await closeChatRoom(leaveRoom.id)
+              setHiddenRoomIds(hideChatRoom(leaveRoom.id))
               await fetchRooms()
               setLeaveRoom(null)
             } catch {

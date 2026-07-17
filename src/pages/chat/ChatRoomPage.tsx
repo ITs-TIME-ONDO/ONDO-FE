@@ -34,6 +34,7 @@ import chatRoomChar from '../../assets/chat_room_char.png'
 import tapFinger from '../../assets/tap_finger.svg'
 import menuIcon from '../../assets/chat_menu_icon.png'
 import miniProfileChar from '../../assets/mini_profile_char.png'
+import { hideChatRoom } from '../../utils/hiddenChatRooms'
 
 const CARD_CATEGORY_LABELS: Record<string, string> = {
   PHOTO: '사진 찍기',
@@ -116,29 +117,37 @@ export default function ChatRoomPage() {
     setRoom(null)
     setRoomNotFound(false)
 
-    getChatRoom(roomId)
-      .then((res) => {
+    const loadRoom = async () => {
+      try {
+        const roomRes = await getChatRoom(roomId)
+        let category = '도움 요청'
+
+        try {
+          const cardRes = await apiFetch<any>(`/api/cards/${roomRes.data.cardId}`)
+          const card = cardRes?.data?.card ?? cardRes?.data ?? cardRes
+          category =
+            CARD_CATEGORY_LABELS[card?.category] ?? card?.category ?? '도움 요청'
+        } catch {}
+
         if (!active) return
-        setRoom(res.data)
-        apiFetch<any>(`/api/cards/${res.data.cardId}`)
-          .then((cardRes) => {
-            if (!active) return
-            const card = cardRes?.data?.card ?? cardRes?.data ?? cardRes
-            setCardCategory(
-              CARD_CATEGORY_LABELS[card?.category] ?? card?.category ?? '도움 요청'
-            )
-          })
-          .catch(() => {
-            if (active) setCardCategory('도움 요청')
-          })
+        setCardCategory(category)
+        setRoom(roomRes.data)
+
+        if (roomRes.data.status === 'CLOSED') {
+          setLiveLocationSharingEnabled(false)
+          setClosedMessage('종료된 채팅방입니다.')
+        }
+
         if (localStorage.getItem(LOCATION_GUIDE_SEEN_STORAGE_KEY) !== 'true') {
           setShowLocationGuide(true)
         }
-      })
-      .catch(() => {
+      } catch {
         if (!active) return
         setRoomNotFound(true)
-      })
+      }
+    }
+
+    void loadRoom()
 
     return () => {
       active = false
@@ -236,6 +245,7 @@ export default function ChatRoomPage() {
     const lastMessage = messages[messages.length - 1]
     if (lastMessage?.messageType !== 'ROOM_CLOSED') return
 
+    setLiveLocationSharingEnabled(false)
     setClosedMessage(
       lastMessage.senderId === myUserId
         ? '채팅방을 나갔습니다.'
@@ -351,7 +361,7 @@ export default function ChatRoomPage() {
     }
   }, [messages])
 
-  const handleCloseRoom = async () => {
+  const handleCloseRoom = async (hideForCurrentUser = false) => {
     if (!roomId) return
 
     if (mockMode) {
@@ -361,7 +371,12 @@ export default function ChatRoomPage() {
 
     try {
       await closeChatRoom(roomId)
+      setLiveLocationSharingEnabled(false)
       setClosedMessage('채팅방을 나갔습니다.')
+      if (hideForCurrentUser) {
+        hideChatRoom(roomId)
+        navigate('/chat', { replace: true })
+      }
     } catch {
       alert('채팅방 종료에 실패했습니다. 다시 시도해주세요.')
     }
@@ -399,7 +414,8 @@ export default function ChatRoomPage() {
   const visibleMessages = messages.filter(
     (msg) =>
       msg.messageType !== 'ROOM_CLOSED' &&
-      msg.content !== LOCATION_ACCEPT_MESSAGE
+      msg.content !== LOCATION_ACCEPT_MESSAGE &&
+      !(closedMessage && msg.content === LOCATION_REQUEST_MESSAGE)
   )
   const firstUnreadMessageIndex = visibleMessages.findIndex(
     (message) => message.senderId !== myUserId && !message.readAt
@@ -625,7 +641,7 @@ export default function ChatRoomPage() {
           description="매칭이 자동으로 종료됩니다."
           onConfirm={() => {
             setShowLeaveModal(false)
-            handleCloseRoom()
+            handleCloseRoom(true)
           }}
           onCancel={() => setShowLeaveModal(false)}
         />

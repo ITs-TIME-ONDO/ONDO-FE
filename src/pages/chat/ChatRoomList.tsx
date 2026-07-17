@@ -36,7 +36,7 @@ export default function ChatRoomList({ rooms, onLeave }: Props) {
 
   return (
     <main className="absolute left-0 top-[113px] w-full">
-      {[mockChatRoom, ...rooms.filter((room) => room.status === 'ACTIVE' && room.id !== mockChatRoom.id)].map((room) => (
+      {[mockChatRoom, ...rooms.filter((room) => room.id !== mockChatRoom.id)].map((room) => (
         <ChatRoomListItem
           key={room.id}
           roomId={room.id}
