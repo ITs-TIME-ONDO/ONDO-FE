@@ -33,7 +33,7 @@ export default function ChatRoomList({ rooms, onLeave }: Props) {
   }, [openRoomId])
 
   return (
-    <main className="absolute left-0 top-[113px] w-full">
+    <main className="absolute left-0 top-[113px] h-[620.5px] w-full overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {(import.meta.env.DEV
         ? [mockChatRoom, ...rooms.filter((room) => room.id !== mockChatRoom.id)]
         : rooms

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { check, sexual } from 'korcen'
 
 import mapIcon from '../../assets/chat_map_icon.svg'
@@ -65,7 +65,7 @@ export default function ChatRoomInputBar({
               ? '10분 후 다시 요청할 수 있어요'
               : undefined
           }
-          className="shrink-0 disabled:cursor-not-allowed disabled:opacity-40"
+          className="shrink-0 disabled:opacity-40"
         >
           <img src={mapIcon} alt="위치 공유" className="h-5 w-5" />
         </button>

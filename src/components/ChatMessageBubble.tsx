@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+﻿import { useRef, useState } from 'react'
 import type { Ref } from 'react'
 import miniProfileChar from '../assets/mini_profile_char.png'
 import { translateChatMessage, type MessageType } from '../api/chat'
@@ -41,7 +41,7 @@ function TranslateMenu({
         type="button"
         aria-label="번역 메뉴 닫기"
         tabIndex={-1}
-        className="fixed inset-0 z-40 cursor-default"
+        className="fixed inset-0 z-40"
         onPointerDown={onClose}
       />
       <div

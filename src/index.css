@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -37,7 +37,6 @@ body {
   border-radius: 9999px;
   border: 1px solid white;
   background: #ff9814;
-  cursor: pointer;
 }
 
 .slider::-moz-range-track {
@@ -51,5 +50,4 @@ body {
   border-radius: 9999px;
   border: 1px solid white;
   background: #ff9814;
-  cursor: pointer;
 }

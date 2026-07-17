@@ -1,9 +1,9 @@
-import { useNavigate } from 'react-router-dom'
+﻿import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
-import arrow from '../../assets/arrow.png'
 import openArrow from '../../assets/open_arrow.png'
 import { apiFetch } from '../../api/client'
+import PageHeader from '../../components/PageHeader'
 import { hasClosedChatForCard } from '../../utils/cardChatStatus'
 
 type Purpose = '사진 찍기' | '합석' | '기타'
@@ -120,21 +120,9 @@ export default function RequestPage() {
 
   return (
     <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-white font-['Pretendard']">
-      <header className="relative h-[104px]">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="absolute left-6 top-[50px]"
-        >
-          <img src={arrow} alt="뒤로가기" className="h-5 w-5 object-contain" />
-        </button>
+      <PageHeader title="요청하기" fallbackPath="/" />
 
-        <h1 className="absolute left-1/2 top-[50px] -translate-x-1/2 text-xl font-medium text-black">
-          요청 하기
-        </h1>
-      </header>
-
-      <main className="px-6">
+      <main className="px-6 pt-[104px]">
         <section className="relative">
           <p className="ml-5 text-base font-medium text-black">목적</p>
 
@@ -291,7 +279,7 @@ export default function RequestPage() {
         className={`absolute bottom-16 left-6 h-[60px] w-[342px] rounded-full text-xl font-bold text-white ${
           isValid && !isSubmitting && !hasActiveRequest
             ? 'bg-[#FF9814]'
-            : 'bg-[#FFC878] cursor-not-allowed'
+            : 'bg-[#FFC878]'
         }`}
       >
         {isSubmitting ? '생성 중...' : '다음'}

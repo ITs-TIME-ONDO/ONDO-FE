@@ -1,4 +1,4 @@
-import { motion, useAnimationControls } from 'framer-motion'
+﻿import { motion, useAnimationControls } from 'framer-motion'
 
 import photo from '../assets/photo.png'
 import meal from '../assets/합석.png'
@@ -86,7 +86,7 @@ export default function NearbyRequestCard({
           transition: { type: 'spring', stiffness: 280, damping: 26 },
         })
       }}
-      className="flex h-[508px] w-80 cursor-pointer flex-col items-center justify-between rounded-[20px] bg-white pb-7 pt-5 shadow-[0_4px_4px_rgba(0,0,0,0.25),0_0_4px_rgba(255,158,27,1)]"
+      className="flex h-[508px] w-80 flex-col items-center justify-between rounded-[20px] bg-white pb-7 pt-5 shadow-[0_4px_4px_rgba(0,0,0,0.25),0_0_4px_rgba(255,158,27,1)]"
     >
       <p className="h-5 text-sm font-normal text-[#555555]">
         {formatElapsedTime(request.updatedAt || request.createdAt)}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 
 interface ProfileImagePickerProps {
   defaultImage: string
@@ -25,12 +25,10 @@ export default function ProfileImagePicker({
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      alert('이미지 파일만 선택할 수 있습니다.')
       e.target.value = ''
       return
     }
     if (file.size > 1024 * 1024) {
-      alert('1MB 이하의 이미지를 선택해주세요.')
       e.target.value = ''
       return
     }
@@ -71,7 +69,7 @@ export default function ProfileImagePicker({
           aria-expanded={isImageMenuOpen}
           aria-label="프로필 이미지 변경 메뉴"
           onClick={() => setIsImageMenuOpen((prev) => !prev)}
-          className={`absolute inset-0 z-30 size-full cursor-pointer rounded-full transition-transform duration-200 ease-out ${
+          className={`absolute inset-0 z-30 size-full rounded-full transition-transform duration-200 ease-out ${
             isImageMenuOpen ? 'scale-[1.03]' : 'scale-100'
           }`}
         >
@@ -87,7 +85,7 @@ export default function ProfileImagePicker({
             <button
               type="button"
               aria-label="이미지 선택 메뉴 닫기"
-              className="fixed inset-0 z-20 cursor-default bg-black/25"
+              className="fixed inset-0 z-20 bg-black/25"
               onPointerDown={() => setIsImageMenuOpen(false)}
             />
             <div
