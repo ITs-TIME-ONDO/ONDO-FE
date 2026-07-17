@@ -91,6 +91,11 @@ export default function ChatRoomPage() {
   const setLiveLocation = useChatSocketStore((state) => state.setLiveLocation)
   const sendLiveLocation = useChatSocketStore((state) => state.sendLiveLocation)
   const stopLiveLocation = useChatSocketStore((state) => state.stopLiveLocation)
+  const isRoomClosed =
+    Boolean(closedMessage) ||
+    room?.status === 'CLOSED' ||
+    messages[messages.length - 1]?.messageType === 'ROOM_CLOSED'
+
   useEffect(() => {
     if (!roomId) return
 
@@ -246,22 +251,17 @@ export default function ChatRoomPage() {
   }, [roomId, liveLocationSharingEnabled, sendLiveLocation, stopLiveLocation])
 
   useEffect(() => {
-    const lastMessage = messages[messages.length - 1]
     const hasAcceptedLocationSharing = messages.some(
       (message) => message.content === LOCATION_ACCEPT_MESSAGE
     )
 
-    if (
-      closedMessage ||
-      room?.status === 'CLOSED' ||
-      lastMessage?.messageType === 'ROOM_CLOSED'
-    ) {
+    if (isRoomClosed) {
       setLiveLocationSharingEnabled(false)
       return
     }
 
     setLiveLocationSharingEnabled(hasAcceptedLocationSharing)
-  }, [closedMessage, messages, room?.status])
+  }, [isRoomClosed, messages])
 
   useLayoutEffect(() => {
     const el = scrollRef.current
@@ -343,7 +343,7 @@ export default function ChatRoomPage() {
 
   const handleLocationAgree = async () => {
     const sent = await handleSend(LOCATION_ACCEPT_MESSAGE)
-    if (sent) setLiveLocationSharingEnabled(true)
+    if (sent && !isRoomClosed) setLiveLocationSharingEnabled(true)
   }
 
   const handleCompleteCard = async () => {

@@ -1,31 +1,13 @@
-import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import alertIcon from '../../assets/alert.png'
 import alertActiveIcon from '../../assets/alert_acitve.svg'
 import profileBtn from '../../assets/top_small_profile_btn.png'
+import useUnreadNotifications from '../../hooks/useUnreadNotifications'
 
 export default function ChatHeader() {
   const navigate = useNavigate()
-  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(
-    () => localStorage.getItem('hasUnreadNotifications') === 'true'
-  )
-
-  useEffect(() => {
-    const syncUnreadState = () => {
-      setHasUnreadNotifications(
-        localStorage.getItem('hasUnreadNotifications') === 'true'
-      )
-    }
-
-    window.addEventListener('storage', syncUnreadState)
-    window.addEventListener('hasUnreadNotificationsChange', syncUnreadState)
-
-    return () => {
-      window.removeEventListener('storage', syncUnreadState)
-      window.removeEventListener('hasUnreadNotificationsChange', syncUnreadState)
-    }
-  }, [])
+  const hasUnreadNotifications = useUnreadNotifications()
 
   return (
     <header className="absolute left-0 top-[38px] flex h-12 w-full items-center justify-between px-6">

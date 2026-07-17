@@ -18,6 +18,7 @@ import sideFinger from '../../assets/side_finger.png'
 import { apiFetch } from '../../api/client'
 import { createChatRoom } from '../../api/chat'
 import { hasClosedChatForCard } from '../../utils/cardChatStatus'
+import useUnreadNotifications from '../../hooks/useUnreadNotifications'
 
 const getHomeErrorMessage = (error: unknown): string => {
   const code =
@@ -126,9 +127,7 @@ const getStoredMatchedHelp = (): any | null => {
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(
-    () => localStorage.getItem('hasUnreadNotifications') === 'true'
-  )
+  const hasUnreadNotifications = useUnreadNotifications()
 
   const [myRequest, setMyRequest] = useState<any>(null)
   const [nearbyCards, setNearbyCards] = useState<any[]>([])
@@ -150,22 +149,6 @@ export default function HomePage() {
   const selectedHelpCardRef = useRef<any | null>(null)
   const deleteGuideDismissedCardIdRef = useRef<string | null>(null)
   const hasShownNearbyGuideRef = useRef(false)
-
-  useEffect(() => {
-    const syncUnreadState = () => {
-      setHasUnreadNotifications(
-        localStorage.getItem('hasUnreadNotifications') === 'true'
-      )
-    }
-
-    window.addEventListener('storage', syncUnreadState)
-    window.addEventListener('hasUnreadNotificationsChange', syncUnreadState)
-
-    return () => {
-      window.removeEventListener('storage', syncUnreadState)
-      window.removeEventListener('hasUnreadNotificationsChange', syncUnreadState)
-    }
-  }, [])
 
   const getCurrentPosition = (): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
