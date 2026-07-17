@@ -629,6 +629,10 @@ export default function ChatRoomPage() {
                         ? (room.opponentProfileImageUrl ?? undefined)
                         : undefined
                     }
+                    messageId={msg.id}
+                    messageType={msg.messageType}
+                    translatable={msg.messageType === 'TEXT'}
+                    mockTranslate={mockMode}
                   />
                 )
               })}
