@@ -29,8 +29,8 @@ export default function ProfileImagePicker({
       e.target.value = ''
       return
     }
-    if (file.size > 10 * 1024 * 1024) {
-      alert('10MB 이하의 이미지를 선택해주세요.')
+    if (file.size > 1024 * 1024) {
+      alert('1MB 이하의 이미지를 선택해주세요.')
       e.target.value = ''
       return
     }
