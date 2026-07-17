@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import PageHeader from '../../components/PageHeader'
+import myMapPin from '../../assets/map_ping_me.png'
+import opponentMapPin from '../../assets/map_ping_opponent.png'
 
 declare global {
   interface Window {
@@ -131,8 +133,19 @@ export default function LocationPage() {
       <main className="absolute inset-x-0 bottom-0 top-[99px]" aria-label="실시간 위치 지도">
         <div ref={mapRef} className="h-full w-full" />
 
+        <div className="absolute left-4 top-4 z-10 flex items-center gap-4 rounded-full bg-white/90 px-4 py-2 text-xs text-[#555555] shadow">
+          <span className="flex items-center gap-1.5">
+            <img src={myMapPin} alt="" className="h-7 w-auto" />
+            내 위치
+          </span>
+          <span className="flex items-center gap-1.5">
+            <img src={opponentMapPin} alt="" className="h-7 w-auto" />
+            상대 위치
+          </span>
+        </div>
+
         {errorMessage && (
-          <p className="absolute left-1/2 top-4 z-10 w-max max-w-[342px] -translate-x-1/2 rounded-full bg-white/90 px-4 py-2 text-center text-sm text-[#555555] shadow">
+          <p className="absolute left-1/2 top-16 z-10 w-max max-w-[342px] -translate-x-1/2 rounded-full bg-white/90 px-4 py-2 text-center text-sm text-[#555555] shadow">
             {errorMessage}
           </p>
         )}
