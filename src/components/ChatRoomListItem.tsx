@@ -105,7 +105,7 @@ export default function ChatRoomListItem({
           }
           onClick?.()
         }}
-        className="relative flex h-[85px] w-full items-center gap-3 bg-white px-6 text-left after:absolute after:bottom-0 after:left-6 after:right-6 after:h-px after:bg-[#EDEDED]"
+        className="relative flex h-[85px] w-full items-center gap-3 bg-transparent px-6 text-left after:absolute after:bottom-0 after:left-6 after:right-6 after:h-px after:bg-[#EDEDED]"
       >
       <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#FFF4E8]">
         <img

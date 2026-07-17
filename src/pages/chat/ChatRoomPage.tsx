@@ -54,6 +54,7 @@ export default function ChatRoomPage() {
   const mockMode = import.meta.env.DEV && isMockChatRoom(roomId)
   const [room, setRoom] = useState<ChatRoomSummary | null>(null)
   const [cardCategory, setCardCategory] = useState('도움 요청')
+  const [canCompleteCard, setCanCompleteCard] = useState(false)
   const [roomNotFound, setRoomNotFound] = useState(false)
   const [showCompleteModal, setShowCompleteModal] = useState(false)
   const [showLeaveModal, setShowLeaveModal] = useState(false)
@@ -108,6 +109,7 @@ export default function ChatRoomPage() {
     if (mockMode) {
       setRoom(mockChatRoom)
       setCardCategory('사진 찍기')
+      setCanCompleteCard(true)
       setRoomNotFound(false)
       return
     }
@@ -115,6 +117,7 @@ export default function ChatRoomPage() {
     let active = true
     setRoom(null)
     setRoomNotFound(false)
+    setCanCompleteCard(false)
 
     const loadRoom = async () => {
       try {
@@ -126,6 +129,9 @@ export default function ChatRoomPage() {
           const card = cardRes?.data?.card ?? cardRes?.data ?? cardRes
           category =
             CARD_CATEGORY_LABELS[card?.category] ?? card?.category ?? '도움 요청'
+          setCanCompleteCard(
+            Boolean(myUserId) && String(card?.requesterId) === String(myUserId)
+          )
         } catch {}
 
         if (!active) return
@@ -151,7 +157,7 @@ export default function ChatRoomPage() {
     return () => {
       active = false
     }
-  }, [mockMode, roomId])
+  }, [mockMode, myUserId, roomId])
 
   useEffect(() => {
     if (!roomId || mockMode) return
@@ -383,7 +389,7 @@ export default function ChatRoomPage() {
       setClosedMessage('종료된 채팅방입니다.')
     } catch (error) {
       if (error instanceof ApiError && error.status === 403) {
-        alert('카드 작성자만 완료할 수 있습니다.')
+        return
       } else if (error instanceof ApiError && error.status === 409) {
         alert('매칭 상태가 아니어서 완료할 수 없습니다.')
       } else {
@@ -499,8 +505,12 @@ export default function ChatRoomPage() {
           <button
             type="button"
             onClick={() => setShowCompleteModal(true)}
-            disabled={Boolean(closedMessage)}
-            className="flex h-10 w-[107px] -translate-y-2 items-center justify-center rounded-full bg-black text-base font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={Boolean(closedMessage) || !canCompleteCard}
+            className={`flex h-10 w-[107px] -translate-y-2 items-center justify-center rounded-full text-base font-medium text-white ${
+              closedMessage
+                ? 'cursor-not-allowed bg-black opacity-40'
+                : 'bg-black'
+            }`}
           >
             완료
           </button>
