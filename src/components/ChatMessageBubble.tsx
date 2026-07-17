@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import type { Ref } from 'react'
 import miniProfileChar from '../assets/mini_profile_char.png'
 import { translateChatMessage, type MessageType } from '../api/chat'
+import { useLongPress } from '../hooks/useLongPress'
 
 type Props = {
   sender: 'me' | 'partner'
@@ -44,7 +45,7 @@ function TranslateMenu({
         onPointerDown={onClose}
       />
       <div
-        className="absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-[calc(100%+6px)] overflow-hidden whitespace-nowrap rounded-[5px] border border-white/60 bg-white/90 backdrop-blur-[2px]"
+        className="absolute right-0 top-full z-50 mt-1.5 overflow-hidden whitespace-nowrap rounded-[5px] border border-white/60 bg-white/90 backdrop-blur-[2px]"
         style={{ boxShadow: '0px 2px 4px rgba(0,0,0,0.25)' }}
       >
         <button
@@ -109,12 +110,13 @@ function MessageBubble({
       .catch(() => setTranslation({ status: 'error' }))
   }
 
+  const longPress = useLongPress(() => setMenuOpen(true))
+
   return (
     <div className="relative">
       <div
         role={translatable ? 'button' : undefined}
         tabIndex={translatable ? 0 : undefined}
-        onClick={() => translatable && setMenuOpen((prev) => !prev)}
         onKeyDown={(e) => {
           if (!translatable) return
           if (e.key === 'Enter' || e.key === ' ') {
@@ -122,7 +124,8 @@ function MessageBubble({
             setMenuOpen((prev) => !prev)
           }
         }}
-        className={`transition-transform duration-200 ease-out ${
+        {...(translatable ? longPress : {})}
+        className={`select-none transition-transform duration-200 ease-out ${
           menuOpen ? 'scale-[1.03]' : 'scale-100'
         } ${bubbleClassName}`}
       >

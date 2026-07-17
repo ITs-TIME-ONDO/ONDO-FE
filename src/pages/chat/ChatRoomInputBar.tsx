@@ -52,7 +52,7 @@ export default function ChatRoomInputBar({
 
   return (
     <div className="absolute bottom-0 left-0 z-20 flex min-h-[74px] w-full flex-col gap-1 bg-white px-6 pb-6 before:pointer-events-none before:absolute before:bottom-full before:left-0 before:h-8 before:w-full before:bg-[linear-gradient(to_top,rgba(255,255,255,1)_0%,rgba(255,255,255,0.98)_30%,rgba(255,255,255,0)_75%)]">
-      {error && <p className="px-1 text-xs text-red-500">{error}</p>}
+      {error && <p className="pl-[3rem] pr-1 text-xs text-red-500">{error}</p>}
 
       <div className="flex items-center gap-3">
         <button
@@ -60,7 +60,11 @@ export default function ChatRoomInputBar({
           onClick={onLocationRequest}
           disabled={disabled || locationRequestDisabled}
           aria-label="실시간 위치 공유 요청"
-          title={locationRequestDisabled ? '10분 후 다시 요청할 수 있어요' : undefined}
+          title={
+            locationRequestDisabled
+              ? '10분 후 다시 요청할 수 있어요'
+              : undefined
+          }
           className="shrink-0 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <img src={mapIcon} alt="위치 공유" className="h-5 w-5" />
