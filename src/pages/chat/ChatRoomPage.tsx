@@ -433,10 +433,14 @@ export default function ChatRoomPage() {
           open={showMenu}
           onClose={() => setShowMenu(false)}
           options={[
-            {
-              label: notificationsEnabled ? '알림 끄기' : '알림 켜기',
-              onClick: () => setNotificationsEnabled((prev) => !prev),
-            },
+            ...(closedMessage
+              ? []
+              : [
+                  {
+                    label: notificationsEnabled ? '알림 끄기' : '알림 켜기',
+                    onClick: () => setNotificationsEnabled((prev) => !prev),
+                  },
+                ]),
             { label: '신고하기', onClick: () => setShowReportModal(true) },
             ...(closedMessage
               ? []
