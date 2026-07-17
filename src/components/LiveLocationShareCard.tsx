@@ -1,6 +1,6 @@
 import mapImage from '../assets/map.png'
 
-export type LiveLocationShareCardStatus = 'requested' | 'accepted'
+export type LiveLocationShareCardStatus = 'requested' | 'accepted' | 'ended'
 
 type Props = {
   sender: 'me' | 'partner'
@@ -16,7 +16,8 @@ export default function LiveLocationShareCard({
   onOpen,
 }: Props) {
   const accepted = status === 'accepted'
-  const needsAgreement = sender === 'partner' && !accepted
+  const ended = status === 'ended'
+  const needsAgreement = sender === 'partner' && !accepted && !ended
 
   return (
     <article
@@ -31,9 +32,9 @@ export default function LiveLocationShareCard({
       <div className="relative h-[130px] w-[232px] overflow-hidden rounded-[5px]">
         <button
           type="button"
-          disabled={!accepted}
-          onClick={accepted ? onOpen : undefined}
-          aria-label={accepted ? '실시간 위치 지도 열기' : undefined}
+          disabled={!accepted || ended}
+          onClick={accepted && !ended ? onOpen : undefined}
+          aria-label={accepted && !ended ? '실시간 위치 지도 열기' : undefined}
           className="absolute inset-0 disabled:cursor-default"
         >
           <img src={mapImage} alt="" className="h-full w-full object-cover" />
@@ -52,11 +53,11 @@ export default function LiveLocationShareCard({
       </div>
 
       <div className="flex w-[232px] items-center justify-end gap-1.5">
-        {accepted && (
+        {accepted && !ended && (
           <span className="size-1.5 shrink-0 rounded-full bg-[#22C55E]" />
         )}
         <p className="text-[10px] font-light text-[#737373]">
-          {accepted ? '위치 공유 중' : '요청 대기 중'}
+          {ended ? '위치 공유 종료' : accepted ? '위치 공유 중' : '요청 대기 중'}
         </p>
       </div>
 

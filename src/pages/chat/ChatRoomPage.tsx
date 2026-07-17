@@ -406,8 +406,7 @@ export default function ChatRoomPage() {
   const visibleMessages = messages.filter(
     (msg) =>
       msg.messageType !== 'ROOM_CLOSED' &&
-      msg.content !== LOCATION_ACCEPT_MESSAGE &&
-      !(closedMessage && msg.content === LOCATION_REQUEST_MESSAGE)
+      msg.content !== LOCATION_ACCEPT_MESSAGE
   )
   const firstUnreadMessageIndex = visibleMessages.findIndex(
     (message) => message.senderId !== myUserId && !message.readAt
@@ -527,7 +526,7 @@ export default function ChatRoomPage() {
                           <div className="flex items-end gap-[5px]">
                             <LiveLocationShareCard
                               sender={sender}
-                              status={accepted ? 'accepted' : 'requested'}
+                              status={closedMessage ? 'ended' : accepted ? 'accepted' : 'requested'}
                               onAgree={() => setShowLocationAgreeModal(true)}
                               onOpen={() => navigate(`/location?roomId=${roomId}`)}
                             />
@@ -560,7 +559,7 @@ export default function ChatRoomPage() {
 
                       <LiveLocationShareCard
                         sender={sender}
-                        status={accepted ? 'accepted' : 'requested'}
+                        status={closedMessage ? 'ended' : accepted ? 'accepted' : 'requested'}
                         onAgree={() => setShowLocationAgreeModal(true)}
                         onOpen={() => navigate(`/location?roomId=${roomId}`)}
                       />
