@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 
 import arrowIcon from '../../assets/chat_report_arrow.svg'
 import { createChatRoomReport, type ReportReason } from '../../api/reports'
-import { ApiError } from '../../api/client'
 
 const REASON_CODE_MAP: Record<string, ReportReason> = {
   '욕설/인신공격': 'HARASSMENT',
@@ -54,13 +53,7 @@ export default function ReportModal({
         onSuccess()
         onClose()
       })
-      .catch((error) => {
-        if (error instanceof ApiError && error.status === 409) {
-          alert('이미 신고한 사용자입니다.')
-        } else {
-          alert('신고 접수에 실패했습니다. 다시 시도해주세요.')
-        }
-      })
+      .catch(() => {})
       .finally(() => setSubmitting(false))
   }
 

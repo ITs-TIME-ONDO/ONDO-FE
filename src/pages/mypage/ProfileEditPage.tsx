@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import PageHeader from '../../components/PageHeader'
@@ -106,11 +106,11 @@ export default function ProfileEditPage() {
               navigate('/mypage', { replace: true })
             } catch (error) {
               if (error instanceof DOMException && error.name === 'AbortError') {
-                alert('이미지 업로드 시간이 초과되었습니다. 다시 시도해주세요.')
-              } else if (error instanceof ApiError && error.status === 409) {
-                alert('이미 사용 중인 닉네임입니다.')
-              } else {
-                alert('프로필 저장에 실패했습니다. 다시 시도해주세요.')
+                return
+              }
+
+              if (error instanceof ApiError && error.status === 409) {
+                return
               }
             } finally {
               setIsSubmitting(false)

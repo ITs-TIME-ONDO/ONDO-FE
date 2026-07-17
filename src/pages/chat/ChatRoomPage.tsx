@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+﻿import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import PageTransition from '../../components/PageTransition'
@@ -391,9 +391,7 @@ export default function ChatRoomPage() {
       if (error instanceof ApiError && error.status === 403) {
         return
       } else if (error instanceof ApiError && error.status === 409) {
-        alert('매칭 상태가 아니어서 완료할 수 없습니다.')
-      } else {
-        alert('완료 처리에 실패했습니다. 다시 시도해주세요.')
+        return
       }
     }
   }
@@ -411,9 +409,7 @@ export default function ChatRoomPage() {
       await closeChatRoom(roomId)
       setLiveLocationSharingEnabled(false)
       setClosedMessage('종료된 채팅방입니다.')
-    } catch {
-      alert('채팅방 종료에 실패했습니다. 다시 시도해주세요.')
-    }
+    } catch {}
   }
 
   const handleScroll = () => {
@@ -507,9 +503,7 @@ export default function ChatRoomPage() {
             onClick={() => setShowCompleteModal(true)}
             disabled={Boolean(closedMessage) || !canCompleteCard}
             className={`flex h-10 w-[107px] -translate-y-2 items-center justify-center rounded-full text-base font-medium text-white ${
-              closedMessage
-                ? 'cursor-not-allowed bg-black opacity-40'
-                : 'bg-black'
+              closedMessage ? 'bg-black opacity-40' : 'bg-black'
             }`}
           >
             완료

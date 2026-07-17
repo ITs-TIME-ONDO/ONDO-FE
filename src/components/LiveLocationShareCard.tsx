@@ -1,4 +1,4 @@
-import mapImage from '../assets/map.png'
+﻿import mapImage from '../assets/map.png'
 
 export type LiveLocationShareCardStatus = 'requested' | 'accepted' | 'ended'
 
@@ -35,7 +35,7 @@ export default function LiveLocationShareCard({
           disabled={!accepted || ended}
           onClick={accepted && !ended ? onOpen : undefined}
           aria-label={accepted && !ended ? '실시간 위치 지도 열기' : undefined}
-          className="absolute inset-0 disabled:cursor-default"
+          className="absolute inset-0"
         >
           <img src={mapImage} alt="" className="h-full w-full object-cover" />
           {needsAgreement && <span className="absolute inset-0 bg-black/40" />}

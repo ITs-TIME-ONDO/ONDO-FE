@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 
 import PageTransition from '../../components/PageTransition'
 import BottomNav from '../../components/BottomNav'
@@ -75,7 +75,6 @@ export default function ChatPage() {
               await fetchRooms()
               setLeaveRoom(null)
             } catch {
-              alert('채팅방 나가기에 실패했습니다. 다시 시도해주세요.')
             } finally {
               setIsLeaving(false)
             }

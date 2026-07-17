@@ -1,4 +1,4 @@
-type MenuOption = {
+﻿type MenuOption = {
   label: string
   onClick: () => void
 }
@@ -22,7 +22,7 @@ export default function ChatRoomMenuDropdown({
         type="button"
         aria-label="더보기 메뉴 닫기"
         tabIndex={-1}
-        className="absolute inset-0 z-40 cursor-default"
+        className="absolute inset-0 z-40"
         onPointerDown={onClose}
       />
 

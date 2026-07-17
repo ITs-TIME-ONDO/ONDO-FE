@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+﻿import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
 import openArrow from '../../assets/open_arrow.png'
@@ -279,7 +279,7 @@ export default function RequestPage() {
         className={`absolute bottom-16 left-6 h-[60px] w-[342px] rounded-full text-xl font-bold text-white ${
           isValid && !isSubmitting && !hasActiveRequest
             ? 'bg-[#FF9814]'
-            : 'bg-[#FFC878] cursor-not-allowed'
+            : 'bg-[#FFC878]'
         }`}
       >
         {isSubmitting ? '생성 중...' : '다음'}

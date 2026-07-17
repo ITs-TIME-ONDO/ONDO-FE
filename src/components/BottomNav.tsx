@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom'
+﻿import { useLocation, useNavigate } from 'react-router-dom'
 
 import homeBtn from '../assets/home_btn.png'
 import homeBtnNonactive from '../assets/home_btn_nonactive.png'
@@ -85,9 +85,7 @@ export default function BottomNav({ disableRequestButton = false }: Props) {
         onClick={() => navigate('/request')}
         className={
           'absolute left-1/2 top-0 z-20 h-[70px] w-[70px] -translate-x-1/2 rounded-full shadow-[0_8px_16px_rgba(255,158,27,0.35)] ' +
-          (isRequestButtonDisabled
-            ? 'cursor-not-allowed opacity-45 grayscale'
-            : '')
+          (isRequestButtonDisabled ? 'opacity-45 grayscale' : '')
         }
         aria-disabled={isRequestButtonDisabled}
       >

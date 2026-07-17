@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { motion, useAnimationControls } from 'framer-motion'
 
 import photo from '../assets/photo.png'
@@ -176,7 +176,7 @@ export default function MyRequestCard({
         onClick={handleBump}
         className={`mt-auto h-[50px] w-[286px] self-center rounded-full text-lg font-semibold transition ${
           !isOpen || isBumping || bumpCount >= 3
-            ? 'cursor-not-allowed bg-[#D9D9D9] text-[#8C8C8C]'
+            ? 'bg-[#D9D9D9] text-[#8C8C8C]'
             : 'bg-black text-white'
         }`}
       >
