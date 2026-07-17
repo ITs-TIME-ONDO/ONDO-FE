@@ -21,6 +21,7 @@ export default function ChatRoomMenuDropdown({
       <button
         type="button"
         aria-label="더보기 메뉴 닫기"
+        tabIndex={-1}
         className="absolute inset-0 z-40 cursor-default"
         onPointerDown={onClose}
       />

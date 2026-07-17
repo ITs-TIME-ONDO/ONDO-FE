@@ -19,27 +19,29 @@ export default function ProfileEditPage() {
   )
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const hasEditedRef = useRef(false)
+  const nicknameEditedRef = useRef(false)
+  const imageEditedRef = useRef(false)
   const originalNicknameRef = useRef(nickname)
 
   useEffect(() => {
     getUserProfile()
       .then((profile) => {
         originalNicknameRef.current = profile.nickname
-        if (hasEditedRef.current) return
-        setNickname(profile.nickname)
-        setProfileImage(profile.profileImageUrl || null)
+        if (!nicknameEditedRef.current) setNickname(profile.nickname)
+        if (!imageEditedRef.current) {
+          setProfileImage(profile.profileImageUrl || null)
+        }
       })
       .catch(() => {})
   }, [])
 
   const handleNicknameChange = (value: string) => {
-    hasEditedRef.current = true
+    nicknameEditedRef.current = true
     setNickname(value)
   }
 
   const handleProfileImageChange = (file: File, previewUrl: string) => {
-    hasEditedRef.current = true
+    imageEditedRef.current = true
     setProfileImageFile(file)
     setProfileImage(previewUrl)
   }

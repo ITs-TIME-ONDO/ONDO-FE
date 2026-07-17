@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import arrow from '../../assets/arrow.png'
 import openArrow from '../../assets/open_arrow.png'
 import { apiFetch } from '../../api/client'
+import { hasClosedChatForCard } from '../../utils/cardChatStatus'
 
 type Purpose = '사진 찍기' | '합석' | '기타'
 type Gender = '남성' | '여성' | '상관없음'
@@ -47,6 +48,10 @@ export default function RequestPage() {
         const res = await apiFetch<any>('/api/cards/my/active')
         const card = getCardFromResponse(res)
         const accessToken = localStorage.getItem('accessToken')
+
+        if (card?.status === 'MATCHED' && (await hasClosedChatForCard(card.id))) {
+          return
+        }
 
         if (card?.id) {
           setHasActiveRequest(true)

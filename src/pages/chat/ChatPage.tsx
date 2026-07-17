@@ -36,7 +36,7 @@ export default function ChatPage() {
     }
   }, [fetchRooms, connect])
 
-  const hasChatRooms = true
+  const hasChatRooms = import.meta.env.DEV || rooms.length > 0
 
   return (
     <PageTransition>

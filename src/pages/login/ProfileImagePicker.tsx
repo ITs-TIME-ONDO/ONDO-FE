@@ -37,19 +37,21 @@ export default function ProfileImagePicker({
     const previewUrl = URL.createObjectURL(file)
     setImageUrl(previewUrl)
     onChange?.(file, previewUrl)
+    e.target.value = ''
   }
 
   const handleUseDefaultImage = async () => {
     setIsImageMenuOpen(false)
-    setImageUrl(null)
 
     try {
       const response = await fetch(defaultImage)
+      if (!response.ok) throw new Error('기본 이미지 로드 실패')
       const blob = await response.blob()
       const extension = blob.type.includes('svg') ? 'svg' : 'png'
       const file = new File([blob], `default-profile.${extension}`, {
         type: blob.type,
       })
+      setImageUrl(null)
       onChange?.(file, defaultImage)
     } catch {}
   }
@@ -63,14 +65,22 @@ export default function ProfileImagePicker({
           className="absolute inset-0 rounded-full"
           style={{ background: 'linear-gradient(to bottom, #FF9E1B, #FFDCAE)' }}
         />
-        <img
-          alt="프로필 이미지"
-          className={`absolute inset-0 z-30 size-full cursor-pointer rounded-full object-cover transition-transform duration-200 ease-out ${
+        <button
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={isImageMenuOpen}
+          aria-label="프로필 이미지 변경 메뉴"
+          onClick={() => setIsImageMenuOpen((prev) => !prev)}
+          className={`absolute inset-0 z-30 size-full cursor-pointer rounded-full transition-transform duration-200 ease-out ${
             isImageMenuOpen ? 'scale-[1.03]' : 'scale-100'
           }`}
-          src={imageUrl ?? defaultImage}
-          onClick={() => setIsImageMenuOpen((prev) => !prev)}
-        />
+        >
+          <img
+            alt="프로필 이미지"
+            className="size-full rounded-full object-cover"
+            src={imageUrl ?? defaultImage}
+          />
+        </button>
 
         {isImageMenuOpen && (
           <>
@@ -113,7 +123,6 @@ export default function ProfileImagePicker({
           onChange={handleFileChange}
         />
       </div>
-
     </>
   )
 }

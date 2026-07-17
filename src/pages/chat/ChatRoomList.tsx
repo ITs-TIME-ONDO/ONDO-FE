@@ -25,8 +25,6 @@ export default function ChatRoomList({ rooms, onLeave }: Props) {
       const pressedRoom = target.closest<HTMLElement>('[data-chat-room-id]')
       if (pressedRoom?.dataset.chatRoomId === openRoomId) return
 
-      event.preventDefault()
-      event.stopPropagation()
       setOpenRoomId(null)
     }
 
@@ -36,7 +34,10 @@ export default function ChatRoomList({ rooms, onLeave }: Props) {
 
   return (
     <main className="absolute left-0 top-[113px] w-full">
-      {[mockChatRoom, ...rooms.filter((room) => room.id !== mockChatRoom.id)].map((room) => (
+      {(import.meta.env.DEV
+        ? [mockChatRoom, ...rooms.filter((room) => room.id !== mockChatRoom.id)]
+        : rooms
+      ).map((room) => (
         <ChatRoomListItem
           key={room.id}
           roomId={room.id}

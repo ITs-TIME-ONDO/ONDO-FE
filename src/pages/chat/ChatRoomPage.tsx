@@ -51,7 +51,7 @@ const LOCATION_REQUEST_COOLDOWN_PREFIX = 'chatLocationRequestCooldown:'
 export default function ChatRoomPage() {
   const navigate = useNavigate()
   const { roomId } = useParams<{ roomId: string }>()
-  const mockMode = isMockChatRoom(roomId)
+  const mockMode = import.meta.env.DEV && isMockChatRoom(roomId)
   const [room, setRoom] = useState<ChatRoomSummary | null>(null)
   const [cardCategory, setCardCategory] = useState('도움 요청')
   const [roomNotFound, setRoomNotFound] = useState(false)
@@ -163,16 +163,27 @@ export default function ChatRoomPage() {
 
     if (!validUntil) {
       localStorage.removeItem(storageKey)
+    }
+  }, [mockMode, roomId])
+
+  useEffect(() => {
+    if (!locationRequestCooldownUntil) return
+
+    const remaining = locationRequestCooldownUntil - Date.now()
+    if (remaining <= 0) {
+      setLocationRequestCooldownUntil(0)
       return
     }
 
     const timeoutId = window.setTimeout(() => {
-      localStorage.removeItem(storageKey)
       setLocationRequestCooldownUntil(0)
-    }, validUntil - Date.now())
+      if (!mockMode && roomId) {
+        localStorage.removeItem(`${LOCATION_REQUEST_COOLDOWN_PREFIX}${roomId}`)
+      }
+    }, remaining)
 
     return () => window.clearTimeout(timeoutId)
-  }, [mockMode, roomId])
+  }, [locationRequestCooldownUntil, mockMode, roomId])
 
   useEffect(() => {
     if (!roomId || mockMode) return

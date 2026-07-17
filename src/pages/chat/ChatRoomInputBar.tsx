@@ -87,7 +87,7 @@ export default function ChatRoomInputBar({
           <button
             type="button"
             onClick={handleSend}
-            disabled={disabled || sending}
+            disabled={!isSendActive}
             className="shrink-0"
           >
             <img

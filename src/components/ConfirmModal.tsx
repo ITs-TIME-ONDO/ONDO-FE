@@ -46,6 +46,7 @@ export default function ConfirmModal({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
+        if (disabled) return
         onCancelRef.current()
         return
       }
@@ -82,7 +83,7 @@ export default function ConfirmModal({
       document.removeEventListener('keydown', handleKeyDown)
       previouslyFocusedElement?.focus()
     }
-  }, [open])
+  }, [disabled, open])
 
   if (!open) return null
 
