@@ -16,9 +16,18 @@ export default function ChatPage() {
   const connect = useChatSocketStore((state) => state.connect)
   const [leaveRoom, setLeaveRoom] = useState<ChatRoomSummary | null>(null)
   const [isLeaving, setIsLeaving] = useState(false)
+  const [isLoadingRooms, setIsLoadingRooms] = useState(true)
 
   useEffect(() => {
-    fetchRooms()
+    let cancelled = false
+
+    const loadRooms = async () => {
+      setIsLoadingRooms(true)
+      await fetchRooms()
+      if (!cancelled) setIsLoadingRooms(false)
+    }
+
+    void loadRooms()
     connect()
 
     const intervalId = window.setInterval(fetchRooms, 5000)
@@ -31,12 +40,13 @@ export default function ChatPage() {
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
+      cancelled = true
       window.clearInterval(intervalId)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [fetchRooms, connect])
 
-  const hasChatRooms = import.meta.env.DEV || rooms.length > 0
+  const hasChatRooms = rooms.length > 0
 
   return (
     <PageTransition>
@@ -51,7 +61,7 @@ export default function ChatPage() {
 
         {hasChatRooms ? (
           <ChatRoomList rooms={rooms} onLeave={setLeaveRoom} />
-        ) : (
+        ) : isLoadingRooms ? null : (
           <ChatEmptyState />
         )}
 
