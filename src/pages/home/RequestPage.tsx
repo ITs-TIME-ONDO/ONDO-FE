@@ -276,7 +276,7 @@ export default function RequestPage() {
         type="button"
         disabled={!isValid || isSubmitting || hasActiveRequest}
         onClick={handleSubmit}
-        className={`absolute bottom-16 left-6 h-[60px] w-[342px] rounded-full text-xl font-bold text-white ${
+        className={`absolute bottom-14 left-6 h-[60px] w-[342px] rounded-full text-xl font-bold text-white ${
           isValid && !isSubmitting && !hasActiveRequest
             ? 'bg-[#FF9814]'
             : 'bg-[#FFC878]'

@@ -9,6 +9,7 @@ import ConfirmModal from '../../components/ConfirmModal'
 
 import logo from '../../assets/logo.png'
 import alertIcon from '../../assets/alert.png'
+import alertActiveIcon from '../../assets/alert_acitve.svg'
 import profileBtn from '../../assets/top_small_profile_btn.png'
 import cryingChar from '../../assets/crying_char.png'
 import matchingImage from '../../assets/matching.png'
@@ -17,6 +18,7 @@ import sideFinger from '../../assets/side_finger.png'
 import { apiFetch } from '../../api/client'
 import { createChatRoom } from '../../api/chat'
 import { hasClosedChatForCard } from '../../utils/cardChatStatus'
+import useUnreadNotifications from '../../hooks/useUnreadNotifications'
 
 const getHomeErrorMessage = (error: unknown): string => {
   const code =
@@ -36,7 +38,6 @@ const getHomeErrorMessage = (error: unknown): string => {
 }
 
 const MY_REQUEST_STORAGE_KEY = 'myRequest'
-const NEARBY_GUIDE_SEEN_STORAGE_KEY = 'hasSeenNearbyCardGuide'
 const getCardFromResponse = (response: any): any | null => {
   const card = response?.data?.card ?? response?.data ?? response?.card ?? response
 
@@ -126,6 +127,7 @@ const getStoredMatchedHelp = (): any | null => {
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const hasUnreadNotifications = useUnreadNotifications()
 
   const [myRequest, setMyRequest] = useState<any>(null)
   const [nearbyCards, setNearbyCards] = useState<any[]>([])
@@ -146,6 +148,7 @@ export default function HomePage() {
   const positionRef = useRef<GeolocationPosition | null>(null)
   const selectedHelpCardRef = useRef<any | null>(null)
   const deleteGuideDismissedCardIdRef = useRef<string | null>(null)
+  const hasShownNearbyGuideRef = useRef(false)
 
   const getCurrentPosition = (): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
@@ -242,8 +245,9 @@ export default function HomePage() {
           if (
             nextNearbyCards.length > 0 &&
             nearbyData?.hasSeenCardViewOnboarding === false &&
-            sessionStorage.getItem(NEARBY_GUIDE_SEEN_STORAGE_KEY) !== 'true'
+            !hasShownNearbyGuideRef.current
           ) {
+            hasShownNearbyGuideRef.current = true
             setNearbyGuideStep((prev) => prev ?? 'help')
           }
           setHomeErrorMessage(null)
@@ -350,7 +354,6 @@ export default function HomePage() {
         return 'swipe'
       }
 
-      sessionStorage.setItem(NEARBY_GUIDE_SEEN_STORAGE_KEY, 'true')
       return null
     })
   }
@@ -453,7 +456,13 @@ export default function HomePage() {
           <img src={logo} alt="ONDO" className="h-6 w-[97px] object-contain" />
 
           <div className="flex items-center gap-4">
-            <img src={alertIcon} alt="알림" className="h-6 w-5" />
+            <button type="button" onClick={() => navigate('/notifications')}>
+              <img
+                src={hasUnreadNotifications ? alertActiveIcon : alertIcon}
+                alt="알림"
+                className="h-6 w-5"
+              />
+            </button>
 
             <button type="button" onClick={() => navigate('/mypage')}>
               <img src={profileBtn} alt="프로필" className="h-6 w-6" />

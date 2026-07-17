@@ -13,6 +13,7 @@ import MyPage from './pages/mypage/MyPage'
 import ProfileEditPage from './pages/mypage/ProfileEditPage'
 import WithdrawPage from './pages/mypage/WithdrawPage'
 import LocationPage from './pages/location/location'
+import NotificationPage from './pages/notification/NotificationPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isLoggedIn = localStorage.getItem('onboardingCompleted') === 'true'
@@ -45,6 +46,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <RequestPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationPage />
               </ProtectedRoute>
             }
           />

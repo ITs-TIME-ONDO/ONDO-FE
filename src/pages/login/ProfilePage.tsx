@@ -35,7 +35,7 @@ export default function ProfilePage() {
 
         <button
           type="button"
-          className={`absolute bottom-16 left-6 flex h-[60px] w-[342px] items-center justify-center rounded-full text-[20px] font-bold text-white transition-colors ${nickname.trim() && !isSubmitting ? 'bg-[#ff9e1b]' : 'bg-[#ff9e1b]/50'}`}
+          className={`absolute bottom-14 left-6 flex h-[60px] w-[342px] items-center justify-center rounded-full text-[20px] font-bold text-white transition-colors ${nickname.trim() && !isSubmitting ? 'bg-[#ff9e1b]' : 'bg-[#ff9e1b]/50'}`}
           disabled={!nickname.trim() || isSubmitting}
           onClick={async () => {
             if (isSubmitting) return

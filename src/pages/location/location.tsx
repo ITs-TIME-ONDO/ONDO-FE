@@ -104,7 +104,7 @@ export default function LocationPage() {
   const stopLiveLocation = useChatSocketStore((state) => state.stopLiveLocation)
   const liveLocations = useChatSocketStore((state) =>
     roomId
-      ? state.liveLocationByRoom[roomId] ?? EMPTY_LIVE_LOCATIONS
+      ? (state.liveLocationByRoom[roomId] ?? EMPTY_LIVE_LOCATIONS)
       : EMPTY_LIVE_LOCATIONS
   )
 
@@ -240,11 +240,13 @@ export default function LocationPage() {
     )
     const activeIds = new Set(entries.map(([senderId]) => senderId))
     const locationsOverlap = entries.some(([, location], index) =>
-      entries.slice(index + 1).some(
-        ([, otherLocation]) =>
-          Math.abs(location.latitude! - otherLocation.latitude!) < 0.00005 &&
-          Math.abs(location.longitude! - otherLocation.longitude!) < 0.00005
-      )
+      entries
+        .slice(index + 1)
+        .some(
+          ([, otherLocation]) =>
+            Math.abs(location.latitude! - otherLocation.latitude!) < 0.00005 &&
+            Math.abs(location.longitude! - otherLocation.longitude!) < 0.00005
+        )
     )
 
     markerRefs.current.forEach((marker, senderId) => {
@@ -332,13 +334,15 @@ export default function LocationPage() {
     <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-white font-['Pretendard']">
       <PageHeader title="실시간 위치 공유" fallbackPath="/chat" />
 
-      <main className="absolute inset-x-0 bottom-0 top-[99px]" aria-label="실시간 위치 지도">
+      <main
+        className="absolute inset-x-0 bottom-0 top-[99px]"
+        aria-label="실시간 위치 지도"
+      >
         <div ref={mapElementRef} className="h-full w-full" />
 
         <div className="absolute left-4 top-4 z-10 flex items-center gap-4 rounded-full bg-white/90 px-4 py-2 text-xs text-[#555555] shadow">
           <span className="flex items-center gap-1.5">
-            <img src={myMapPin} alt="" className="h-7 w-auto" />
-            내 위치
+            <img src={myMapPin} alt="" className="h-7 w-auto" />내 위치
           </span>
           <span className="flex items-center gap-1.5">
             <img src={opponentMapPin} alt="" className="h-7 w-auto" />
@@ -358,7 +362,13 @@ export default function LocationPage() {
             className="size-7 text-black"
             fill="none"
           >
-            <circle cx="12" cy="12" r="6.5" stroke="currentColor" strokeWidth="2" />
+            <circle
+              cx="12"
+              cy="12"
+              r="6.5"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
             <circle cx="12" cy="12" r="2.5" fill="currentColor" />
             <path
               d="M12 2.5V5M12 19V21.5M2.5 12H5M19 12H21.5"
