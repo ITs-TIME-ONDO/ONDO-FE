@@ -16,6 +16,7 @@ import upFinger from '../../assets/up_finger.png'
 import sideFinger from '../../assets/side_finger.png'
 import { apiFetch } from '../../api/client'
 import { createChatRoom } from '../../api/chat'
+import { hasClosedChatForCard } from '../../utils/cardChatStatus'
 
 const getHomeErrorMessage = (error: unknown): string => {
   const code =
@@ -166,9 +167,19 @@ export default function HomePage() {
       const res = await apiFetch<any>('/api/cards/my/active')
       if (!isLatestFetch()) return
 
-      const card = getCardFromResponse(res)
+      let card = getCardFromResponse(res)
       const activeCardData = res?.data ?? res
       const hasCreatedCard = activeCardData?.hasCreatedCard
+
+      if (card?.status === 'MATCHED') {
+        const chatClosed = await hasClosedChatForCard(card.id)
+        if (!isLatestFetch()) return
+
+        if (chatClosed) {
+          card = null
+          localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+        }
+      }
 
       if (!card || !card.id) {
         const storedMatchedHelp = getStoredMatchedHelp()
@@ -181,7 +192,12 @@ export default function HomePage() {
 
           const matchedCard = getCardFromResponse(matchedCardRes)
 
-          if (matchedCard?.status === 'MATCHED') {
+          const matchedChatClosed = matchedCard?.id
+            ? await hasClosedChatForCard(matchedCard.id)
+            : false
+          if (!isLatestFetch()) return
+
+          if (matchedCard?.status === 'MATCHED' && !matchedChatClosed) {
             saveStoredMatchedHelp(matchedCard)
             setMyRequest(matchedCard)
             setNearbyCards([])

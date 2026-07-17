@@ -9,7 +9,7 @@ import FloatingConfirmModal from '../../components/FloatingConfirmModal'
 import ChatRoomInputBar from './ChatRoomInputBar'
 import ChatRoomMenuDropdown from './ChatRoomMenuDropdown'
 import ReportModal from './ReportModal'
-import { apiFetch } from '../../api/client'
+import { apiFetch, ApiError } from '../../api/client'
 import {
   getChatRoom,
   getChatMessages,
@@ -38,6 +38,7 @@ import miniProfileChar from '../../assets/mini_profile_char.png'
 const CARD_CATEGORY_LABELS: Record<string, string> = {
   PHOTO: '사진 찍기',
   MEAL: '합석',
+  OTHER: '기타',
   ETC: '기타',
 }
 
@@ -50,7 +51,7 @@ const LOCATION_REQUEST_COOLDOWN_PREFIX = 'chatLocationRequestCooldown:'
 export default function ChatRoomPage() {
   const navigate = useNavigate()
   const { roomId } = useParams<{ roomId: string }>()
-  const mockMode = isMockChatRoom(roomId)
+  const mockMode = import.meta.env.DEV && isMockChatRoom(roomId)
   const [room, setRoom] = useState<ChatRoomSummary | null>(null)
   const [cardCategory, setCardCategory] = useState('도움 요청')
   const [roomNotFound, setRoomNotFound] = useState(false)
@@ -115,29 +116,37 @@ export default function ChatRoomPage() {
     setRoom(null)
     setRoomNotFound(false)
 
-    getChatRoom(roomId)
-      .then((res) => {
+    const loadRoom = async () => {
+      try {
+        const roomRes = await getChatRoom(roomId)
+        let category = '도움 요청'
+
+        try {
+          const cardRes = await apiFetch<any>(`/api/cards/${roomRes.data.cardId}`)
+          const card = cardRes?.data?.card ?? cardRes?.data ?? cardRes
+          category =
+            CARD_CATEGORY_LABELS[card?.category] ?? card?.category ?? '도움 요청'
+        } catch {}
+
         if (!active) return
-        setRoom(res.data)
-        apiFetch<any>(`/api/cards/${res.data.cardId}`)
-          .then((cardRes) => {
-            if (!active) return
-            const card = cardRes?.data?.card ?? cardRes?.data ?? cardRes
-            setCardCategory(
-              CARD_CATEGORY_LABELS[card?.category] ?? card?.category ?? '도움 요청'
-            )
-          })
-          .catch(() => {
-            if (active) setCardCategory('도움 요청')
-          })
+        setCardCategory(category)
+        setRoom(roomRes.data)
+
+        if (roomRes.data.status === 'CLOSED') {
+          setLiveLocationSharingEnabled(false)
+          setClosedMessage('종료된 채팅방입니다.')
+        }
+
         if (localStorage.getItem(LOCATION_GUIDE_SEEN_STORAGE_KEY) !== 'true') {
           setShowLocationGuide(true)
         }
-      })
-      .catch(() => {
+      } catch {
         if (!active) return
         setRoomNotFound(true)
-      })
+      }
+    }
+
+    void loadRoom()
 
     return () => {
       active = false
@@ -154,16 +163,27 @@ export default function ChatRoomPage() {
 
     if (!validUntil) {
       localStorage.removeItem(storageKey)
+    }
+  }, [mockMode, roomId])
+
+  useEffect(() => {
+    if (!locationRequestCooldownUntil) return
+
+    const remaining = locationRequestCooldownUntil - Date.now()
+    if (remaining <= 0) {
+      setLocationRequestCooldownUntil(0)
       return
     }
 
     const timeoutId = window.setTimeout(() => {
-      localStorage.removeItem(storageKey)
       setLocationRequestCooldownUntil(0)
-    }, validUntil - Date.now())
+      if (!mockMode && roomId) {
+        localStorage.removeItem(`${LOCATION_REQUEST_COOLDOWN_PREFIX}${roomId}`)
+      }
+    }, remaining)
 
     return () => window.clearTimeout(timeoutId)
-  }, [mockMode, roomId])
+  }, [locationRequestCooldownUntil, mockMode, roomId])
 
   useEffect(() => {
     if (!roomId || mockMode) return
@@ -235,11 +255,8 @@ export default function ChatRoomPage() {
     const lastMessage = messages[messages.length - 1]
     if (lastMessage?.messageType !== 'ROOM_CLOSED') return
 
-    setClosedMessage(
-      lastMessage.senderId === myUserId
-        ? '채팅방을 나갔습니다.'
-        : `${lastMessage.senderNickname}님이 채팅을 종료했습니다.`
-    )
+    setLiveLocationSharingEnabled(false)
+    setClosedMessage('종료된 채팅방입니다.')
   }, [messages, myUserId])
 
   useLayoutEffect(() => {
@@ -350,17 +367,44 @@ export default function ChatRoomPage() {
     }
   }, [messages])
 
+  const handleCompleteCard = async () => {
+    if (!roomId || !room) return
+
+    if (mockMode) {
+      setLiveLocationSharingEnabled(false)
+      setClosedMessage('종료된 채팅방입니다.')
+      return
+    }
+
+    try {
+      await apiFetch(`/api/cards/${room.cardId}/complete`, { method: 'PATCH' })
+      await closeChatRoom(roomId)
+      setLiveLocationSharingEnabled(false)
+      setClosedMessage('종료된 채팅방입니다.')
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 403) {
+        alert('카드 작성자만 완료할 수 있습니다.')
+      } else if (error instanceof ApiError && error.status === 409) {
+        alert('매칭 상태가 아니어서 완료할 수 없습니다.')
+      } else {
+        alert('완료 처리에 실패했습니다. 다시 시도해주세요.')
+      }
+    }
+  }
+
   const handleCloseRoom = async () => {
     if (!roomId) return
 
     if (mockMode) {
-      setClosedMessage('채팅방을 나갔습니다.')
+      setLiveLocationSharingEnabled(false)
+      setClosedMessage('종료된 채팅방입니다.')
       return
     }
 
     try {
       await closeChatRoom(roomId)
-      setClosedMessage('채팅방을 나갔습니다.')
+      setLiveLocationSharingEnabled(false)
+      setClosedMessage('종료된 채팅방입니다.')
     } catch {
       alert('채팅방 종료에 실패했습니다. 다시 시도해주세요.')
     }
@@ -425,12 +469,18 @@ export default function ChatRoomPage() {
           open={showMenu}
           onClose={() => setShowMenu(false)}
           options={[
-            {
-              label: notificationsEnabled ? '알림 끄기' : '알림 켜기',
-              onClick: () => setNotificationsEnabled((prev) => !prev),
-            },
+            ...(closedMessage
+              ? []
+              : [
+                  {
+                    label: notificationsEnabled ? '알림 끄기' : '알림 켜기',
+                    onClick: () => setNotificationsEnabled((prev) => !prev),
+                  },
+                ]),
             { label: '신고하기', onClick: () => setShowReportModal(true) },
-            { label: '채팅방 나가기', onClick: () => setShowLeaveModal(true) },
+            ...(closedMessage
+              ? []
+              : [{ label: '채팅방 나가기', onClick: () => setShowLeaveModal(true) }]),
           ]}
         />
 
@@ -449,7 +499,8 @@ export default function ChatRoomPage() {
           <button
             type="button"
             onClick={() => setShowCompleteModal(true)}
-            className="flex h-10 w-[107px] -translate-y-2 items-center justify-center rounded-full bg-black text-base font-medium text-white"
+            disabled={Boolean(closedMessage)}
+            className="flex h-10 w-[107px] -translate-y-2 items-center justify-center rounded-full bg-black text-base font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             완료
           </button>
@@ -515,7 +566,7 @@ export default function ChatRoomPage() {
                           <div className="flex items-end gap-[5px]">
                             <LiveLocationShareCard
                               sender={sender}
-                              status={accepted ? 'accepted' : 'requested'}
+                              status={closedMessage ? 'ended' : accepted ? 'accepted' : 'requested'}
                               onAgree={() => setShowLocationAgreeModal(true)}
                               onOpen={() => navigate(`/location?roomId=${roomId}`)}
                             />
@@ -534,8 +585,10 @@ export default function ChatRoomPage() {
                     <div
                       key={msg.id}
                       ref={index === firstUnreadMessageIndex ? firstUnreadMessageRef : undefined}
-                      className={`flex items-end gap-[5px] px-6 ${compact ? '-mt-3' : ''} ${
-                        sender === 'me' ? 'justify-end' : 'justify-start'
+                      className={`flex items-end gap-[5px] ${compact ? '-mt-3' : ''} ${
+                        sender === 'me'
+                          ? 'justify-end px-6'
+                          : 'justify-start pl-[62px] pr-6'
                       }`}
                     >
                       {sender === 'me' && showTime && (
@@ -546,7 +599,7 @@ export default function ChatRoomPage() {
 
                       <LiveLocationShareCard
                         sender={sender}
-                        status={accepted ? 'accepted' : 'requested'}
+                        status={closedMessage ? 'ended' : accepted ? 'accepted' : 'requested'}
                         onAgree={() => setShowLocationAgreeModal(true)}
                         onOpen={() => navigate(`/location?roomId=${roomId}`)}
                       />
@@ -576,6 +629,10 @@ export default function ChatRoomPage() {
                         ? (room.opponentProfileImageUrl ?? undefined)
                         : undefined
                     }
+                    messageId={msg.id}
+                    messageType={msg.messageType}
+                    translatable={msg.messageType === 'TEXT'}
+                    mockTranslate={mockMode}
                   />
                 )
               })}
@@ -613,7 +670,7 @@ export default function ChatRoomPage() {
           description="완료 시 위치 공유가 불가합니다."
           onConfirm={() => {
             setShowCompleteModal(false)
-            handleCloseRoom()
+            handleCompleteCard()
           }}
           onCancel={() => setShowCompleteModal(false)}
         />
@@ -633,7 +690,7 @@ export default function ChatRoomPage() {
           open={showReportModal}
           onClose={() => setShowReportModal(false)}
           roomId={roomId}
-          onSuccess={() => setClosedMessage('채팅방을 나갔습니다.')}
+          onSuccess={() => setClosedMessage('종료된 채팅방입니다.')}
         />
 
         {showLocationGuide && !closedMessage && (

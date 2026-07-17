@@ -180,3 +180,21 @@ export function getLiveLocations(
     `/api/chat/rooms/${roomId}/live-location`
   )
 }
+
+export interface TranslateMessageResponse {
+  translatedText: string
+  cached: boolean
+}
+
+export function translateChatMessage(
+  messageId: string,
+  targetLanguage: string
+): Promise<ApiResponse<TranslateMessageResponse>> {
+  return apiFetch<ApiResponse<TranslateMessageResponse>>(
+    `/api/chat/messages/${messageId}/translations`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ targetLanguage }),
+    }
+  )
+}

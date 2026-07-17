@@ -53,6 +53,8 @@ export default function ChatRoomListItem({
         <motion.button
           type="button"
           onClick={onLeave}
+          aria-hidden={!swipeOpen}
+          tabIndex={swipeOpen ? 0 : -1}
           style={{ x: leaveButtonX }}
           className={`absolute inset-y-0 right-0 flex w-[76px] items-center justify-center bg-[#F06464] text-sm font-semibold text-white transition-opacity duration-100 ${
             swipeOpen || isDragging ? 'opacity-100' : 'pointer-events-none opacity-0'
@@ -69,6 +71,17 @@ export default function ChatRoomListItem({
         dragElastic={0.12}
         onDragStart={() => setIsDragging(true)}
         style={{ x }}
+        aria-expanded={swipeOpen}
+        onKeyDown={(event) => {
+          if (!swipeEnabled) return
+          if (event.key === 'ArrowLeft') {
+            event.preventDefault()
+            onSwipeOpen?.()
+          } else if (event.key === 'ArrowRight' && swipeOpen) {
+            event.preventDefault()
+            onSwipeClose?.()
+          }
+        }}
         onDragEnd={(_, info) => {
           setIsDragging(false)
           const shouldOpen = info.offset.x <= -42 || info.velocity.x <= -450

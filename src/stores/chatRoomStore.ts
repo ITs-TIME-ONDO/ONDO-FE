@@ -18,6 +18,10 @@ export const useChatRoomStore = create<ChatRoomState>((set) => ({
             const messagesRes = await getChatMessages(room.id, { size: 1 })
             return {
               ...room,
+              lastMessage:
+                room.status === 'CLOSED'
+                  ? '종료된 채팅방입니다.'
+                  : room.lastMessage,
               latestMessageAt: messagesRes.data.messages[0]?.sentAt ?? null,
             }
           } catch {
