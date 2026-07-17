@@ -460,7 +460,11 @@ export default function HomePage() {
               <img
                 src={hasUnreadNotifications ? alertActiveIcon : alertIcon}
                 alt="알림"
-                className="h-6 w-5"
+                className={`h-6 w-5 origin-center ${
+                  hasUnreadNotifications
+                    ? 'animate-[alert-bob_1.4s_ease-in-out_infinite]'
+                    : ''
+                }`}
               />
             </button>
 
