@@ -91,7 +91,7 @@ export default function ReportModal({
             <img
               src={arrowIcon}
               alt=""
-              className={`w-4 transition-transform ${isReasonOpen ? 'rotate-180' : ''}`}
+              className={`h-2 w-[14px] transition-transform ${isReasonOpen ? 'rotate-180' : ''}`}
             />
           </button>
 
