@@ -381,7 +381,7 @@ export default function LocationPage() {
 
         {errorMessage && (
           <p className="absolute left-1/2 top-16 z-10 w-max max-w-[342px] -translate-x-1/2 rounded-full bg-white/90 px-4 py-2 text-center text-sm text-[#555555] shadow">
-            아 {errorMessage}
+            {errorMessage}
           </p>
         )}
       </main>

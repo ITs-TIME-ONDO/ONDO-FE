@@ -37,7 +37,6 @@ const getHomeErrorMessage = (error: unknown): string => {
 }
 
 const MY_REQUEST_STORAGE_KEY = 'myRequest'
-const NEARBY_GUIDE_SEEN_STORAGE_KEY = 'hasSeenNearbyCardGuide'
 const getCardFromResponse = (response: any): any | null => {
   const card = response?.data?.card ?? response?.data ?? response?.card ?? response
 
@@ -150,6 +149,7 @@ export default function HomePage() {
   const positionRef = useRef<GeolocationPosition | null>(null)
   const selectedHelpCardRef = useRef<any | null>(null)
   const deleteGuideDismissedCardIdRef = useRef<string | null>(null)
+  const hasShownNearbyGuideRef = useRef(false)
 
   useEffect(() => {
     const syncUnreadState = () => {
@@ -262,8 +262,9 @@ export default function HomePage() {
           if (
             nextNearbyCards.length > 0 &&
             nearbyData?.hasSeenCardViewOnboarding === false &&
-            sessionStorage.getItem(NEARBY_GUIDE_SEEN_STORAGE_KEY) !== 'true'
+            !hasShownNearbyGuideRef.current
           ) {
+            hasShownNearbyGuideRef.current = true
             setNearbyGuideStep((prev) => prev ?? 'help')
           }
           setHomeErrorMessage(null)
@@ -370,7 +371,6 @@ export default function HomePage() {
         return 'swipe'
       }
 
-      sessionStorage.setItem(NEARBY_GUIDE_SEEN_STORAGE_KEY, 'true')
       return null
     })
   }

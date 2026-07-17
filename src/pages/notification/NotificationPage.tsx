@@ -29,6 +29,9 @@ export default function NotificationPage() {
   const hasUnreadNotifications = notifications.some(
     (notification) => !notification.isRead
   )
+  const visibleNotifications = notifications.filter(
+    (notification) => !notification.isRead
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -103,8 +106,8 @@ export default function NotificationPage() {
               <div className="flex min-h-[240px] items-center justify-center text-sm text-[#929292]">
                 알림을 불러오는 중
               </div>
-            ) : notifications.length > 0 ? (
-              notifications.map((notification) => (
+            ) : visibleNotifications.length > 0 ? (
+              visibleNotifications.map((notification) => (
                 <NotificationListItem
                   key={notification.id}
                   type={notification.type}
