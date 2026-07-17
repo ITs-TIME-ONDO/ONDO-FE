@@ -9,7 +9,7 @@ import FloatingConfirmModal from '../../components/FloatingConfirmModal'
 import ChatRoomInputBar from './ChatRoomInputBar'
 import ChatRoomMenuDropdown from './ChatRoomMenuDropdown'
 import ReportModal from './ReportModal'
-import { apiFetch } from '../../api/client'
+import { apiFetch, ApiError } from '../../api/client'
 import {
   getChatRoom,
   getChatMessages,
@@ -367,6 +367,31 @@ export default function ChatRoomPage() {
     }
   }, [messages])
 
+  const handleCompleteCard = async () => {
+    if (!roomId || !room) return
+
+    if (mockMode) {
+      setLiveLocationSharingEnabled(false)
+      setClosedMessage('종료된 채팅방입니다.')
+      return
+    }
+
+    try {
+      await apiFetch(`/api/cards/${room.cardId}/complete`, { method: 'POST' })
+      await closeChatRoom(roomId)
+      setLiveLocationSharingEnabled(false)
+      setClosedMessage('종료된 채팅방입니다.')
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 403) {
+        alert('카드 작성자만 완료할 수 있습니다.')
+      } else if (error instanceof ApiError && error.status === 409) {
+        alert('매칭 상태가 아니어서 완료할 수 없습니다.')
+      } else {
+        alert('완료 처리에 실패했습니다. 다시 시도해주세요.')
+      }
+    }
+  }
+
   const handleCloseRoom = async () => {
     if (!roomId) return
 
@@ -641,7 +666,7 @@ export default function ChatRoomPage() {
           description="완료 시 위치 공유가 불가합니다."
           onConfirm={() => {
             setShowCompleteModal(false)
-            handleCloseRoom()
+            handleCompleteCard()
           }}
           onCancel={() => setShowCompleteModal(false)}
         />
