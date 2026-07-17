@@ -34,7 +34,6 @@ import chatRoomChar from '../../assets/chat_room_char.png'
 import tapFinger from '../../assets/tap_finger.svg'
 import menuIcon from '../../assets/chat_menu_icon.png'
 import miniProfileChar from '../../assets/mini_profile_char.png'
-import { hideChatRoom } from '../../utils/hiddenChatRooms'
 
 const CARD_CATEGORY_LABELS: Record<string, string> = {
   PHOTO: '사진 찍기',
@@ -46,6 +45,7 @@ const CARD_CATEGORY_LABELS: Record<string, string> = {
 const LOCATION_GUIDE_SEEN_STORAGE_KEY = 'hasSeenChatLiveLocationGuide'
 const LOCATION_REQUEST_MESSAGE = '실시간 위치 공유 요청'
 const LOCATION_ACCEPT_MESSAGE = '실시간 위치 공유 동의'
+const MATCH_COMPLETE_MESSAGE = '매칭 완료'
 const LOCATION_REQUEST_COOLDOWN_MS = 10 * 60 * 1000
 const LOCATION_REQUEST_COOLDOWN_PREFIX = 'chatLocationRequestCooldown:'
 
@@ -242,6 +242,12 @@ export default function ChatRoomPage() {
   }, [mockMode, roomId, liveLocationSharingEnabled, sendLiveLocation, stopLiveLocation])
 
   useEffect(() => {
+    if (messages.some((message) => message.content === MATCH_COMPLETE_MESSAGE)) {
+      setLiveLocationSharingEnabled(false)
+      setClosedMessage('이 채팅방은 완료되었습니다.')
+      return
+    }
+
     const lastMessage = messages[messages.length - 1]
     if (lastMessage?.messageType !== 'ROOM_CLOSED') return
 
@@ -361,22 +367,30 @@ export default function ChatRoomPage() {
     }
   }, [messages])
 
-  const handleCloseRoom = async (hideForCurrentUser = false) => {
+  const handleCloseRoom = async (completed = false) => {
     if (!roomId) return
 
     if (mockMode) {
-      setClosedMessage('채팅방을 나갔습니다.')
+      setLiveLocationSharingEnabled(false)
+      setClosedMessage(
+        completed ? '이 채팅방은 완료되었습니다.' : '채팅방을 나갔습니다.'
+      )
       return
     }
 
     try {
+      if (completed) {
+        const completionRes = await sendChatMessage(roomId, {
+          messageType: 'TEXT',
+          content: MATCH_COMPLETE_MESSAGE,
+        })
+        appendRoomMessage(roomId, completionRes.data)
+      }
       await closeChatRoom(roomId)
       setLiveLocationSharingEnabled(false)
-      setClosedMessage('채팅방을 나갔습니다.')
-      if (hideForCurrentUser) {
-        hideChatRoom(roomId)
-        navigate('/chat', { replace: true })
-      }
+      setClosedMessage(
+        completed ? '이 채팅방은 완료되었습니다.' : '채팅방을 나갔습니다.'
+      )
     } catch {
       alert('채팅방 종료에 실패했습니다. 다시 시도해주세요.')
     }
@@ -415,6 +429,7 @@ export default function ChatRoomPage() {
     (msg) =>
       msg.messageType !== 'ROOM_CLOSED' &&
       msg.content !== LOCATION_ACCEPT_MESSAGE &&
+      msg.content !== MATCH_COMPLETE_MESSAGE &&
       !(closedMessage && msg.content === LOCATION_REQUEST_MESSAGE)
   )
   const firstUnreadMessageIndex = visibleMessages.findIndex(
@@ -447,7 +462,9 @@ export default function ChatRoomPage() {
               onClick: () => setNotificationsEnabled((prev) => !prev),
             },
             { label: '신고하기', onClick: () => setShowReportModal(true) },
-            { label: '채팅방 나가기', onClick: () => setShowLeaveModal(true) },
+            ...(closedMessage
+              ? []
+              : [{ label: '채팅방 나가기', onClick: () => setShowLeaveModal(true) }]),
           ]}
         />
 
@@ -466,7 +483,8 @@ export default function ChatRoomPage() {
           <button
             type="button"
             onClick={() => setShowCompleteModal(true)}
-            className="flex h-10 w-[107px] -translate-y-2 items-center justify-center rounded-full bg-black text-base font-medium text-white"
+            disabled={Boolean(closedMessage)}
+            className="flex h-10 w-[107px] -translate-y-2 items-center justify-center rounded-full bg-black text-base font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             완료
           </button>
@@ -630,7 +648,7 @@ export default function ChatRoomPage() {
           description="완료 시 위치 공유가 불가합니다."
           onConfirm={() => {
             setShowCompleteModal(false)
-            handleCloseRoom()
+            handleCloseRoom(true)
           }}
           onCancel={() => setShowCompleteModal(false)}
         />
@@ -641,7 +659,7 @@ export default function ChatRoomPage() {
           description="매칭이 자동으로 종료됩니다."
           onConfirm={() => {
             setShowLeaveModal(false)
-            handleCloseRoom(true)
+            handleCloseRoom()
           }}
           onCancel={() => setShowLeaveModal(false)}
         />

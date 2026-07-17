@@ -47,12 +47,12 @@ export default function ChatRoomList({ rooms, onLeave }: Props) {
           profileImageUrl={room.opponentProfileImageUrl ?? undefined}
           onClick={() => navigate(`/chat/${room.id}`)}
           onLeave={() => {
-            if (room.id !== mockChatRoom.id) onLeave(room)
+            if (room.id !== mockChatRoom.id && room.status === 'ACTIVE') onLeave(room)
           }}
           swipeOpen={openRoomId === room.id}
           onSwipeOpen={() => setOpenRoomId(room.id)}
           onSwipeClose={() => setOpenRoomId(null)}
-          swipeEnabled={room.id !== mockChatRoom.id}
+          swipeEnabled={room.id !== mockChatRoom.id && room.status === 'ACTIVE'}
         />
       ))}
     </main>
