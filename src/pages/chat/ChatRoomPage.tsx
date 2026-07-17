@@ -569,8 +569,10 @@ export default function ChatRoomPage() {
                     <div
                       key={msg.id}
                       ref={index === firstUnreadMessageIndex ? firstUnreadMessageRef : undefined}
-                      className={`flex items-end gap-[5px] px-6 ${compact ? '-mt-3' : ''} ${
-                        sender === 'me' ? 'justify-end' : 'justify-start'
+                      className={`flex items-end gap-[5px] ${compact ? '-mt-3' : ''} ${
+                        sender === 'me'
+                          ? 'justify-end px-6'
+                          : 'justify-start pl-[62px] pr-6'
                       }`}
                     >
                       {sender === 'me' && showTime && (
