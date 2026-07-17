@@ -377,7 +377,7 @@ export default function ChatRoomPage() {
     }
 
     try {
-      await apiFetch(`/api/cards/${room.cardId}/complete`, { method: 'POST' })
+      await apiFetch(`/api/cards/${room.cardId}/complete`, { method: 'PATCH' })
       await closeChatRoom(roomId)
       setLiveLocationSharingEnabled(false)
       setClosedMessage('종료된 채팅방입니다.')
@@ -629,6 +629,10 @@ export default function ChatRoomPage() {
                         ? (room.opponentProfileImageUrl ?? undefined)
                         : undefined
                     }
+                    messageId={msg.id}
+                    messageType={msg.messageType}
+                    translatable={msg.messageType === 'TEXT'}
+                    mockTranslate={mockMode}
                   />
                 )
               })}
