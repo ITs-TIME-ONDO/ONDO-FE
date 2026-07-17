@@ -16,6 +16,7 @@ import upFinger from '../../assets/up_finger.png'
 import sideFinger from '../../assets/side_finger.png'
 import { apiFetch } from '../../api/client'
 import { createChatRoom } from '../../api/chat'
+import { hasClosedChatForCard } from '../../utils/cardChatStatus'
 
 const getHomeErrorMessage = (error: unknown): string => {
   const code =
@@ -166,9 +167,19 @@ export default function HomePage() {
       const res = await apiFetch<any>('/api/cards/my/active')
       if (!isLatestFetch()) return
 
-      const card = getCardFromResponse(res)
+      let card = getCardFromResponse(res)
       const activeCardData = res?.data ?? res
       const hasCreatedCard = activeCardData?.hasCreatedCard
+
+      if (card?.status === 'MATCHED') {
+        const chatClosed = await hasClosedChatForCard(card.id)
+        if (!isLatestFetch()) return
+
+        if (chatClosed) {
+          card = null
+          localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+        }
+      }
 
       if (!card || !card.id) {
         const storedMatchedHelp = getStoredMatchedHelp()
@@ -181,7 +192,12 @@ export default function HomePage() {
 
           const matchedCard = getCardFromResponse(matchedCardRes)
 
-          if (matchedCard?.status === 'MATCHED') {
+          const matchedChatClosed = matchedCard?.id
+            ? await hasClosedChatForCard(matchedCard.id)
+            : false
+          if (!isLatestFetch()) return
+
+          if (matchedCard?.status === 'MATCHED' && !matchedChatClosed) {
             saveStoredMatchedHelp(matchedCard)
             setMyRequest(matchedCard)
             setNearbyCards([])
@@ -234,7 +250,6 @@ export default function HomePage() {
         } catch (error) {
           if (!isLatestFetch()) return
 
-          console.error('주변 요청 조회 실패:', error)
           setNearbyCards([])
           setNextCursor(null)
           setHomeErrorMessage(getHomeErrorMessage(error))
@@ -265,7 +280,6 @@ export default function HomePage() {
     } catch (e) {
       if (!isLatestFetch()) return
 
-      console.error('홈 데이터 조회 실패:', e)
       setMyRequest(null)
       setNearbyCards([])
       setNextCursor(null)
@@ -322,9 +336,7 @@ export default function HomePage() {
           return [...cards, ...newCards.filter((card) => !existingIds.has(card.id))]
         })
         setNextCursor(data?.nextCursor ?? null)
-      } catch (error) {
-        console.error('주변 요청 추가 조회 실패:', error)
-      } finally {
+      } catch {} finally {
         isLoadingMoreRef.current = false
       }
     }
@@ -346,7 +358,6 @@ export default function HomePage() {
     const cardId = myRequest?.id
 
     if (!cardId) {
-      console.error('카드 ID 없음:', myRequest)
       return
     }
 
@@ -364,8 +375,6 @@ export default function HomePage() {
 
       await fetchHomeData({ force: true })
     } catch (error) {
-      console.error('카드 취소 실패:', error)
-
       const status =
         typeof error === 'object' && error !== null && 'status' in error
           ? (error as { status?: number }).status
@@ -413,9 +422,7 @@ export default function HomePage() {
       try {
         const chatRoomRes = await createChatRoom({ cardId })
         navigate(`/chat/${chatRoomRes.data.id}`)
-      } catch (chatRoomError) {
-        console.error('채팅방 생성 또는 조회 실패:', chatRoomError)
-      }
+      } catch {}
     } catch (error) {
       const status =
         typeof error === 'object' && error !== null && 'status' in error
@@ -428,8 +435,6 @@ export default function HomePage() {
         setSelectedHelpCardId(null)
         selectedHelpCardRef.current = null
         await fetchHomeData({ force: true })
-      } else {
-        console.error('도움 신청 실패:', error)
       }
     } finally {
       setIsApplying(false)
@@ -437,11 +442,17 @@ export default function HomePage() {
   }
   return (
     <PageTransition>
-      <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-gradient-to-b from-white via-[#FFF4E8] to-[#FFC679]">
-        <header className="absolute left-0 top-[50px] flex w-full items-center justify-between px-6">
+      <div
+        className="relative mx-auto h-[844px] w-[390px] overflow-hidden"
+        style={{
+          background:
+            'linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 65%, #FFF4E8 84%, #FFC679 100%)',
+        }}
+      >
+        <header className="absolute left-0 top-[38px] flex h-12 w-full items-center justify-between px-6">
           <img src={logo} alt="ONDO" className="h-6 w-[97px] object-contain" />
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <img src={alertIcon} alt="알림" className="h-6 w-5" />
 
             <button type="button" onClick={() => navigate('/mypage')}>
@@ -452,14 +463,14 @@ export default function HomePage() {
 
         <main className="absolute left-0 top-[171px] flex w-full flex-col items-center">
           {myRequest?.status === 'MATCHED' ? (
-            <div className="relative h-[508px] w-full" aria-live="polite">
+            <div className="mt-[96px] flex flex-col items-center" aria-live="polite">
               <img
                 src={matchingImage}
                 alt="매칭 완료"
-                className="absolute left-1/2 top-[43px] h-[293px] w-[236px] -translate-x-1/2 object-contain"
+                className="h-[200px] w-auto object-contain"
               />
 
-              <p className="absolute left-1/2 top-[307px] -translate-x-1/2 text-center text-lg font-normal leading-6 text-black">
+              <p className="mt-5 text-center text-sm leading-[25px] text-[#343434]">
                 매칭완료!
               </p>
             </div>
@@ -523,10 +534,10 @@ export default function HomePage() {
               <img
                 src={cryingChar}
                 alt="울고 있는 캐릭터"
-                className="h-auto w-[200px] object-contain"
+                className="h-[200px] w-auto object-contain"
               />
 
-              <p className="mt-5 text-sm leading-5 text-[#666666]">
+              <p className="mt-5 text-sm leading-[25px] text-[#343434]">
                 {homeErrorMessage}
               </p>
 
@@ -543,7 +554,7 @@ export default function HomePage() {
               <img
                 src={cryingChar}
                 alt="울고 있는 캐릭터"
-                className="h-auto w-[200px] object-contain"
+                className="h-[200px] w-auto object-contain"
               />
 
               <p className="mt-5 text-sm text-[#666666]">아직 요청이 없어요</p>
@@ -575,7 +586,6 @@ export default function HomePage() {
             selectedHelpCardRef.current = null
           }}
         />
-        {/* 삭제 가이드 */}
         {showDeleteGuide && (
           <div
             onClick={() => {
@@ -598,7 +608,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Nearby request guide */}
         {nearbyGuideStep && (
           <div
             onClick={handleNearbyGuideClick}

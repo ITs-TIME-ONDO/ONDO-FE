@@ -4,11 +4,12 @@ import { useNavigate, useParams } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import PageHeader from '../../components/PageHeader'
 import ChatMessageBubble from '../../components/ChatMessageBubble'
+import LiveLocationShareCard from '../../components/LiveLocationShareCard'
 import FloatingConfirmModal from '../../components/FloatingConfirmModal'
 import ChatRoomInputBar from './ChatRoomInputBar'
 import ChatRoomMenuDropdown from './ChatRoomMenuDropdown'
 import ReportModal from './ReportModal'
-import { mockChatRooms } from './chatMockData'
+import { apiFetch } from '../../api/client'
 import {
   getChatRoom,
   getChatMessages,
@@ -22,21 +23,37 @@ import { getAccessToken } from '../../utils/authStorage'
 import { getUserIdFromToken } from '../../utils/jwt'
 import { formatMessageTime, formatMatchedDate } from '../../utils/date'
 import { useChatSocketStore, EMPTY_MESSAGES } from '../../stores/chatSocketStore'
+import {
+  MOCK_MY_USER_ID,
+  isMockChatRoom,
+  mockChatMessages,
+  mockChatRoom,
+} from '../../mocks/mockChat'
 
-import menuIcon from '../../assets/chat_menu_icon.svg'
 import chatRoomChar from '../../assets/chat_room_char.png'
 import tapFinger from '../../assets/tap_finger.svg'
+import menuIcon from '../../assets/chat_menu_icon.png'
+import miniProfileChar from '../../assets/mini_profile_char.png'
 
-// category는 아직 API에 없는 필드라 목데이터로 임시 표시 (실제 필드 추가되면 room 데이터로 교체 필요)
-const mockRoomInfo = mockChatRooms[0]
+const CARD_CATEGORY_LABELS: Record<string, string> = {
+  PHOTO: '사진 찍기',
+  MEAL: '합석',
+  OTHER: '기타',
+  ETC: '기타',
+}
 
-// HomePage.tsx의 첫 방문 가이드(hasSeenNearbyCardGuide)와 동일한 패턴 — 한 번 보면 다시 안 뜨도록 저장
 const LOCATION_GUIDE_SEEN_STORAGE_KEY = 'hasSeenChatLiveLocationGuide'
+const LOCATION_REQUEST_MESSAGE = '실시간 위치 공유 요청'
+const LOCATION_ACCEPT_MESSAGE = '실시간 위치 공유 동의'
+const LOCATION_REQUEST_COOLDOWN_MS = 10 * 60 * 1000
+const LOCATION_REQUEST_COOLDOWN_PREFIX = 'chatLocationRequestCooldown:'
 
 export default function ChatRoomPage() {
   const navigate = useNavigate()
   const { roomId } = useParams<{ roomId: string }>()
+  const mockMode = import.meta.env.DEV && isMockChatRoom(roomId)
   const [room, setRoom] = useState<ChatRoomSummary | null>(null)
+  const [cardCategory, setCardCategory] = useState('도움 요청')
   const [roomNotFound, setRoomNotFound] = useState(false)
   const [showCompleteModal, setShowCompleteModal] = useState(false)
   const [showLeaveModal, setShowLeaveModal] = useState(false)
@@ -45,21 +62,33 @@ export default function ChatRoomPage() {
   const [showReportModal, setShowReportModal] = useState(false)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [showLocationGuide, setShowLocationGuide] = useState(false)
+  const [showLocationAgreeModal, setShowLocationAgreeModal] = useState(false)
+  const [liveLocationSharingEnabled, setLiveLocationSharingEnabled] =
+    useState(false)
+  const [locationRequestCooldownUntil, setLocationRequestCooldownUntil] =
+    useState(0)
+  const [localMockMessages, setLocalMockMessages] = useState(mockChatMessages)
 
   const [hasNext, setHasNext] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [loadingMore, setLoadingMore] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const firstUnreadMessageRef = useRef<HTMLDivElement>(null)
   const isInitialLoadRef = useRef(true)
   const preserveScrollRef = useRef<{ height: number; top: number } | null>(null)
 
   const accessToken = getAccessToken()
-  const myUserId = accessToken ? getUserIdFromToken(accessToken) : null
+  const myUserId = mockMode
+    ? MOCK_MY_USER_ID
+    : accessToken
+      ? getUserIdFromToken(accessToken)
+      : null
 
-  const messages = useChatSocketStore((state) =>
+  const socketMessages = useChatSocketStore((state) =>
     roomId ? (state.messagesByRoom[roomId] ?? EMPTY_MESSAGES) : EMPTY_MESSAGES
   )
+  const messages = mockMode ? localMockMessages : socketMessages
   const lastMessageId = messages[messages.length - 1]?.id
   const connect = useChatSocketStore((state) => state.connect)
   const subscribeToRoom = useChatSocketStore((state) => state.subscribeToRoom)
@@ -73,45 +102,95 @@ export default function ChatRoomPage() {
   const setLiveLocation = useChatSocketStore((state) => state.setLiveLocation)
   const sendLiveLocation = useChatSocketStore((state) => state.sendLiveLocation)
   const stopLiveLocation = useChatSocketStore((state) => state.stopLiveLocation)
-  const distanceMeters = useChatSocketStore((state) =>
-    roomId && myUserId
-      ? (state.liveLocationByRoom[roomId]?.[myUserId]?.distanceToTargetMeters ?? null)
-      : null
-  )
-
   useEffect(() => {
     if (!roomId) return
+
+    if (mockMode) {
+      setRoom(mockChatRoom)
+      setCardCategory('사진 찍기')
+      setRoomNotFound(false)
+      return
+    }
 
     let active = true
     setRoom(null)
     setRoomNotFound(false)
 
-    getChatRoom(roomId)
-      .then((res) => {
+    const loadRoom = async () => {
+      try {
+        const roomRes = await getChatRoom(roomId)
+        let category = '도움 요청'
+
+        try {
+          const cardRes = await apiFetch<any>(`/api/cards/${roomRes.data.cardId}`)
+          const card = cardRes?.data?.card ?? cardRes?.data ?? cardRes
+          category =
+            CARD_CATEGORY_LABELS[card?.category] ?? card?.category ?? '도움 요청'
+        } catch {}
+
         if (!active) return
-        setRoom(res.data)
+        setCardCategory(category)
+        setRoom(roomRes.data)
+
+        if (roomRes.data.status === 'CLOSED') {
+          setLiveLocationSharingEnabled(false)
+          setClosedMessage('종료된 채팅방입니다.')
+        }
+
         if (localStorage.getItem(LOCATION_GUIDE_SEEN_STORAGE_KEY) !== 'true') {
           setShowLocationGuide(true)
         }
-      })
-      .catch((error) => {
+      } catch {
         if (!active) return
-        console.error('채팅방 조회 실패', error)
         setRoomNotFound(true)
-      })
+      }
+    }
+
+    void loadRoom()
 
     return () => {
       active = false
     }
-  }, [roomId])
+  }, [mockMode, roomId])
 
   useEffect(() => {
-    if (!roomId) return
+    if (!roomId || mockMode) return
+
+    const storageKey = `${LOCATION_REQUEST_COOLDOWN_PREFIX}${roomId}`
+    const savedUntil = Number(localStorage.getItem(storageKey) ?? 0)
+    const validUntil = savedUntil > Date.now() ? savedUntil : 0
+    setLocationRequestCooldownUntil(validUntil)
+
+    if (!validUntil) {
+      localStorage.removeItem(storageKey)
+    }
+  }, [mockMode, roomId])
+
+  useEffect(() => {
+    if (!locationRequestCooldownUntil) return
+
+    const remaining = locationRequestCooldownUntil - Date.now()
+    if (remaining <= 0) {
+      setLocationRequestCooldownUntil(0)
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setLocationRequestCooldownUntil(0)
+      if (!mockMode && roomId) {
+        localStorage.removeItem(`${LOCATION_REQUEST_COOLDOWN_PREFIX}${roomId}`)
+      }
+    }, remaining)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [locationRequestCooldownUntil, mockMode, roomId])
+
+  useEffect(() => {
+    if (!roomId || mockMode) return
 
     isInitialLoadRef.current = true
     preserveScrollRef.current = null
 
-    // 소켓 연결은 앱 전체 1개만 유지 (이미 연결돼 있으면 no-op)
     connect()
     subscribeToRoom(roomId)
     onRoomRead(roomId, (event) => markMessagesRead(roomId, event.messageIds, event.readAt))
@@ -122,12 +201,9 @@ export default function ChatRoomPage() {
         setHasNext(res.data.hasNext)
         setNextCursor(res.data.nextCursor)
       })
-      .catch((error) => console.error('메시지 목록 조회 실패', error))
+      .catch(() => {})
 
-    // 채팅방 진입 시 상대방이 보낸 미읽음 메시지 읽음 처리
-    markRoomAsRead(roomId).catch((error) =>
-      console.error('읽음 처리 실패', error)
-    )
+    markRoomAsRead(roomId).catch(() => {})
 
     return () => {
       onRoomRead(roomId, null)
@@ -135,6 +211,7 @@ export default function ChatRoomPage() {
     }
   }, [
     roomId,
+    mockMode,
     connect,
     subscribeToRoom,
     unsubscribeFromRoom,
@@ -143,20 +220,18 @@ export default function ChatRoomPage() {
     onRoomRead,
   ])
 
-  // 입장 시 초기 거리값 세팅 (실시간 이벤트가 오기 전 빈 화면 방지)
   useEffect(() => {
-    if (!roomId) return
+    if (!roomId || mockMode) return
 
     getLiveLocations(roomId)
       .then((res) => {
         res.data.forEach((event) => setLiveLocation(roomId, event))
       })
-      .catch((error) => console.error('실시간 위치 초기값 조회 실패', error))
-  }, [roomId, setLiveLocation])
+      .catch(() => {})
+  }, [mockMode, roomId, setLiveLocation])
 
-  // 내 위치를 지속적으로 서버에 발행해 목표 지점까지 남은 거리를 갱신 (서버가 1초 단위로 스로틀링)
   useEffect(() => {
-    if (!roomId || !navigator.geolocation) return
+    if (!roomId || mockMode || !liveLocationSharingEnabled || !navigator.geolocation) return
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
@@ -166,7 +241,7 @@ export default function ChatRoomPage() {
           accuracy: position.coords.accuracy,
         })
       },
-      (error) => console.error('실시간 위치 갱신 실패', error),
+      () => {},
       { enableHighAccuracy: true, maximumAge: 0 }
     )
 
@@ -174,22 +249,16 @@ export default function ChatRoomPage() {
       navigator.geolocation.clearWatch(watchId)
       stopLiveLocation(roomId)
     }
-  }, [roomId, sendLiveLocation, stopLiveLocation])
+  }, [mockMode, roomId, liveLocationSharingEnabled, sendLiveLocation, stopLiveLocation])
 
-  // 서버가 발행하는 ROOM_CLOSED 시스템 메시지 수신 시 방 종료 처리
   useEffect(() => {
     const lastMessage = messages[messages.length - 1]
     if (lastMessage?.messageType !== 'ROOM_CLOSED') return
 
-    setClosedMessage(
-      lastMessage.senderId === myUserId
-        ? '채팅방을 나갔습니다.'
-        : `${lastMessage.senderNickname}님이 채팅을 종료했습니다.`
-    )
+    setLiveLocationSharingEnabled(false)
+    setClosedMessage('종료된 채팅방입니다.')
   }, [messages, myUserId])
 
-  // 최초 로딩 시에는 최신 메시지가 보이도록 하단으로 스크롤하고,
-  // 이전 메시지를 위로 더 불러온 경우에는 기존에 보고 있던 위치를 유지한다.
   useLayoutEffect(() => {
     const el = scrollRef.current
     if (!el) return
@@ -202,16 +271,22 @@ export default function ChatRoomPage() {
     }
 
     if (messages.length > 0) {
-      messagesEndRef.current?.scrollIntoView({
+      if (isInitialLoadRef.current && firstUnreadMessageRef.current) {
+        el.scrollTop = Math.max(firstUnreadMessageRef.current.offsetTop - 16, 0)
+        isInitialLoadRef.current = false
+        return
+      }
+
+      el.scrollTo({
+        top: el.scrollHeight,
         behavior: isInitialLoadRef.current ? 'auto' : 'smooth',
-        block: 'end',
       })
       isInitialLoadRef.current = false
     }
-  }, [lastMessageId, messages.length])
+  }, [room?.id, lastMessageId, messages.length])
 
   const loadMoreMessages = () => {
-    if (!roomId || !hasNext || !nextCursor || loadingMore) return
+    if (mockMode || !roomId || !hasNext || !nextCursor || loadingMore) return
 
     const el = scrollRef.current
     if (el) {
@@ -225,9 +300,8 @@ export default function ChatRoomPage() {
         setHasNext(res.data.hasNext)
         setNextCursor(res.data.nextCursor)
       })
-      .catch((error) => {
+      .catch(() => {
         preserveScrollRef.current = null
-        console.error('이전 메시지 조회 실패', error)
       })
       .finally(() => setLoadingMore(false))
   }
@@ -235,32 +309,78 @@ export default function ChatRoomPage() {
   const handleSend = async (text: string): Promise<boolean> => {
     if (!roomId) return false
 
+    if (mockMode) {
+      setLocalMockMessages((current) => [
+        ...current,
+        {
+          id: `mock-message-${Date.now()}`,
+          chatRoomId: roomId,
+          senderId: MOCK_MY_USER_ID,
+          senderNickname: '나',
+          messageType: 'TEXT',
+          content: text,
+          sentAt: new Date().toISOString(),
+          readAt: null,
+        },
+      ])
+      return true
+    }
+
     const body = { messageType: 'TEXT' as const, content: text }
     const sentViaSocket = sendSocketMessage(roomId, body)
 
-    // 소켓으로 보낸 메시지는 SUBSCRIBE 채널로 에코되어 돌아옴
     if (sentViaSocket) return true
 
-    // 소켓 미연결 시에만 REST 폴백
     try {
       const res = await sendChatMessage(roomId, body)
       appendRoomMessage(roomId, res.data)
       return true
-    } catch (error) {
-      console.error('메시지 전송 실패', error)
+    } catch {
       return false
     }
   }
 
+  const handleLocationRequest = async () => {
+    if (!roomId || locationRequestCooldownUntil > Date.now()) return
+
+    const sent = await handleSend(LOCATION_REQUEST_MESSAGE)
+    if (!sent) return
+
+    const cooldownUntil = Date.now() + LOCATION_REQUEST_COOLDOWN_MS
+    if (!mockMode) {
+      localStorage.setItem(
+        `${LOCATION_REQUEST_COOLDOWN_PREFIX}${roomId}`,
+        String(cooldownUntil)
+      )
+    }
+    setLocationRequestCooldownUntil(cooldownUntil)
+  }
+
+  const handleLocationAgree = async () => {
+    const sent = await handleSend(LOCATION_ACCEPT_MESSAGE)
+    if (sent) setLiveLocationSharingEnabled(true)
+  }
+
+  useEffect(() => {
+    if (messages.some((message) => message.content === LOCATION_ACCEPT_MESSAGE)) {
+      setLiveLocationSharingEnabled(true)
+    }
+  }, [messages])
+
   const handleCloseRoom = async () => {
     if (!roomId) return
 
+    if (mockMode) {
+      setLiveLocationSharingEnabled(false)
+      setClosedMessage('종료된 채팅방입니다.')
+      return
+    }
+
     try {
       await closeChatRoom(roomId)
-      // 상대방 화면에는 ROOM_CLOSED 소켓 echo(위 useEffect)가 "OO님이 채팅을 종료했습니다."를 띄워줌
-      setClosedMessage('채팅방을 나갔습니다.')
-    } catch (error) {
-      console.error('채팅방 종료 실패', error)
+      setLiveLocationSharingEnabled(false)
+      setClosedMessage('종료된 채팅방입니다.')
+    } catch {
       alert('채팅방 종료에 실패했습니다. 다시 시도해주세요.')
     }
   }
@@ -294,6 +414,15 @@ export default function ChatRoomPage() {
     )
   }
 
+  const visibleMessages = messages.filter(
+    (msg) =>
+      msg.messageType !== 'ROOM_CLOSED' &&
+      msg.content !== LOCATION_ACCEPT_MESSAGE
+  )
+  const firstUnreadMessageIndex = visibleMessages.findIndex(
+    (message) => message.senderId !== myUserId && !message.readAt
+  )
+
   return (
     <PageTransition>
       <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-white">
@@ -301,8 +430,12 @@ export default function ChatRoomPage() {
           title={room.opponentNickname ?? '알 수 없음'}
           onBack={() => navigate('/chat', { replace: true })}
           rightAction={
-            <button type="button" onClick={() => setShowMenu((prev) => !prev)}>
-              <img src={menuIcon} alt="메뉴" className="h-6 w-6" />
+            <button
+              type="button"
+              onClick={() => setShowMenu((prev) => !prev)}
+              className="flex h-6 w-6 items-center justify-center"
+            >
+              <img src={menuIcon} alt="메뉴" className="h-[18px] w-[3px]" />
             </button>
           }
         />
@@ -311,37 +444,38 @@ export default function ChatRoomPage() {
           open={showMenu}
           onClose={() => setShowMenu(false)}
           options={[
-            // TODO: 알림 켜기/끄기 서버 연동 (지금은 로컬 상태만 토글)
-            {
-              label: notificationsEnabled ? '알림 끄기' : '알림 켜기',
-              onClick: () => setNotificationsEnabled((prev) => !prev),
-            },
+            ...(closedMessage
+              ? []
+              : [
+                  {
+                    label: notificationsEnabled ? '알림 끄기' : '알림 켜기',
+                    onClick: () => setNotificationsEnabled((prev) => !prev),
+                  },
+                ]),
             { label: '신고하기', onClick: () => setShowReportModal(true) },
-            { label: '채팅방 나가기', onClick: () => setShowLeaveModal(true) },
+            ...(closedMessage
+              ? []
+              : [{ label: '채팅방 나가기', onClick: () => setShowLeaveModal(true) }]),
           ]}
         />
 
         <div
-          className="absolute left-0 top-[99px] flex w-full flex-col gap-5 px-6 py-3"
+          className="absolute left-0 top-[99px] flex h-[145px] w-full flex-col gap-5 px-6 py-3"
           style={{
             background: 'linear-gradient(180deg, #FF9E1B -52.24%, #FFF 115.3%)',
           }}
         >
           <div>
-            <p className="text-[18px] font-semibold text-black">
-              {mockRoomInfo.category}
-            </p>
-            <p className="mt-[10px] text-sm font-light text-[#343434]">
-              {distanceMeters !== null
-                ? `나와 ${distanceMeters}m 떨어져 있음`
-                : '위치 정보를 불러오는 중...'}
+            <p className="mt-[30px] text-[18px] font-semibold text-black">
+              {cardCategory}
             </p>
           </div>
 
           <button
             type="button"
             onClick={() => setShowCompleteModal(true)}
-            className="flex h-10 w-[107px] items-center justify-center rounded-full bg-black text-base font-medium text-white"
+            disabled={Boolean(closedMessage)}
+            className="flex h-10 w-[107px] -translate-y-2 items-center justify-center rounded-full bg-black text-base font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             완료
           </button>
@@ -349,22 +483,111 @@ export default function ChatRoomPage() {
           <img
             src={chatRoomChar}
             alt=""
-            className="pointer-events-none absolute right-0 top-[-2px] h-[144px] w-[153px] object-contain"
+            className="pointer-events-none absolute right-0 top-0 h-36 w-[153px] object-contain"
           />
         </div>
+
+        <div className="pointer-events-none absolute inset-x-0 top-[243px] z-10 h-8 bg-[linear-gradient(to_bottom,rgba(255,255,255,1)_0%,rgba(255,255,255,0.98)_30%,rgba(255,255,255,0)_75%)]" />
 
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="chat-scrollbar absolute inset-x-0 top-[265px] bottom-[90px] overflow-y-auto"
+          className="chat-scrollbar absolute inset-x-0 top-[259px] bottom-[73px] overflow-y-auto"
         >
-          <p className="text-center text-xs text-[#666]">{formatMatchedDate(room.createdAt)}</p>
+          <p className="text-center text-[13px] text-[#666]">{formatMatchedDate(room.createdAt)}</p>
 
           <div className="mt-6 flex flex-col gap-6">
-            {messages
-              .filter((msg) => msg.messageType !== 'ROOM_CLOSED')
-              .map((msg) => {
+            {visibleMessages.map((msg, index) => {
                 const sender = msg.senderId === myUserId ? 'me' : 'partner'
+                const previousMessage = visibleMessages[index - 1]
+                const nextMessage = visibleMessages[index + 1]
+                const isSameGroupAsPrevious =
+                  Boolean(previousMessage) &&
+                  previousMessage.senderId === msg.senderId &&
+                  formatMessageTime(previousMessage.sentAt) ===
+                    formatMessageTime(msg.sentAt)
+                const compact = isSameGroupAsPrevious
+                const showTime =
+                  !nextMessage ||
+                  nextMessage.senderId !== msg.senderId ||
+                  formatMessageTime(nextMessage.sentAt) !==
+                    formatMessageTime(msg.sentAt)
+                const showSenderInfo =
+                  sender === 'partner' && !isSameGroupAsPrevious
+                if (msg.content === LOCATION_REQUEST_MESSAGE) {
+                  const accepted = messages.some(
+                    (message) =>
+                      message.content === LOCATION_ACCEPT_MESSAGE &&
+                      (mockMode ||
+                        Date.parse(message.sentAt) >= Date.parse(msg.sentAt))
+                  )
+
+                  if (sender === 'partner' && showSenderInfo) {
+                    return (
+                      <div
+                        key={msg.id}
+                        ref={index === firstUnreadMessageIndex ? firstUnreadMessageRef : undefined}
+                        className="flex items-start gap-2 px-6"
+                      >
+                        <div className="flex size-[30px] shrink-0 items-center justify-center rounded-full bg-[#FFF4E8]">
+                          <img
+                            src={room.opponentProfileImageUrl || miniProfileChar}
+                            alt={msg.senderNickname}
+                            className="size-[26px] object-contain"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <p className="text-xs text-[#343434]">{msg.senderNickname}</p>
+                          <div className="flex items-end gap-[5px]">
+                            <LiveLocationShareCard
+                              sender={sender}
+                              status={closedMessage ? 'ended' : accepted ? 'accepted' : 'requested'}
+                              onAgree={() => setShowLocationAgreeModal(true)}
+                              onOpen={() => navigate(`/location?roomId=${roomId}`)}
+                            />
+                            {showTime && (
+                              <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">
+                                {formatMessageTime(msg.sentAt)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div
+                      key={msg.id}
+                      ref={index === firstUnreadMessageIndex ? firstUnreadMessageRef : undefined}
+                      className={`flex items-end gap-[5px] ${compact ? '-mt-3' : ''} ${
+                        sender === 'me'
+                          ? 'justify-end px-6'
+                          : 'justify-start pl-[62px] pr-6'
+                      }`}
+                    >
+                      {sender === 'me' && showTime && (
+                        <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">
+                          {formatMessageTime(msg.sentAt)}
+                        </span>
+                      )}
+
+                      <LiveLocationShareCard
+                        sender={sender}
+                        status={closedMessage ? 'ended' : accepted ? 'accepted' : 'requested'}
+                        onAgree={() => setShowLocationAgreeModal(true)}
+                        onOpen={() => navigate(`/location?roomId=${roomId}`)}
+                      />
+
+                      {sender === 'partner' && showTime && (
+                        <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">
+                          {formatMessageTime(msg.sentAt)}
+                        </span>
+                      )}
+                    </div>
+                  )
+                }
+
                 return (
                   <ChatMessageBubble
                     key={msg.id}
@@ -372,6 +595,10 @@ export default function ChatRoomPage() {
                     message={msg.content ?? ''}
                     time={formatMessageTime(msg.sentAt)}
                     nickname={sender === 'partner' ? msg.senderNickname : undefined}
+                    showSenderInfo={showSenderInfo}
+                    compact={compact}
+                    showTime={showTime}
+                    containerRef={index === firstUnreadMessageIndex ? firstUnreadMessageRef : undefined}
                     profileImageUrl={
                       sender === 'partner'
                         ? (room.opponentProfileImageUrl ?? undefined)
@@ -387,10 +614,26 @@ export default function ChatRoomPage() {
               {closedMessage}
             </p>
           )}
-          <div ref={messagesEndRef} aria-hidden="true" />
+          <div ref={messagesEndRef} className="h-6" aria-hidden="true" />
         </div>
 
-        <ChatRoomInputBar disabled={Boolean(closedMessage)} onSend={handleSend} />
+        <ChatRoomInputBar
+          disabled={Boolean(closedMessage)}
+          locationRequestDisabled={locationRequestCooldownUntil > Date.now()}
+          onSend={handleSend}
+          onLocationRequest={handleLocationRequest}
+        />
+
+        <FloatingConfirmModal
+          open={showLocationAgreeModal}
+          title="실시간 위치를 공유하시겠어요?"
+          description="상대방과 위치가 실시간으로 공유돼요."
+          onConfirm={() => {
+            setShowLocationAgreeModal(false)
+            void handleLocationAgree()
+          }}
+          onCancel={() => setShowLocationAgreeModal(false)}
+        />
 
         <FloatingConfirmModal
           open={showCompleteModal}
@@ -418,10 +661,9 @@ export default function ChatRoomPage() {
           open={showReportModal}
           onClose={() => setShowReportModal(false)}
           roomId={roomId}
-          onSuccess={() => setClosedMessage('채팅방을 나갔습니다.')}
+          onSuccess={() => setClosedMessage('종료된 채팅방입니다.')}
         />
 
-        {/* 실시간 위치 공유 최초 안내 — HomePage.tsx의 첫 방문 가이드와 동일한 패턴 */}
         {showLocationGuide && !closedMessage && (
           <div
             onClick={handleDismissLocationGuide}

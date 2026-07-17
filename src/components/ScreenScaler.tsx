@@ -11,7 +11,6 @@ function getViewportSize() {
   }
 }
 
-// 390x844(Figma 기준) 디자인을 실제 기기 화면 크기에 맞춰 꽉 차게 스케일링한다.
 export default function ScreenScaler({ children }: { children: ReactNode }) {
   const [{ width, height }, setSize] = useState(getViewportSize)
 

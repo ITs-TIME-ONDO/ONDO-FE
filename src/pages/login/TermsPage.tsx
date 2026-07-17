@@ -42,19 +42,16 @@ export default function TermsPage() {
   return (
     <PageTransition>
       <div className="relative h-[844px] w-[390px] overflow-hidden bg-white">
-        {/* 진행 단계 바 */}
         <div className="absolute flex gap-1 items-center left-6 top-10">
           <div className="h-1 w-[169px] rounded-full bg-[#c6c6c6]" />
           <div className="h-1 w-[169px] rounded-full bg-[#ff9e1b]" />
         </div>
 
-        {/* 타이틀 */}
         <div className="absolute left-6 top-[104px] text-[22px] font-medium leading-7 text-black">
           <p>회원가입 약관에</p>
           <p>동의해 주세요</p>
         </div>
 
-        {/* 모두 체크하기 */}
         <button
           type="button"
           onClick={toggleAll}
@@ -64,10 +61,8 @@ export default function TermsPage() {
           <span className="text-[18px] font-medium text-[#343434]">항목 모두 체크하기</span>
         </button>
 
-        {/* 구분선 */}
         <div className="absolute left-6 top-[373px] h-px w-[342px] bg-[#e8e8e8]" />
 
-        {/* 약관 항목 */}
         <div className="absolute left-6 top-[401px] flex flex-col w-[342px]">
           {TERMS.map((term, i) => (
             <button
@@ -84,7 +79,6 @@ export default function TermsPage() {
           ))}
         </div>
 
-        {/* 다음 버튼 */}
         <NextButton
           disabled={!allChecked}
           onClick={() => {

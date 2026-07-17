@@ -4,7 +4,6 @@ import arrowIcon from '../../assets/chat_report_arrow.svg'
 import { createChatRoomReport, type ReportReason } from '../../api/reports'
 import { ApiError } from '../../api/client'
 
-// reports.md엔 'HARASSMENT'(욕설/인신공격) 예시만 있음. 나머지 두 값은 추정 작성 — 백엔드 확인 필요
 const REASON_CODE_MAP: Record<string, ReportReason> = {
   '욕설/인신공격': 'HARASSMENT',
   '음란성/선정성': 'OBSCENE_CONTENT',
@@ -59,7 +58,6 @@ export default function ReportModal({
         if (error instanceof ApiError && error.status === 409) {
           alert('이미 신고한 사용자입니다.')
         } else {
-          console.error('신고 접수 실패', error)
           alert('신고 접수에 실패했습니다. 다시 시도해주세요.')
         }
       })
@@ -68,13 +66,16 @@ export default function ReportModal({
 
   return (
     <>
-      <div className="absolute inset-0 z-40" onClick={onClose} />
+      <div
+        className="absolute inset-0 z-40 bg-white/20 backdrop-blur-[3px]"
+        onClick={onClose}
+      />
 
       <div
-        className="absolute left-1/2 top-1/2 z-50 flex w-[342px] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-5 rounded-[20px] bg-white px-7 pb-6 pt-5"
-        style={{ boxShadow: '0px 2px 2.8px rgba(0,0,0,0.4)' }}
+        className="absolute left-1/2 top-1/2 z-50 flex w-[342px] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-5 rounded-[20px] bg-white/90 px-7 pb-6 pt-8"
+        style={{ boxShadow: '0px 0px 5.6px rgba(0,0,0,0.2)' }}
       >
-        <p className="text-[20px] font-semibold leading-[1.7] text-black">
+        <p className="text-[18px] font-semibold leading-[1.7] text-black">
           신고하기
         </p>
 
@@ -108,7 +109,7 @@ export default function ReportModal({
                     setIsReasonOpen(false)
                   }}
                   className={
-                    'flex h-[50px] w-full items-center border border-t-0 border-[#C6C6C6] bg-white px-5 text-left text-base text-[#343434] ' +
+                    'flex h-[50px] w-full items-center border border-t-0 border-[#C6C6C6] bg-white/95 px-5 text-left text-base text-[#343434] ' +
                     (index === REPORT_REASONS.length - 1
                       ? 'rounded-b-[20px]'
                       : '')
@@ -142,7 +143,7 @@ export default function ReportModal({
           disabled={!isValid || !roomId || submitting}
           onClick={handleSubmit}
           className={
-            'flex h-[50px] w-full items-center justify-center rounded-full text-xl font-bold text-white ' +
+            'flex h-[50px] w-[286px] items-center justify-center rounded-full text-lg font-semibold text-white ' +
             (isValid && roomId && !submitting
               ? 'bg-[#FF9E1B]'
               : 'bg-[#FF9E1B]/50')

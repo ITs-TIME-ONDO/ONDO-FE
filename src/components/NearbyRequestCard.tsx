@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, useAnimationControls } from 'framer-motion'
 
 import photo from '../assets/photo.png'
 import meal from '../assets/합석.png'
@@ -55,6 +55,7 @@ export default function NearbyRequestCard({
   onSwipeRight,
   onHelp,
 }: Props) {
+  const controls = useAnimationControls()
   const categoryLabel = categoryLabelMap[request.category] ?? request.category
   const categoryImage = categoryImageMap[request.category] ?? photo
   const genderLabel =
@@ -69,20 +70,21 @@ export default function NearbyRequestCard({
       dragDirectionLock
       dragConstraints={{ left: -140, right: 140, top: -120, bottom: 0 }}
       dragElastic={0}
-      dragSnapToOrigin
+      animate={controls}
       onDragEnd={(_, info) => {
         if (info.offset.y <= -100) {
           onHelp?.()
-          return
-        }
-
-        if (info.offset.x < -100) {
+        } else if (info.offset.x < -100) {
           onSwipeLeft?.()
-        }
-
-        if (info.offset.x > 100) {
+        } else if (info.offset.x > 100) {
           onSwipeRight?.()
         }
+
+        void controls.start({
+          x: 0,
+          y: 0,
+          transition: { type: 'spring', stiffness: 280, damping: 26 },
+        })
       }}
       className="flex h-[508px] w-80 cursor-pointer flex-col items-center justify-between rounded-[20px] bg-white pb-7 pt-5 shadow-[0_4px_4px_rgba(0,0,0,0.25),0_0_4px_rgba(255,158,27,1)]"
     >

@@ -20,9 +20,7 @@ export default function WithdrawPage() {
   useEffect(() => {
     getUserProfile()
       .then(setProfile)
-      .catch((error) => {
-        console.error('프로필 조회 실패:', error)
-      })
+      .catch(() => {})
   }, [])
 
   const nickname =
@@ -36,9 +34,7 @@ export default function WithdrawPage() {
       await deleteUser()
       localStorage.clear()
       navigate('/login', { replace: true })
-    } catch (error) {
-      console.error('회원 탈퇴 실패:', error)
-    } finally {
+    } catch {} finally {
       setIsSubmitting(false)
     }
   }
@@ -72,7 +68,7 @@ export default function WithdrawPage() {
 
         <button
           type="button"
-          className="absolute left-[24px] top-[720px] flex h-[60px] w-[342px] items-center justify-center rounded-full bg-[red] text-[20px] font-bold text-white disabled:opacity-50"
+          className="absolute bottom-16 left-6 flex h-[60px] w-[342px] items-center justify-center rounded-full bg-[red] text-[20px] font-bold text-white disabled:opacity-50"
           onClick={handleWithdraw}
           disabled={isSubmitting}
         >

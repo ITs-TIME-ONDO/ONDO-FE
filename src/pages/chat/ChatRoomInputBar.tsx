@@ -1,20 +1,27 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { check, sexual } from 'korcen' // korcen.ts 오픈소스 이용해서 한국어 비속어 블로킹
+import { check, sexual } from 'korcen'
 
 import mapIcon from '../../assets/chat_map_icon.svg'
 import sendIcon from '../../assets/chat_send_icon.svg'
+import sendIconActive from '../../assets/chat_send_icon_active.svg'
 
 type Props = {
   disabled?: boolean
+  locationRequestDisabled?: boolean
   onSend: (text: string) => Promise<boolean>
+  onLocationRequest: () => void
 }
 
-export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
+export default function ChatRoomInputBar({
+  disabled = false,
+  locationRequestDisabled = false,
+  onSend,
+  onLocationRequest,
+}: Props) {
   const [value, setValue] = useState('')
-  const navigate = useNavigate()
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
+  const isSendActive = Boolean(value.trim()) && !disabled && !sending
 
   useEffect(() => {
     if (disabled) setValue('')
@@ -24,8 +31,6 @@ export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
     const text = value.trim()
     if (disabled || sending || !text) return
 
-    // 클라이언트 단어사전 기반 경량 차단 — 우회 가능성 있어 실효성 있는 필터링은
-    // 백엔드/AI 모더레이션에서 별도로 처리해야 함
     if (check(text) || sexual(text)) {
       setError('부적절한 표현이 포함되어 있어 전송할 수 없습니다.')
       return
@@ -34,7 +39,6 @@ export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
     setError('')
     setSending(true)
 
-    // 전송 성공이 확인된 뒤에만 입력을 비운다 — 실패 시 값을 그대로 두어 원문이 보존됨
     const success = await onSend?.(text)
 
     setSending(false)
@@ -47,15 +51,17 @@ export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
   }
 
   return (
-    <div className="absolute bottom-6 left-0 flex w-full flex-col gap-1 px-6">
+    <div className="absolute bottom-0 left-0 z-20 flex min-h-[74px] w-full flex-col gap-1 bg-white px-6 pb-6 before:pointer-events-none before:absolute before:bottom-full before:left-0 before:h-8 before:w-full before:bg-[linear-gradient(to_top,rgba(255,255,255,1)_0%,rgba(255,255,255,0.98)_30%,rgba(255,255,255,0)_75%)]">
       {error && <p className="px-1 text-xs text-red-500">{error}</p>}
 
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={() => navigate('/location')}
-          disabled={disabled}
-          className="shrink-0"
+          onClick={onLocationRequest}
+          disabled={disabled || locationRequestDisabled}
+          aria-label="실시간 위치 공유 요청"
+          title={locationRequestDisabled ? '10분 후 다시 요청할 수 있어요' : undefined}
+          className="shrink-0 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <img src={mapIcon} alt="위치 공유" className="h-5 w-5" />
         </button>
@@ -75,16 +81,20 @@ export default function ChatRoomInputBar({ disabled = false, onSend }: Props) {
               disabled ? '메시지를 보낼 수 없습니다' : '메시지 보내기'
             }
             disabled={disabled}
-            className="min-w-0 flex-1 bg-transparent text-sm text-[#343434] placeholder:text-[#343434] focus:outline-none"
+            className="min-w-0 flex-1 bg-transparent text-sm text-[#343434] placeholder:text-[#929292] focus:outline-none"
           />
 
           <button
             type="button"
             onClick={handleSend}
-            disabled={disabled || sending}
+            disabled={!isSendActive}
             className="shrink-0"
           >
-            <img src={sendIcon} alt="전송" className="h-6 w-[23px]" />
+            <img
+              src={isSendActive ? sendIconActive : sendIcon}
+              alt="전송"
+              className="h-6 w-[23px]"
+            />
           </button>
         </div>
       </div>

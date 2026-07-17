@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import arrow from '../../assets/arrow.png'
 import openArrow from '../../assets/open_arrow.png'
 import { apiFetch } from '../../api/client'
+import { hasClosedChatForCard } from '../../utils/cardChatStatus'
 
 type Purpose = '사진 찍기' | '합석' | '기타'
 type Gender = '남성' | '여성' | '상관없음'
@@ -48,6 +49,10 @@ export default function RequestPage() {
         const card = getCardFromResponse(res)
         const accessToken = localStorage.getItem('accessToken')
 
+        if (card?.status === 'MATCHED' && (await hasClosedChatForCard(card.id))) {
+          return
+        }
+
         if (card?.id) {
           setHasActiveRequest(true)
 
@@ -60,9 +65,7 @@ export default function RequestPage() {
 
           navigate('/')
         }
-      } catch (error) {
-        console.error('active request check failed:', error)
-      }
+      } catch {}
     }
 
     checkActiveRequest()
@@ -110,9 +113,7 @@ export default function RequestPage() {
         )
       }
       navigate('/')
-    } catch (error) {
-      console.error('카드 생성 실패:', error)
-    } finally {
+    } catch {} finally {
       setIsSubmitting(false)
     }
   }
@@ -287,7 +288,7 @@ export default function RequestPage() {
         type="button"
         disabled={!isValid || isSubmitting || hasActiveRequest}
         onClick={handleSubmit}
-        className={`absolute bottom-[68px] left-6 h-14 w-[342px] rounded-full text-xl font-bold text-white ${
+        className={`absolute bottom-16 left-6 h-[60px] w-[342px] rounded-full text-xl font-bold text-white ${
           isValid && !isSubmitting && !hasActiveRequest
             ? 'bg-[#FF9814]'
             : 'bg-[#FFC878] cursor-not-allowed'

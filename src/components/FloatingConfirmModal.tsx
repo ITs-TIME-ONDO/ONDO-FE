@@ -8,6 +8,7 @@ type Props = {
   cancelText?: string
   onConfirm: () => void
   onCancel: () => void
+  disabled?: boolean
 }
 
 export default function FloatingConfirmModal({
@@ -18,6 +19,7 @@ export default function FloatingConfirmModal({
   cancelText = '취소',
   onConfirm,
   onCancel,
+  disabled = false,
 }: Props) {
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -27,23 +29,28 @@ export default function FloatingConfirmModal({
     cancelButtonRef.current?.focus()
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel()
+      if (e.key === 'Escape' && !disabled) onCancel()
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [open, onCancel])
+  }, [disabled, open, onCancel])
 
   if (!open) return null
 
   return (
     <>
-      <div className="absolute inset-0 z-40" onClick={onCancel} />
+      <div
+        className="absolute inset-0 z-40 bg-white/20 backdrop-blur-[3px]"
+        onClick={() => {
+          if (!disabled) onCancel()
+        }}
+      />
 
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="floating-confirm-modal-title"
-        className="absolute left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-5 rounded-[20px] bg-white/80 px-7 pb-6 pt-8"
+        className="absolute left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-5 rounded-[20px] bg-white/60 px-7 pb-6 pt-8"
         style={{ boxShadow: '0px 0px 5.6px rgba(0,0,0,0.2)' }}
       >
         <div className="text-center">
@@ -66,6 +73,7 @@ export default function FloatingConfirmModal({
             ref={cancelButtonRef}
             type="button"
             onClick={onCancel}
+            disabled={disabled}
             className="flex h-11 w-[108px] items-center justify-center rounded-full bg-[#C6C6C6]/60 text-base text-[#343434]"
           >
             {cancelText}
@@ -74,6 +82,7 @@ export default function FloatingConfirmModal({
           <button
             type="button"
             onClick={onConfirm}
+            disabled={disabled}
             className="flex h-11 w-[107px] items-center justify-center rounded-full bg-[#FF9E1B] text-base font-semibold text-white"
           >
             {confirmText}

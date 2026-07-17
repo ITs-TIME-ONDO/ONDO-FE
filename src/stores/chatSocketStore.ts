@@ -17,8 +17,6 @@ export interface SendLiveLocationRequest {
 
 const WS_URL = 'ws://54.117.1.94/ws'
 
-// selector fallback용 고정 참조 — 매번 새 배열([])을 반환하면 useSyncExternalStore가
-// 스냅샷이 계속 바뀌었다고 판단해 무한 리렌더링(Maximum update depth exceeded)이 발생함
 export const EMPTY_MESSAGES: ChatMessage[] = []
 
 interface ChatSocketState {
@@ -29,7 +27,6 @@ interface ChatSocketState {
   readSubscriptions: Record<string, StompSubscription>
   liveLocationSubscriptions: Record<string, StompSubscription>
   readHandlers: Record<string, (event: ChatReadEvent) => void>
-  // roomId -> senderId -> 그 사용자의 최신 위치 이벤트
   liveLocationByRoom: Record<string, Record<string, LiveLocationEvent>>
   pendingRoomIds: Set<string>
   connect: () => void
@@ -109,20 +106,12 @@ export const useChatSocketStore = create<ChatSocketState>((set, get) => ({
         Authorization: `Bearer ${getAccessToken() ?? ''}`,
       },
       onConnect: () => {
-        console.log('[chatSocket] STOMP 연결 성공')
         set({ connected: true })
         get().pendingRoomIds.forEach((roomId) => subscribeToRoomChannels(get, set, roomId))
       },
-      onStompError: (frame) => {
-        console.error('[chatSocket] STOMP 에러', frame.headers, frame.body)
-      },
-      onWebSocketError: (event) => {
-        console.error('[chatSocket] WebSocket 연결 실패', event)
-      },
-      onWebSocketClose: (event) => {
-        console.log('[chatSocket] WebSocket 연결 종료', event.code, event.reason)
-        // 연결이 끊기면 구독도 함께 끊어지므로, 재연결 시 다시 구독할 수 있도록
-        // 기존 구독 방들을 pendingRoomIds로 옮기고 구독 맵은 비운다.
+      onStompError: () => {},
+      onWebSocketError: () => {},
+      onWebSocketClose: () => {
         const { roomSubscriptions, pendingRoomIds } = get()
         Object.keys(roomSubscriptions).forEach((roomId) => pendingRoomIds.add(roomId))
         set({
@@ -221,7 +210,6 @@ export const useChatSocketStore = create<ChatSocketState>((set, get) => ({
   sendMessage: (roomId, body) => {
     const { client, connected } = get()
     if (!client || !connected) {
-      console.error('[chatSocket] 연결되지 않은 상태에서 SEND 시도')
       return false
     }
 

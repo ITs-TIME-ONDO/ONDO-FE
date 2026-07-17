@@ -18,11 +18,17 @@ export default function ChatRoomMenuDropdown({
 
   return (
     <>
-      <div className="absolute inset-0 z-40" onClick={onClose} />
+      <button
+        type="button"
+        aria-label="더보기 메뉴 닫기"
+        tabIndex={-1}
+        className="absolute inset-0 z-40 cursor-default"
+        onPointerDown={onClose}
+      />
 
       <div
-        className="absolute right-6 top-[80px] z-50 flex w-[150px] flex-col rounded-[5px] bg-white"
-        style={{ boxShadow: '0px 2px 2px rgba(0,0,0,0.25)' }}
+        className="absolute right-6 top-[80px] z-50 flex w-36 flex-col divide-y divide-[#E8E8E8] rounded-[5px] border border-white/60 bg-white/90 backdrop-blur-[2px]"
+        style={{ boxShadow: '0px 2px 4px rgba(0,0,0,0.25)' }}
       >
         {options.map((option) => (
           <button

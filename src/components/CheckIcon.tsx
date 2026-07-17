@@ -1,4 +1,3 @@
-// 체크 아이콘
 type CheckIconProps = {
   checked: boolean
   size?: number
