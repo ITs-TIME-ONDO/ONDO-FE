@@ -135,7 +135,11 @@ export default function ChatRoomPage() {
 
         if (roomRes.data.status === 'CLOSED') {
           setLiveLocationSharingEnabled(false)
-          setClosedMessage('종료된 채팅방입니다.')
+          setClosedMessage(
+            roomRes.data.lastMessage?.includes('채팅을 종료했습니다')
+              ? roomRes.data.lastMessage
+              : '채팅이 종료되었습니다.'
+          )
         }
 
         if (localStorage.getItem(LOCATION_GUIDE_SEEN_STORAGE_KEY) !== 'true') {
