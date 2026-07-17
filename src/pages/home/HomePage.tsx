@@ -127,8 +127,9 @@ const getStoredMatchedHelp = (): any | null => {
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const hasUnreadNotifications =
-    localStorage.getItem('hasUnreadNotifications') === 'true'
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(
+    () => localStorage.getItem('hasUnreadNotifications') === 'true'
+  )
 
   const [myRequest, setMyRequest] = useState<any>(null)
   const [nearbyCards, setNearbyCards] = useState<any[]>([])
@@ -149,6 +150,22 @@ export default function HomePage() {
   const positionRef = useRef<GeolocationPosition | null>(null)
   const selectedHelpCardRef = useRef<any | null>(null)
   const deleteGuideDismissedCardIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    const syncUnreadState = () => {
+      setHasUnreadNotifications(
+        localStorage.getItem('hasUnreadNotifications') === 'true'
+      )
+    }
+
+    window.addEventListener('storage', syncUnreadState)
+    window.addEventListener('hasUnreadNotificationsChange', syncUnreadState)
+
+    return () => {
+      window.removeEventListener('storage', syncUnreadState)
+      window.removeEventListener('hasUnreadNotificationsChange', syncUnreadState)
+    }
+  }, [])
 
   const getCurrentPosition = (): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {

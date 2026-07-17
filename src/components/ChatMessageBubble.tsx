@@ -31,9 +31,11 @@ type TranslationState =
 function TranslateMenu({
   onTranslate,
   onClose,
+  side = 'right',
 }: {
   onTranslate: () => void
   onClose: () => void
+  side?: 'left' | 'right'
 }) {
   return (
     <>
@@ -45,7 +47,9 @@ function TranslateMenu({
         onPointerDown={onClose}
       />
       <div
-        className="absolute right-0 top-full z-50 mt-1.5 overflow-hidden whitespace-nowrap rounded-[5px] border border-white/60 bg-white/90 backdrop-blur-[2px]"
+        className={`absolute top-1/2 z-50 -translate-y-1/2 overflow-hidden whitespace-nowrap rounded-[5px] border border-white/60 bg-white/90 backdrop-blur-[2px] ${
+          side === 'right' ? 'left-full ml-2' : 'right-full mr-2'
+        }`}
         style={{ boxShadow: '0px 2px 4px rgba(0,0,0,0.25)' }}
       >
         <button
@@ -54,7 +58,7 @@ function TranslateMenu({
             onTranslate()
             onClose()
           }}
-          className="px-4 py-[10px] text-left text-sm text-black"
+          className="min-w-[54px] px-4 py-1.5 text-left text-[12px] text-black"
         >
           번역
         </button>
@@ -69,12 +73,14 @@ function MessageBubble({
   messageId,
   translatable,
   mockTranslate,
+  menuSide = 'right',
 }: {
   message: string
   bubbleClassName: string
   messageId?: string
   translatable: boolean
   mockTranslate?: boolean
+  menuSide?: 'left' | 'right'
 }) {
   const [translation, setTranslation] = useState<TranslationState>({
     status: 'idle',
@@ -180,6 +186,7 @@ function MessageBubble({
         <TranslateMenu
           onTranslate={requestTranslation}
           onClose={() => setMenuOpen(false)}
+          side={menuSide}
         />
       )}
     </div>
@@ -217,6 +224,7 @@ export default function ChatMessageBubble({
           messageId={messageId}
           translatable={translatable}
           mockTranslate={mockTranslate}
+          menuSide="left"
         />
       </div>
     )
@@ -234,6 +242,7 @@ export default function ChatMessageBubble({
           messageId={messageId}
           translatable={translatable}
           mockTranslate={mockTranslate}
+          menuSide="right"
         />
         {showTime && (
           <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">
@@ -264,6 +273,7 @@ export default function ChatMessageBubble({
             messageId={messageId}
             translatable={translatable}
             mockTranslate={mockTranslate}
+            menuSide="right"
           />
           {showTime && (
             <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">

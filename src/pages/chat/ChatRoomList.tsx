@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import ChatRoomListItem from '../../components/ChatRoomListItem'
 import type { ChatRoomSummary } from '../../api/chat'
 import { formatMessageTime } from '../../utils/date'
-import { mockChatRoom } from '../../mocks/mockChat'
 
 type Props = {
   rooms: ChatRoomSummary[]
@@ -34,10 +33,7 @@ export default function ChatRoomList({ rooms, onLeave }: Props) {
 
   return (
     <main className="absolute left-0 top-[113px] h-[620.5px] w-full overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {(import.meta.env.DEV
-        ? [mockChatRoom, ...rooms.filter((room) => room.id !== mockChatRoom.id)]
-        : rooms
-      ).map((room) => (
+      {rooms.map((room) => (
         <ChatRoomListItem
           key={room.id}
           roomId={room.id}
@@ -48,12 +44,12 @@ export default function ChatRoomList({ rooms, onLeave }: Props) {
           profileImageUrl={room.opponentProfileImageUrl ?? undefined}
           onClick={() => navigate(`/chat/${room.id}`)}
           onLeave={() => {
-            if (room.id !== mockChatRoom.id && room.status === 'ACTIVE') onLeave(room)
+            if (room.status === 'ACTIVE') onLeave(room)
           }}
           swipeOpen={openRoomId === room.id}
           onSwipeOpen={() => setOpenRoomId(room.id)}
           onSwipeClose={() => setOpenRoomId(null)}
-          swipeEnabled={room.id !== mockChatRoom.id && room.status === 'ACTIVE'}
+          swipeEnabled={room.status === 'ACTIVE'}
         />
       ))}
     </main>

@@ -23,12 +23,6 @@ import { getAccessToken } from '../../utils/authStorage'
 import { getUserIdFromToken } from '../../utils/jwt'
 import { formatMessageTime, formatMatchedDate } from '../../utils/date'
 import { useChatSocketStore, EMPTY_MESSAGES } from '../../stores/chatSocketStore'
-import {
-  MOCK_MY_USER_ID,
-  isMockChatRoom,
-  mockChatMessages,
-  mockChatRoom,
-} from '../../mocks/mockChat'
 
 import chatRoomChar from '../../assets/chat_room_char.png'
 import tapFinger from '../../assets/tap_finger.svg'
@@ -51,7 +45,6 @@ const LOCATION_REQUEST_COOLDOWN_PREFIX = 'chatLocationRequestCooldown:'
 export default function ChatRoomPage() {
   const navigate = useNavigate()
   const { roomId } = useParams<{ roomId: string }>()
-  const mockMode = import.meta.env.DEV && isMockChatRoom(roomId)
   const [room, setRoom] = useState<ChatRoomSummary | null>(null)
   const [cardCategory, setCardCategory] = useState('도움 요청')
   const [canCompleteCard, setCanCompleteCard] = useState(false)
@@ -68,7 +61,6 @@ export default function ChatRoomPage() {
     useState(false)
   const [locationRequestCooldownUntil, setLocationRequestCooldownUntil] =
     useState(0)
-  const [localMockMessages, setLocalMockMessages] = useState(mockChatMessages)
 
   const [hasNext, setHasNext] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -80,16 +72,12 @@ export default function ChatRoomPage() {
   const preserveScrollRef = useRef<{ height: number; top: number } | null>(null)
 
   const accessToken = getAccessToken()
-  const myUserId = mockMode
-    ? MOCK_MY_USER_ID
-    : accessToken
-      ? getUserIdFromToken(accessToken)
-      : null
+  const myUserId = accessToken ? getUserIdFromToken(accessToken) : null
 
   const socketMessages = useChatSocketStore((state) =>
     roomId ? (state.messagesByRoom[roomId] ?? EMPTY_MESSAGES) : EMPTY_MESSAGES
   )
-  const messages = mockMode ? localMockMessages : socketMessages
+  const messages = socketMessages
   const lastMessageId = messages[messages.length - 1]?.id
   const connect = useChatSocketStore((state) => state.connect)
   const subscribeToRoom = useChatSocketStore((state) => state.subscribeToRoom)
@@ -105,14 +93,6 @@ export default function ChatRoomPage() {
   const stopLiveLocation = useChatSocketStore((state) => state.stopLiveLocation)
   useEffect(() => {
     if (!roomId) return
-
-    if (mockMode) {
-      setRoom(mockChatRoom)
-      setCardCategory('사진 찍기')
-      setCanCompleteCard(true)
-      setRoomNotFound(false)
-      return
-    }
 
     let active = true
     setRoom(null)
@@ -157,10 +137,10 @@ export default function ChatRoomPage() {
     return () => {
       active = false
     }
-  }, [mockMode, myUserId, roomId])
+  }, [myUserId, roomId])
 
   useEffect(() => {
-    if (!roomId || mockMode) return
+    if (!roomId) return
 
     const storageKey = `${LOCATION_REQUEST_COOLDOWN_PREFIX}${roomId}`
     const savedUntil = Number(localStorage.getItem(storageKey) ?? 0)
@@ -170,7 +150,7 @@ export default function ChatRoomPage() {
     if (!validUntil) {
       localStorage.removeItem(storageKey)
     }
-  }, [mockMode, roomId])
+  }, [roomId])
 
   useEffect(() => {
     if (!locationRequestCooldownUntil) return
@@ -183,16 +163,16 @@ export default function ChatRoomPage() {
 
     const timeoutId = window.setTimeout(() => {
       setLocationRequestCooldownUntil(0)
-      if (!mockMode && roomId) {
+      if (roomId) {
         localStorage.removeItem(`${LOCATION_REQUEST_COOLDOWN_PREFIX}${roomId}`)
       }
     }, remaining)
 
     return () => window.clearTimeout(timeoutId)
-  }, [locationRequestCooldownUntil, mockMode, roomId])
+  }, [locationRequestCooldownUntil, roomId])
 
   useEffect(() => {
-    if (!roomId || mockMode) return
+    if (!roomId) return
 
     isInitialLoadRef.current = true
     preserveScrollRef.current = null
@@ -217,7 +197,6 @@ export default function ChatRoomPage() {
     }
   }, [
     roomId,
-    mockMode,
     connect,
     subscribeToRoom,
     unsubscribeFromRoom,
@@ -227,17 +206,26 @@ export default function ChatRoomPage() {
   ])
 
   useEffect(() => {
-    if (!roomId || mockMode) return
+    if (!roomId) return
 
     getLiveLocations(roomId)
       .then((res) => {
         res.data.forEach((event) => setLiveLocation(roomId, event))
       })
       .catch(() => {})
-  }, [mockMode, roomId, setLiveLocation])
+  }, [roomId, setLiveLocation])
 
   useEffect(() => {
-    if (!roomId || mockMode || !liveLocationSharingEnabled || !navigator.geolocation) return
+    const disableContextMenu = (event: MouseEvent) => {
+      event.preventDefault()
+    }
+
+    document.addEventListener('contextmenu', disableContextMenu)
+    return () => document.removeEventListener('contextmenu', disableContextMenu)
+  }, [])
+
+  useEffect(() => {
+    if (!roomId || !liveLocationSharingEnabled || !navigator.geolocation) return
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
@@ -255,7 +243,7 @@ export default function ChatRoomPage() {
       navigator.geolocation.clearWatch(watchId)
       stopLiveLocation(roomId)
     }
-  }, [mockMode, roomId, liveLocationSharingEnabled, sendLiveLocation, stopLiveLocation])
+  }, [roomId, liveLocationSharingEnabled, sendLiveLocation, stopLiveLocation])
 
   useEffect(() => {
     const lastMessage = messages[messages.length - 1]
@@ -292,7 +280,7 @@ export default function ChatRoomPage() {
   }, [room?.id, lastMessageId, messages.length])
 
   const loadMoreMessages = () => {
-    if (mockMode || !roomId || !hasNext || !nextCursor || loadingMore) return
+    if (!roomId || !hasNext || !nextCursor || loadingMore) return
 
     const el = scrollRef.current
     if (el) {
@@ -315,23 +303,6 @@ export default function ChatRoomPage() {
   const handleSend = async (text: string): Promise<boolean> => {
     if (!roomId) return false
 
-    if (mockMode) {
-      setLocalMockMessages((current) => [
-        ...current,
-        {
-          id: `mock-message-${Date.now()}`,
-          chatRoomId: roomId,
-          senderId: MOCK_MY_USER_ID,
-          senderNickname: '나',
-          messageType: 'TEXT',
-          content: text,
-          sentAt: new Date().toISOString(),
-          readAt: null,
-        },
-      ])
-      return true
-    }
-
     const body = { messageType: 'TEXT' as const, content: text }
     const sentViaSocket = sendSocketMessage(roomId, body)
 
@@ -353,12 +324,10 @@ export default function ChatRoomPage() {
     if (!sent) return
 
     const cooldownUntil = Date.now() + LOCATION_REQUEST_COOLDOWN_MS
-    if (!mockMode) {
-      localStorage.setItem(
-        `${LOCATION_REQUEST_COOLDOWN_PREFIX}${roomId}`,
-        String(cooldownUntil)
-      )
-    }
+    localStorage.setItem(
+      `${LOCATION_REQUEST_COOLDOWN_PREFIX}${roomId}`,
+      String(cooldownUntil)
+    )
     setLocationRequestCooldownUntil(cooldownUntil)
   }
 
@@ -376,12 +345,6 @@ export default function ChatRoomPage() {
   const handleCompleteCard = async () => {
     if (!roomId || !room) return
 
-    if (mockMode) {
-      setLiveLocationSharingEnabled(false)
-      setClosedMessage('종료된 채팅방입니다.')
-      return
-    }
-
     try {
       await apiFetch(`/api/cards/${room.cardId}/complete`, { method: 'PATCH' })
       await closeChatRoom(roomId)
@@ -398,12 +361,6 @@ export default function ChatRoomPage() {
 
   const handleCloseRoom = async () => {
     if (!roomId) return
-
-    if (mockMode) {
-      setLiveLocationSharingEnabled(false)
-      setClosedMessage('종료된 채팅방입니다.')
-      return
-    }
 
     try {
       await closeChatRoom(roomId)
@@ -452,7 +409,10 @@ export default function ChatRoomPage() {
 
   return (
     <PageTransition>
-      <div className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-white">
+      <div
+        className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-white"
+        onContextMenu={(event) => event.preventDefault()}
+      >
         <PageHeader
           title={room.opponentNickname ?? '알 수 없음'}
           onBack={() => navigate('/chat', { replace: true })}
@@ -547,8 +507,7 @@ export default function ChatRoomPage() {
                   const accepted = messages.some(
                     (message) =>
                       message.content === LOCATION_ACCEPT_MESSAGE &&
-                      (mockMode ||
-                        Date.parse(message.sentAt) >= Date.parse(msg.sentAt))
+                      Date.parse(message.sentAt) >= Date.parse(msg.sentAt)
                   )
 
                   if (sender === 'partner' && showSenderInfo) {
@@ -636,7 +595,7 @@ export default function ChatRoomPage() {
                     messageId={msg.id}
                     messageType={msg.messageType}
                     translatable={msg.messageType === 'TEXT'}
-                    mockTranslate={mockMode}
+                    mockTranslate={false}
                   />
                 )
               })}

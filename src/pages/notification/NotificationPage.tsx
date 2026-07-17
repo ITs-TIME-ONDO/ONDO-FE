@@ -62,10 +62,8 @@ export default function NotificationPage() {
   }, [])
 
   useEffect(() => {
-    localStorage.setItem(
-      'hasUnreadNotifications',
-      String(hasUnreadNotifications)
-    )
+    localStorage.setItem('hasUnreadNotifications', String(hasUnreadNotifications))
+    window.dispatchEvent(new Event('hasUnreadNotificationsChange'))
   }, [hasUnreadNotifications])
 
   const handleItemClick = async (notification: NotificationModel) => {
@@ -76,11 +74,12 @@ export default function NotificationPage() {
     )
 
     void readNotification(notification.id).catch(() => {})
-    navigate(
-      notification.type === 'CHAT_MESSAGE' && notification.referenceId
-        ? `/chat/${notification.referenceId}`
-        : routeMap[notification.type]
-    )
+    if (notification.type === 'CHAT_MESSAGE') {
+      navigate('/chat')
+      return
+    }
+
+    navigate(routeMap[notification.type])
   }
 
   const handleReadAll = async () => {

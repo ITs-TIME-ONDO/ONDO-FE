@@ -15,13 +15,17 @@ export function useLongPress(onLongPress: () => void) {
 
   return {
     onPointerDown: (e: PointerEvent) => {
-      if (e.pointerType === 'mouse' && e.button !== 0) return
+      if (e.pointerType === 'mouse') return
+      e.preventDefault()
       clear()
       timerRef.current = window.setTimeout(onLongPress, LONG_PRESS_DURATION_MS)
     },
     onPointerUp: clear,
     onPointerLeave: clear,
     onPointerCancel: clear,
-    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+    onContextMenu: (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+    },
   }
 }
