@@ -77,23 +77,27 @@ export default function ReportModal({
             type="button"
             onClick={() => setIsReasonOpen((prev) => !prev)}
             className={
-              'flex h-[50px] w-full items-center justify-between border border-[#C6C6C6] px-5 ' +
-              (isReasonOpen ? 'rounded-t-[20px]' : 'rounded-full')
+              'flex h-12 w-full items-center justify-between border border-[#D3D3D3] bg-white px-5 text-base ' +
+              (isReasonOpen ? 'rounded-t-[24px]' : 'rounded-full')
             }
           >
             <span
               className={
-                'text-base ' + (reason ? 'text-[#343434]' : 'text-[#929292]')
+                reason ? 'text-[#333333]' : 'text-[#A6A6A6]'
               }
             >
               {reason ?? '사유 선택'}
             </span>
-            <img src={arrowIcon} alt="" className="h-2 w-4" />
+            <img
+              src={arrowIcon}
+              alt=""
+              className={`w-4 transition-transform ${isReasonOpen ? 'rotate-180' : ''}`}
+            />
           </button>
 
           {isReasonOpen && (
-            <div className="absolute left-0 top-[50px] z-10 w-full">
-              {REPORT_REASONS.map((option, index) => (
+            <div className="absolute left-0 top-[48px] z-20 w-full overflow-hidden rounded-b-[20px] border-x border-b border-[#D3D3D3] bg-white">
+              {REPORT_REASONS.map((option) => (
                 <button
                   key={option}
                   type="button"
@@ -101,12 +105,7 @@ export default function ReportModal({
                     setReason(option)
                     setIsReasonOpen(false)
                   }}
-                  className={
-                    'flex h-[50px] w-full items-center border border-t-0 border-[#C6C6C6] bg-white/95 px-5 text-left text-base text-[#343434] ' +
-                    (index === REPORT_REASONS.length - 1
-                      ? 'rounded-b-[20px]'
-                      : '')
-                  }
+                  className="flex h-12 w-full items-center px-5 text-left text-base text-[#333333] border-t border-[#D3D3D3] first:border-t-0"
                 >
                   {option}
                 </button>

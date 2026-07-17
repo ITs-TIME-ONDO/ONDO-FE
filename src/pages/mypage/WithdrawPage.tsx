@@ -68,7 +68,7 @@ export default function WithdrawPage() {
 
         <button
           type="button"
-          className="absolute bottom-16 left-6 flex h-[60px] w-[342px] items-center justify-center rounded-full bg-[red] text-[20px] font-bold text-white disabled:opacity-50"
+          className="absolute bottom-14 left-6 flex h-[60px] w-[342px] items-center justify-center rounded-full bg-[red] text-[20px] font-bold text-white disabled:opacity-50"
           onClick={handleWithdraw}
           disabled={isSubmitting}
         >

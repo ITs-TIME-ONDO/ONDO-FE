@@ -9,6 +9,7 @@ import ConfirmModal from '../../components/ConfirmModal'
 
 import logo from '../../assets/logo.png'
 import alertIcon from '../../assets/alert.png'
+import alertActiveIcon from '../../assets/alert_acitve.svg'
 import profileBtn from '../../assets/top_small_profile_btn.png'
 import cryingChar from '../../assets/crying_char.png'
 import matchingImage from '../../assets/matching.png'
@@ -126,6 +127,8 @@ const getStoredMatchedHelp = (): any | null => {
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const hasUnreadNotifications =
+    localStorage.getItem('hasUnreadNotifications') === 'true'
 
   const [myRequest, setMyRequest] = useState<any>(null)
   const [nearbyCards, setNearbyCards] = useState<any[]>([])
@@ -453,7 +456,13 @@ export default function HomePage() {
           <img src={logo} alt="ONDO" className="h-6 w-[97px] object-contain" />
 
           <div className="flex items-center gap-4">
-            <img src={alertIcon} alt="알림" className="h-6 w-5" />
+            <button type="button" onClick={() => navigate('/notifications')}>
+              <img
+                src={hasUnreadNotifications ? alertActiveIcon : alertIcon}
+                alt="알림"
+                className="h-6 w-5"
+              />
+            </button>
 
             <button type="button" onClick={() => navigate('/mypage')}>
               <img src={profileBtn} alt="프로필" className="h-6 w-6" />
