@@ -33,6 +33,18 @@ export default function NotificationPage() {
     (notification) => !notification.isRead
   )
 
+  const syncUnreadState = (nextNotifications: NotificationModel[]) => {
+    const nextHasUnreadNotifications = nextNotifications.some(
+      (notification) => !notification.isRead
+    )
+
+    localStorage.setItem(
+      'hasUnreadNotifications',
+      String(nextHasUnreadNotifications)
+    )
+    window.dispatchEvent(new Event('hasUnreadNotificationsChange'))
+  }
+
   useEffect(() => {
     let cancelled = false
 
@@ -65,32 +77,31 @@ export default function NotificationPage() {
   }, [])
 
   useEffect(() => {
-    localStorage.setItem('hasUnreadNotifications', String(hasUnreadNotifications))
-    window.dispatchEvent(new Event('hasUnreadNotificationsChange'))
-  }, [hasUnreadNotifications])
+    syncUnreadState(notifications)
+  }, [notifications])
 
   const handleItemClick = async (notification: NotificationModel) => {
-    setNotifications((current) =>
-      current.map((item) =>
-        item.id === notification.id ? { ...item, isRead: true } : item
-      )
+    const nextNotifications = notifications.map((item) =>
+      item.id === notification.id ? { ...item, isRead: true } : item
     )
 
-    void readNotification(notification.id).catch(() => {})
-    if (notification.type === 'CHAT_MESSAGE') {
-      navigate('/chat')
-      return
-    }
+    syncUnreadState(nextNotifications)
+    setNotifications(nextNotifications)
 
+    void readNotification(notification.id).catch(() => {})
     navigate(routeMap[notification.type])
   }
 
   const handleReadAll = async () => {
     if (!hasUnreadNotifications) return
 
-    setNotifications((current) =>
-      current.map((notification) => ({ ...notification, isRead: true }))
-    )
+    const nextNotifications = notifications.map((notification) => ({
+      ...notification,
+      isRead: true,
+    }))
+
+    syncUnreadState(nextNotifications)
+    setNotifications(nextNotifications)
 
     void readAllNotifications().catch(() => {})
   }

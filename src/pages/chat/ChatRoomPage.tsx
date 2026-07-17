@@ -247,11 +247,21 @@ export default function ChatRoomPage() {
 
   useEffect(() => {
     const lastMessage = messages[messages.length - 1]
-    if (lastMessage?.messageType !== 'ROOM_CLOSED') return
+    const hasAcceptedLocationSharing = messages.some(
+      (message) => message.content === LOCATION_ACCEPT_MESSAGE
+    )
 
-    setLiveLocationSharingEnabled(false)
-    setClosedMessage('종료된 채팅방입니다.')
-  }, [messages, myUserId])
+    if (
+      closedMessage ||
+      room?.status === 'CLOSED' ||
+      lastMessage?.messageType === 'ROOM_CLOSED'
+    ) {
+      setLiveLocationSharingEnabled(false)
+      return
+    }
+
+    setLiveLocationSharingEnabled(hasAcceptedLocationSharing)
+  }, [closedMessage, messages, room?.status])
 
   useLayoutEffect(() => {
     const el = scrollRef.current
@@ -336,12 +346,6 @@ export default function ChatRoomPage() {
     if (sent) setLiveLocationSharingEnabled(true)
   }
 
-  useEffect(() => {
-    if (messages.some((message) => message.content === LOCATION_ACCEPT_MESSAGE)) {
-      setLiveLocationSharingEnabled(true)
-    }
-  }, [messages])
-
   const handleCompleteCard = async () => {
     if (!roomId || !room) return
 
@@ -411,7 +415,6 @@ export default function ChatRoomPage() {
     <PageTransition>
       <div
         className="relative mx-auto h-[844px] w-[390px] overflow-hidden bg-white"
-        onContextMenu={(event) => event.preventDefault()}
       >
         <PageHeader
           title={room.opponentNickname ?? '알 수 없음'}
