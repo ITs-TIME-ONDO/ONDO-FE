@@ -23,7 +23,6 @@ import { getAccessToken } from '../../utils/authStorage'
 import { getUserIdFromToken } from '../../utils/jwt'
 import { formatMessageTime, formatMatchedDate } from '../../utils/date'
 import { useChatSocketStore, EMPTY_MESSAGES } from '../../stores/chatSocketStore'
-import { MATCH_COMPLETE_MESSAGE } from '../../constants/chat'
 import {
   MOCK_MY_USER_ID,
   isMockChatRoom,
@@ -135,11 +134,7 @@ export default function ChatRoomPage() {
 
         if (roomRes.data.status === 'CLOSED') {
           setLiveLocationSharingEnabled(false)
-          setClosedMessage(
-            roomRes.data.lastMessage?.includes('채팅을 종료했습니다')
-              ? roomRes.data.lastMessage
-              : '채팅이 종료되었습니다.'
-          )
+          setClosedMessage('종료된 채팅방입니다.')
         }
 
         if (localStorage.getItem(LOCATION_GUIDE_SEEN_STORAGE_KEY) !== 'true') {
@@ -246,21 +241,11 @@ export default function ChatRoomPage() {
   }, [mockMode, roomId, liveLocationSharingEnabled, sendLiveLocation, stopLiveLocation])
 
   useEffect(() => {
-    if (messages.some((message) => message.content === MATCH_COMPLETE_MESSAGE)) {
-      setLiveLocationSharingEnabled(false)
-      setClosedMessage('이 채팅방은 완료되었습니다.')
-      return
-    }
-
     const lastMessage = messages[messages.length - 1]
     if (lastMessage?.messageType !== 'ROOM_CLOSED') return
 
     setLiveLocationSharingEnabled(false)
-    setClosedMessage(
-      lastMessage.senderId === myUserId
-        ? '채팅방을 나갔습니다.'
-        : `${lastMessage.senderNickname}님이 채팅을 종료했습니다.`
-    )
+    setClosedMessage('종료된 채팅방입니다.')
   }, [messages, myUserId])
 
   useLayoutEffect(() => {
@@ -371,30 +356,19 @@ export default function ChatRoomPage() {
     }
   }, [messages])
 
-  const handleCloseRoom = async (completed = false) => {
+  const handleCloseRoom = async () => {
     if (!roomId) return
 
     if (mockMode) {
       setLiveLocationSharingEnabled(false)
-      setClosedMessage(
-        completed ? '이 채팅방은 완료되었습니다.' : '채팅방을 나갔습니다.'
-      )
+      setClosedMessage('종료된 채팅방입니다.')
       return
     }
 
     try {
-      if (completed) {
-        const completionRes = await sendChatMessage(roomId, {
-          messageType: 'TEXT',
-          content: MATCH_COMPLETE_MESSAGE,
-        })
-        appendRoomMessage(roomId, completionRes.data)
-      }
       await closeChatRoom(roomId)
       setLiveLocationSharingEnabled(false)
-      setClosedMessage(
-        completed ? '이 채팅방은 완료되었습니다.' : '채팅방을 나갔습니다.'
-      )
+      setClosedMessage('종료된 채팅방입니다.')
     } catch {
       alert('채팅방 종료에 실패했습니다. 다시 시도해주세요.')
     }
@@ -433,7 +407,6 @@ export default function ChatRoomPage() {
     (msg) =>
       msg.messageType !== 'ROOM_CLOSED' &&
       msg.content !== LOCATION_ACCEPT_MESSAGE &&
-      msg.content !== MATCH_COMPLETE_MESSAGE &&
       !(closedMessage && msg.content === LOCATION_REQUEST_MESSAGE)
   )
   const firstUnreadMessageIndex = visibleMessages.findIndex(
@@ -654,7 +627,7 @@ export default function ChatRoomPage() {
           description="완료 시 위치 공유가 불가합니다."
           onConfirm={() => {
             setShowCompleteModal(false)
-            handleCloseRoom(true)
+            handleCloseRoom()
           }}
           onCancel={() => setShowCompleteModal(false)}
         />
@@ -674,7 +647,7 @@ export default function ChatRoomPage() {
           open={showReportModal}
           onClose={() => setShowReportModal(false)}
           roomId={roomId}
-          onSuccess={() => setClosedMessage('채팅방을 나갔습니다.')}
+          onSuccess={() => setClosedMessage('종료된 채팅방입니다.')}
         />
 
         {showLocationGuide && !closedMessage && (

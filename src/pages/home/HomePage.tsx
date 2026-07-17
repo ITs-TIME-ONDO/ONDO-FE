@@ -15,7 +15,7 @@ import matchingImage from '../../assets/matching.png'
 import upFinger from '../../assets/up_finger.png'
 import sideFinger from '../../assets/side_finger.png'
 import { apiFetch } from '../../api/client'
-import { createChatRoom } from '../../api/chat'
+import { createChatRoom, getChatRooms } from '../../api/chat'
 
 const getHomeErrorMessage = (error: unknown): string => {
   const code =
@@ -123,6 +123,17 @@ const getStoredMatchedHelp = (): any | null => {
   }
 }
 
+const hasClosedChatForCard = async (cardId: string): Promise<boolean> => {
+  try {
+    const roomsRes = await getChatRooms({ page: 0, size: 100 })
+    return roomsRes.data.content.some(
+      (room) => room.cardId === cardId && room.status === 'CLOSED'
+    )
+  } catch {
+    return false
+  }
+}
+
 export default function HomePage() {
   const navigate = useNavigate()
 
@@ -166,9 +177,22 @@ export default function HomePage() {
       const res = await apiFetch<any>('/api/cards/my/active')
       if (!isLatestFetch()) return
 
-      const card = getCardFromResponse(res)
+      let card = getCardFromResponse(res)
+      let closedRequesterCard = false
       const activeCardData = res?.data ?? res
       const hasCreatedCard = activeCardData?.hasCreatedCard
+
+      if (card?.status === 'MATCHED') {
+        const chatClosed = await hasClosedChatForCard(card.id)
+        if (!isLatestFetch()) return
+
+        if (chatClosed) {
+          closedRequesterCard =
+            String(card.requesterId) === getCurrentUserId()
+          card = null
+          localStorage.removeItem(MY_REQUEST_STORAGE_KEY)
+        }
+      }
 
       if (!card || !card.id) {
         const storedMatchedHelp = getStoredMatchedHelp()
@@ -181,7 +205,12 @@ export default function HomePage() {
 
           const matchedCard = getCardFromResponse(matchedCardRes)
 
-          if (matchedCard?.status === 'MATCHED') {
+          const matchedChatClosed = matchedCard?.id
+            ? await hasClosedChatForCard(matchedCard.id)
+            : false
+          if (!isLatestFetch()) return
+
+          if (matchedCard?.status === 'MATCHED' && !matchedChatClosed) {
             saveStoredMatchedHelp(matchedCard)
             setMyRequest(matchedCard)
             setNearbyCards([])
@@ -200,6 +229,14 @@ export default function HomePage() {
         setMyRequest(null)
         setShowDeleteGuide(false)
         deleteGuideDismissedCardIdRef.current = null
+
+        if (closedRequesterCard) {
+          setNearbyCards([])
+          setNextCursor(null)
+          setCurrentIndex(0)
+          setHomeErrorMessage(null)
+          return
+        }
 
         try {
           const position = await getCurrentPosition()

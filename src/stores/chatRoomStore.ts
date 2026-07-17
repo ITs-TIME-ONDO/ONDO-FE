@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 
 import { getChatMessages, getChatRooms, type ChatRoomSummary } from '../api/chat'
-import { MATCH_COMPLETE_MESSAGE } from '../constants/chat'
 
 interface ChatRoomState {
   rooms: ChatRoomSummary[]
@@ -16,15 +15,12 @@ export const useChatRoomStore = create<ChatRoomState>((set) => ({
       const rooms = await Promise.all(
         res.data.content.map(async (room) => {
           try {
-            const messagesRes = await getChatMessages(room.id, { size: 5 })
-            const completed = messagesRes.data.messages.some(
-              (message) => message.content === MATCH_COMPLETE_MESSAGE
-            )
+            const messagesRes = await getChatMessages(room.id, { size: 1 })
             return {
               ...room,
               lastMessage:
-                room.status === 'CLOSED' && completed
-                  ? '이 채팅방은 완료되었습니다.'
+                room.status === 'CLOSED'
+                  ? '종료된 채팅방입니다.'
                   : room.lastMessage,
               latestMessageAt: messagesRes.data.messages[0]?.sentAt ?? null,
             }
