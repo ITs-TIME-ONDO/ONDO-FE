@@ -76,13 +76,15 @@ function MessageBubble({
   translatable: boolean
   mockTranslate?: boolean
 }) {
-  const [translation, setTranslation] = useState<TranslationState>({ status: 'idle' })
+  const [translation, setTranslation] = useState<TranslationState>({
+    status: 'idle',
+  })
   const [showTranslation, setShowTranslation] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const cachedTranslationRef = useRef<string | null>(null)
 
   const requestTranslation = () => {
-    if (!messageId) return
+    if (!messageId || translation.status === 'loading') return
 
     if (cachedTranslationRef.current !== null) {
       setShowTranslation(true)
@@ -104,7 +106,10 @@ function MessageBubble({
     translateChatMessage(messageId, navigator.language)
       .then((res) => {
         cachedTranslationRef.current = res.data.translatedText
-        setTranslation({ status: 'done', translatedText: res.data.translatedText })
+        setTranslation({
+          status: 'done',
+          translatedText: res.data.translatedText,
+        })
         setShowTranslation(true)
       })
       .catch(() => setTranslation({ status: 'error' }))
@@ -119,6 +124,7 @@ function MessageBubble({
         tabIndex={translatable ? 0 : undefined}
         onKeyDown={(e) => {
           if (!translatable) return
+          if (e.target !== e.currentTarget) return
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
             setMenuOpen((prev) => !prev)
@@ -129,7 +135,9 @@ function MessageBubble({
           menuOpen ? 'scale-[1.03]' : 'scale-100'
         } ${bubbleClassName}`}
       >
-        <p className="whitespace-pre-wrap break-words text-sm text-black">{message}</p>
+        <p className="whitespace-pre-wrap break-words text-sm text-black">
+          {message}
+        </p>
 
         {translation.status === 'loading' && (
           <div className="mt-1.5 flex gap-1">
@@ -169,7 +177,10 @@ function MessageBubble({
       </div>
 
       {menuOpen && (
-        <TranslateMenu onTranslate={requestTranslation} onClose={() => setMenuOpen(false)} />
+        <TranslateMenu
+          onTranslate={requestTranslation}
+          onClose={() => setMenuOpen(false)}
+        />
       )}
     </div>
   )
@@ -191,9 +202,14 @@ export default function ChatMessageBubble({
 }: Props) {
   if (sender === 'me') {
     return (
-      <div ref={containerRef} className={`flex items-end justify-end gap-[5px] px-6 ${compact ? '-mt-3' : ''}`}>
+      <div
+        ref={containerRef}
+        className={`flex items-end justify-end gap-[5px] px-6 ${compact ? '-mt-3' : ''}`}
+      >
         {showTime && (
-          <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">{time}</span>
+          <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">
+            {time}
+          </span>
         )}
         <MessageBubble
           message={message}
@@ -208,7 +224,10 @@ export default function ChatMessageBubble({
 
   if (!showSenderInfo) {
     return (
-      <div ref={containerRef} className={`flex items-end gap-[5px] pl-[62px] pr-6 ${compact ? '-mt-3' : ''}`}>
+      <div
+        ref={containerRef}
+        className={`flex items-end gap-[5px] pl-[62px] pr-6 ${compact ? '-mt-3' : ''}`}
+      >
         <MessageBubble
           message={message}
           bubbleClassName="max-w-[220px] rounded-2xl bg-[#F3F3F3] px-3 py-2"
@@ -247,7 +266,9 @@ export default function ChatMessageBubble({
             mockTranslate={mockTranslate}
           />
           {showTime && (
-            <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">{time}</span>
+            <span className="shrink-0 text-[10px] font-light leading-[14px] text-[#929292]">
+              {time}
+            </span>
           )}
         </div>
       </div>
