@@ -38,6 +38,7 @@ import miniProfileChar from '../../assets/mini_profile_char.png'
 const CARD_CATEGORY_LABELS: Record<string, string> = {
   PHOTO: '사진 찍기',
   MEAL: '합석',
+  OTHER: '기타',
   ETC: '기타',
 }
 
