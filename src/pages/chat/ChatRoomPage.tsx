@@ -23,6 +23,7 @@ import { getAccessToken } from '../../utils/authStorage'
 import { getUserIdFromToken } from '../../utils/jwt'
 import { formatMessageTime, formatMatchedDate } from '../../utils/date'
 import { useChatSocketStore, EMPTY_MESSAGES } from '../../stores/chatSocketStore'
+import { MATCH_COMPLETE_MESSAGE } from '../../constants/chat'
 import {
   MOCK_MY_USER_ID,
   isMockChatRoom,
@@ -45,7 +46,6 @@ const CARD_CATEGORY_LABELS: Record<string, string> = {
 const LOCATION_GUIDE_SEEN_STORAGE_KEY = 'hasSeenChatLiveLocationGuide'
 const LOCATION_REQUEST_MESSAGE = '실시간 위치 공유 요청'
 const LOCATION_ACCEPT_MESSAGE = '실시간 위치 공유 동의'
-const MATCH_COMPLETE_MESSAGE = '매칭 완료'
 const LOCATION_REQUEST_COOLDOWN_MS = 10 * 60 * 1000
 const LOCATION_REQUEST_COOLDOWN_PREFIX = 'chatLocationRequestCooldown:'
 
