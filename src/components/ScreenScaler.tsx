@@ -1,60 +1,66 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 const FRAME_WIDTH = 390
 const FRAME_HEIGHT = 844
 
 export default function ScreenScaler({ children }: { children: ReactNode }) {
-  useEffect(() => {
-    const isMapTarget = (target: EventTarget | null) =>
-      target instanceof Element && Boolean(target.closest('[data-map-gesture]'))
+  const getViewportSize = () => {
+    const viewport = window.visualViewport
 
-    const preventBrowserZoom = (event: WheelEvent) => {
-      if (event.ctrlKey && !isMapTarget(event.target)) event.preventDefault()
-    }
-
-    const preventZoomShortcut = (event: KeyboardEvent) => {
-      if (
-        (event.ctrlKey || event.metaKey) &&
-        ['+', '-', '=', '0'].includes(event.key) &&
-        !isMapTarget(event.target)
-      ) {
-        event.preventDefault()
+    // 핀치 줌 중에는 visual viewport가 줌 배율만큼 작아진다. 그 값을
+    // 프레임 스케일에 다시 반영하면 브라우저 확대 효과가 상쇄된다.
+    if (viewport && viewport.scale !== 1) {
+      return {
+        width: window.innerWidth,
+        height: window.innerHeight,
       }
     }
 
-    const preventPinchZoom = (event: Event) => {
-      if (!isMapTarget(event.target)) event.preventDefault()
+    return {
+      width: viewport?.width ?? window.innerWidth,
+      height: viewport?.height ?? window.innerHeight,
+    }
+  }
+
+  const [{ width, height }, setSize] = useState(getViewportSize)
+  const sizeRef = useRef({ width, height })
+
+  useEffect(() => {
+    const handleResize = () => {
+      const nextSize = getViewportSize()
+      const previousSize = sizeRef.current
+      const widthChanged = Math.abs(nextSize.width - previousSize.width) > 1
+      const keyboardLikelyOpen =
+        !widthChanged &&
+        previousSize.height - nextSize.height > 120 &&
+        document.activeElement instanceof HTMLElement &&
+        (document.activeElement.matches('input, textarea, select') ||
+          document.activeElement.isContentEditable)
+
+      if (keyboardLikelyOpen) return
+
+      sizeRef.current = nextSize
+      setSize(nextSize)
     }
 
-    window.addEventListener('wheel', preventBrowserZoom, { passive: false })
-    window.addEventListener('keydown', preventZoomShortcut)
-    document.addEventListener('gesturestart', preventPinchZoom, {
-      passive: false,
-    })
-
+    window.addEventListener('resize', handleResize)
+    window.visualViewport?.addEventListener('resize', handleResize)
     return () => {
-      window.removeEventListener('wheel', preventBrowserZoom)
-      window.removeEventListener('keydown', preventZoomShortcut)
-      document.removeEventListener('gesturestart', preventPinchZoom)
+      window.removeEventListener('resize', handleResize)
+      window.visualViewport?.removeEventListener('resize', handleResize)
     }
   }, [])
 
+  const scale = Math.min(width / FRAME_WIDTH, height / FRAME_HEIGHT)
+
   return (
-    <div
-      className="fixed inset-0 flex items-start justify-center overflow-hidden"
-      style={{
-        background:
-          'linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 65%, #FFF4E8 84%, #FFC679 100%)',
-        backgroundColor: '#FFC679',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: `100% ${FRAME_HEIGHT}px`,
-      }}
-    >
+    <div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-white">
       <div
-        className="relative shrink-0 overflow-hidden"
         style={{
           width: FRAME_WIDTH,
           height: FRAME_HEIGHT,
+          transform: `scale(${scale})`,
+          transformOrigin: 'center',
         }}
       >
         {children}
