@@ -15,7 +15,13 @@ export interface SendLiveLocationRequest {
   accuracy: number
 }
 
-const WS_URL = 'ws://54.117.1.94/ws'
+const WS_URL = import.meta.env.VITE_WS_URL
+
+if (!WS_URL) {
+  throw new Error(
+    'VITE_WS_URL이 설정되지 않았습니다. .env 파일을 확인해주세요.'
+  )
+}
 
 export const EMPTY_MESSAGES: ChatMessage[] = []
 
@@ -35,9 +41,16 @@ interface ChatSocketState {
   setRoomMessages: (roomId: string, messages: ChatMessage[]) => void
   prependRoomMessages: (roomId: string, messages: ChatMessage[]) => void
   appendRoomMessage: (roomId: string, message: ChatMessage) => void
-  markMessagesRead: (roomId: string, messageIds: string[], readAt: string) => void
+  markMessagesRead: (
+    roomId: string,
+    messageIds: string[],
+    readAt: string
+  ) => void
   sendMessage: (roomId: string, body: ChatMessageSendRequest) => boolean
-  onRoomRead: (roomId: string, handler: ((event: ChatReadEvent) => void) | null) => void
+  onRoomRead: (
+    roomId: string,
+    handler: ((event: ChatReadEvent) => void) | null
+  ) => void
   setLiveLocation: (roomId: string, event: LiveLocationEvent) => void
   sendLiveLocation: (roomId: string, body: SendLiveLocationRequest) => boolean
   stopLiveLocation: (roomId: string) => void
@@ -62,10 +75,13 @@ function subscribeToRoomChannels(
     })
   })
 
-  const readSub = client.subscribe(`/sub/chat/rooms/${roomId}/read`, (frame) => {
-    const event = JSON.parse(frame.body) as ChatReadEvent
-    get().readHandlers[roomId]?.(event)
-  })
+  const readSub = client.subscribe(
+    `/sub/chat/rooms/${roomId}/read`,
+    (frame) => {
+      const event = JSON.parse(frame.body) as ChatReadEvent
+      get().readHandlers[roomId]?.(event)
+    }
+  )
 
   const liveLocationSub = client.subscribe(
     `/sub/chat/rooms/${roomId}/live-location`,
@@ -107,13 +123,17 @@ export const useChatSocketStore = create<ChatSocketState>((set, get) => ({
       },
       onConnect: () => {
         set({ connected: true })
-        get().pendingRoomIds.forEach((roomId) => subscribeToRoomChannels(get, set, roomId))
+        get().pendingRoomIds.forEach((roomId) =>
+          subscribeToRoomChannels(get, set, roomId)
+        )
       },
       onStompError: () => {},
       onWebSocketError: () => {},
       onWebSocketClose: () => {
         const { roomSubscriptions, pendingRoomIds } = get()
-        Object.keys(roomSubscriptions).forEach((roomId) => pendingRoomIds.add(roomId))
+        Object.keys(roomSubscriptions).forEach((roomId) =>
+          pendingRoomIds.add(roomId)
+        )
         set({
           connected: false,
           roomSubscriptions: {},
@@ -173,7 +193,10 @@ export const useChatSocketStore = create<ChatSocketState>((set, get) => ({
     const incomingIds = new Set(messages.map((m) => m.id))
     const liveOnly = current.filter((m) => !incomingIds.has(m.id))
     set({
-      messagesByRoom: { ...get().messagesByRoom, [roomId]: [...messages, ...liveOnly] },
+      messagesByRoom: {
+        ...get().messagesByRoom,
+        [roomId]: [...messages, ...liveOnly],
+      },
     })
   },
 
@@ -182,14 +205,22 @@ export const useChatSocketStore = create<ChatSocketState>((set, get) => ({
     const existingIds = new Set(current.map((m) => m.id))
     const newOnes = messages.filter((m) => !existingIds.has(m.id))
     set({
-      messagesByRoom: { ...get().messagesByRoom, [roomId]: [...newOnes, ...current] },
+      messagesByRoom: {
+        ...get().messagesByRoom,
+        [roomId]: [...newOnes, ...current],
+      },
     })
   },
 
   appendRoomMessage: (roomId, message) => {
     const current = get().messagesByRoom[roomId] ?? []
     if (current.some((m) => m.id === message.id)) return
-    set({ messagesByRoom: { ...get().messagesByRoom, [roomId]: [...current, message] } })
+    set({
+      messagesByRoom: {
+        ...get().messagesByRoom,
+        [roomId]: [...current, message],
+      },
+    })
   },
 
   markMessagesRead: (roomId, messageIds, readAt) => {
