@@ -338,7 +338,7 @@ export default function LocationPage() {
         className="absolute inset-x-0 bottom-0 top-[99px]"
         aria-label="실시간 위치 지도"
       >
-        <div ref={mapElementRef} className="h-full w-full" />
+        <div ref={mapElementRef} data-map-gesture className="h-full w-full" />
 
         <div className="absolute left-4 top-4 z-10 flex items-center gap-4 rounded-full bg-white/90 px-4 py-2 text-xs text-[#555555] shadow">
           <span className="flex items-center gap-1.5">
